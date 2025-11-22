@@ -54,6 +54,7 @@ namespace SecChem
 		static constexpr auto Principal = AzimuthalQuantumNumberId::Principal;
 		static constexpr auto Diffuse = AzimuthalQuantumNumberId::Diffuse;
 		static constexpr auto Fundamental = AzimuthalQuantumNumberId::Fundamental;
+		static constexpr auto SupportedAzimuthalQuantumNumberCount = static_cast<int>(AzimuthalQuantumNumberId::O) + 1;
 
 
 		constexpr AzimuthalQuantumNumber() = default;

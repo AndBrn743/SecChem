@@ -32,7 +32,11 @@ endif ()
 add_executable(AzimuthalQuantumNumberTest AzimuthalQuantumNumberTest.cpp)
 target_link_libraries(AzimuthalQuantumNumberTest PRIVATE Catch2::Catch2WithMain SecChem)
 
+add_executable(ElectronicSubShellTest ElectronicSubShellTest.cpp)
+target_link_libraries(ElectronicSubShellTest PRIVATE Catch2::Catch2WithMain SecChem)
+
 include(CTest)
 include(Catch)
 
 add_test(NAME AzimuthalQuantumNumberTest COMMAND AzimuthalQuantumNumberTest)
+add_test(NAME ElectronicSubShellTest COMMAND ElectronicSubShellTest)
