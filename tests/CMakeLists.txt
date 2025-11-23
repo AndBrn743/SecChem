@@ -38,9 +38,13 @@ target_link_libraries(ElectronicSubShellTest PRIVATE Catch2::Catch2WithMain SecC
 add_executable(AtomicElectronConfigurationTest AtomicElectronConfigurationTest.cpp)
 target_link_libraries(AtomicElectronConfigurationTest PRIVATE Catch2::Catch2WithMain SecChem)
 
+add_executable(ElementTest ElementTest.cpp)
+target_link_libraries(ElementTest PRIVATE Catch2::Catch2WithMain SecChem)
+
 include(CTest)
 include(Catch)
 
 add_test(NAME AzimuthalQuantumNumberTest COMMAND AzimuthalQuantumNumberTest)
 add_test(NAME ElectronicSubShellTest COMMAND ElectronicSubShellTest)
 add_test(NAME AtomicElectronConfigurationTest COMMAND AtomicElectronConfigurationTest)
+add_test(NAME ElementTest COMMAND ElementTest)
