@@ -1117,3 +1117,12 @@ namespace SecChem
 		}
 	};
 }  // namespace SecChem
+
+template <>
+struct std::hash<SecChem::Element>
+{
+	std::size_t operator()(const SecChem::Element& element) const noexcept
+	{
+		return std::hash<int>{}(element.AtomicNumber());
+	}
+};
