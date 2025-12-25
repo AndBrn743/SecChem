@@ -1,0 +1,512 @@
+//
+// Created by Andy on 11/23/2025.
+//
+
+#pragma once
+
+#include "../AzimuthalQuantumNumber.hpp"
+#include "../Element.hpp"
+#include <Eigen/Dense>
+#include <algorithm>
+#include <filesystem>
+#include <memory>
+#include <optional>
+#include <type_traits>
+#include <utility>
+#include <vector>
+
+
+namespace SecChem
+{
+	using Scalar = double;
+
+	enum class OwnershipSemantics : bool
+	{
+		Value,
+		Reference
+	};
+
+	constexpr OwnershipSemantics AlternativeOf(const OwnershipSemantics semantics) noexcept
+	{
+		return static_cast<OwnershipSemantics>(!static_cast<bool>(semantics));
+	}
+
+	template <typename T>
+	class Builder;
+}  // namespace SecChem
+
+namespace SecChem::BasisSet::Gaussian
+{
+	class ContractedRadialOrbitalSet
+	{
+		struct ContractionSetViewDescription
+		{
+			Eigen::Index Offset;
+			Eigen::Index Size;
+		};
+
+	public:
+		class ContractionSetView
+		{
+		public:
+			auto Exponents() const noexcept
+			{
+				return m_Exponents;
+			}
+
+			auto ContractionCoefficients() const noexcept
+			{
+				return m_Contractions;
+			}
+
+			Scalar Exponent(const Eigen::Index index) const noexcept
+			{
+				return m_Exponents[index];
+			}
+
+			Scalar ContractionCoefficient(const Eigen::Index index) const noexcept
+			{
+				return m_Contractions[index];
+			}
+
+		private:
+			friend class ContractedRadialOrbitalSet;
+			friend std::allocator<ContractionSetView>;
+			ContractionSetView(const Eigen::Map<const Eigen::VectorX<Scalar>> exponents,     // NOLINT
+			                   const Eigen::Map<const Eigen::VectorX<Scalar>> contractions)  // NOLINT
+			    : m_Exponents(exponents), m_Contractions(contractions)
+			{
+				assert(m_Exponents.size() == m_Contractions.size());
+			}
+
+			const Eigen::Map<const Eigen::VectorX<Scalar>> m_Exponents;
+			const Eigen::Map<const Eigen::VectorX<Scalar>> m_Contractions;
+		};
+
+		ContractedRadialOrbitalSet(Eigen::VectorXd exponentSet, Eigen::MatrixXd contractionSets)
+		    : m_ExponentSet(std::move(exponentSet)), m_ContractionSets(std::move(contractionSets)),
+		      m_ContractionSetViewDescriptions(BuildContractionSetViewDescriptions(m_ExponentSet, m_ContractionSets))
+		{
+			assert(m_ExponentSet.size() > 0);
+			assert(m_ExponentSet.size() == m_ContractionSets.rows());
+			assert(m_ExponentSet.size() >= m_ContractionSets.cols());
+			assert(m_ContractionSets.cols() >= 0);
+		}
+
+		const Eigen::VectorXd& ExponentSet() const noexcept
+		{
+			return m_ExponentSet;
+		}
+
+		const Eigen::MatrixXd& ContractionSets() const noexcept
+		{
+			return m_ContractionSets;
+		}
+
+		Eigen::Index PrimitiveShellCount() const noexcept
+		{
+			return m_ExponentSet.size();
+		}
+
+		Eigen::Index ContractedShellCount() const noexcept
+		{
+			return m_ContractionSets.cols();
+		}
+
+		ContractionSetView ContractionSet(const Eigen::Index index) const noexcept
+		{
+			const auto [offset, size] = m_ContractionSetViewDescriptions[index];
+			return {Eigen::Map<const Eigen::VectorX<Scalar>>{ExponentSet().data() + offset, size},
+			        Eigen::Map<const Eigen::VectorX<Scalar>>{ContractionSets().col(index).data() + offset, size}};
+		}
+
+		auto AccumulationCoefficientSet(const Eigen::Index index) const noexcept
+		{
+			return m_ContractionSets.row(index);
+		}
+
+	private:
+		static std::vector<ContractionSetViewDescription> BuildContractionSetViewDescriptions(
+		        const Eigen::VectorXd& exponentSet, const Eigen::MatrixXd& contractionSets)
+		{
+			std::vector<ContractionSetViewDescription> descriptions;
+			descriptions.reserve(exponentSet.size());
+
+			for (Eigen::Index i = 0; i < contractionSets.cols(); i++)
+			{
+				const auto contractionSet = contractionSets.col(i);
+				const auto head = std::find_if(contractionSet.begin(),
+				                               contractionSet.end(),
+				                               [](const Scalar c) { return std::abs(c) > 1e-15; });
+				if (head == contractionSet.end())
+				{
+					throw std::runtime_error("Contraction coefficients from a contraction set is all zero");
+				}
+
+				const auto tail = std::find_if(std::reverse_iterator(contractionSet.end()),
+				                               std::reverse_iterator{contractionSet.begin()},
+				                               [](const Scalar c) { return std::abs(c) > 1e-15; });
+				descriptions.push_back({std::distance(contractionSet.begin(), head), std::distance(head, tail.base())});
+			}
+
+			return descriptions;
+		}
+
+		Eigen::VectorX<Scalar> m_ExponentSet;
+		Eigen::MatrixX<Scalar> m_ContractionSets;
+		std::vector<ContractionSetViewDescription> m_ContractionSetViewDescriptions;
+	};
+
+	class SemiLocalEcp
+	{
+	public:
+		template <typename CoefficientSet, typename RExponentSet, typename GaussianExponentSet>
+		SemiLocalEcp(const CoefficientSet& coefficientSet,
+		             const RExponentSet& rExponentSet,
+		             const GaussianExponentSet& gaussianExponentSet)
+		    : m_Data(CreateDataSet(coefficientSet, rExponentSet, gaussianExponentSet))
+		{
+			static_assert(std::is_base_of_v<Eigen::EigenBase<CoefficientSet>, CoefficientSet>);
+			static_assert(std::is_base_of_v<Eigen::EigenBase<RExponentSet>, RExponentSet>);
+			static_assert(std::is_base_of_v<Eigen::EigenBase<GaussianExponentSet>, GaussianExponentSet>);
+			assert(coefficientSet.size() > 0);
+			assert(coefficientSet.size() == rExponentSet.size());
+			assert(coefficientSet.size() == gaussianExponentSet.size());
+			assert(coefficientSet.rows() == 1 || coefficientSet.cols() == 1);
+			assert(rExponentSet.rows() == 1 || rExponentSet.cols() == 1);
+			assert(gaussianExponentSet.rows() == 1 || gaussianExponentSet.cols() == 1);
+		}
+
+		auto Coefficients() const noexcept
+		{
+			return m_Data.col(0);
+		}
+
+		auto RExponents() const noexcept
+		{
+			return m_Data.col(1);
+		}
+
+		auto GaussianExponents() const noexcept
+		{
+			return m_Data.col(2);
+		}
+
+		auto Coefficient(const Eigen::Index index) const noexcept
+		{
+			return m_Data(index, 0);
+		}
+
+		auto RExponent(const Eigen::Index index) const noexcept
+		{
+			return m_Data(index, 1);
+		}
+
+		auto GaussianExponent(const Eigen::Index index) const noexcept
+		{
+			return m_Data(index, 2);
+		}
+
+
+	private:
+		template <typename CoefficientSet, typename RExponentSet, typename GaussianExponentSet>
+		static Eigen::Matrix<Scalar, Eigen::Dynamic, 3> CreateDataSet(const CoefficientSet& coefficientSet,
+		                                                              const RExponentSet& rExponentSet,
+		                                                              const GaussianExponentSet& gaussianExponentSet)
+		{
+			Eigen::Matrix<Scalar, Eigen::Dynamic, 3> data(coefficientSet.size(), 3);
+			data.col(0) = coefficientSet;
+			data.col(1) = rExponentSet;
+			data.col(2) = gaussianExponentSet;
+			return data;
+		}
+
+		Eigen::Matrix<Scalar, Eigen::Dynamic, 3> m_Data;
+	};
+
+	class AngularMomentumBlock
+	{
+	public:
+		AngularMomentumBlock(const AzimuthalQuantumNumber angularMomentum,
+		                     ContractedRadialOrbitalSet contractedRadialOrbitalSet)
+		    : m_AzimuthalQuantumNumber(angularMomentum),
+		      m_ContractedRadialOrbitalSet(std::move(contractedRadialOrbitalSet))
+		{
+			/* NO CODE */
+		}
+
+		AngularMomentumBlock(const AzimuthalQuantumNumber angularMomentum,
+		                     ContractedRadialOrbitalSet contractedRadialOrbitalSet,
+		                     SemiLocalEcp ecp)
+		    : m_AzimuthalQuantumNumber(angularMomentum),
+		      m_ContractedRadialOrbitalSet(std::move(contractedRadialOrbitalSet)),
+		      m_NullableSemiLocalEcp(std::move(ecp))
+		{
+			/* NO CODE */
+		}
+
+		AngularMomentumBlock& OverrideOrAddSemiLocalEcp(SemiLocalEcp ecp)
+		{
+			m_NullableSemiLocalEcp = std::move(ecp);
+			return *this;
+		}
+
+		bool HasSemiLocalEcp() const noexcept
+		{
+			return m_NullableSemiLocalEcp.has_value();
+		}
+
+		// GCC require elaborated type specifier
+		// ReSharper disable once CppRedundantElaboratedTypeSpecifier
+		const class SemiLocalEcp& SemiLocalEcp() const noexcept
+		{
+			return m_NullableSemiLocalEcp.value();
+		}
+
+		// GCC require elaborated type specifier
+		// ReSharper disable once CppRedundantElaboratedTypeSpecifier
+		class ContractedRadialOrbitalSet ContractedRadialOrbitalSet()
+		{
+			return m_ContractedRadialOrbitalSet;
+		}
+
+		const Eigen::VectorXd& ExponentSet() const noexcept
+		{
+			return m_ContractedRadialOrbitalSet.ExponentSet();
+		}
+
+		const Eigen::MatrixXd& ContractionSets() const noexcept
+		{
+			return m_ContractedRadialOrbitalSet.ContractionSets();
+		}
+
+		Eigen::Index PrimitiveShellCount() const noexcept
+		{
+			return m_ContractedRadialOrbitalSet.PrimitiveShellCount();
+		}
+
+		Eigen::Index ContractedShellCount() const noexcept
+		{
+			return m_ContractedRadialOrbitalSet.ContractedShellCount();
+		}
+
+		Eigen::Index PrimitiveCartesianOrbitalCount() const noexcept
+		{
+			return PrimitiveShellCount() * m_AzimuthalQuantumNumber.CartesianMagneticQuantumNumberCount();
+		}
+
+		Eigen::Index PrimitiveSphericalOrbitalCount() const noexcept
+		{
+			return PrimitiveShellCount() * m_AzimuthalQuantumNumber.MagneticQuantumNumberCount();
+		}
+
+		Eigen::Index ContractedCartesianOrbitalCount() const noexcept
+		{
+			return ContractedShellCount() * m_AzimuthalQuantumNumber.CartesianMagneticQuantumNumberCount();
+		}
+
+		Eigen::Index ContractedSphericalOrbitalCount() const noexcept
+		{
+			return ContractedShellCount() * m_AzimuthalQuantumNumber.MagneticQuantumNumberCount();
+		}
+
+	private:
+		AzimuthalQuantumNumber m_AzimuthalQuantumNumber;
+		Gaussian::ContractedRadialOrbitalSet m_ContractedRadialOrbitalSet;
+		std::optional<Gaussian::SemiLocalEcp> m_NullableSemiLocalEcp;
+	};
+
+	namespace Detail
+	{
+		template <OwnershipSemantics Semantics>
+		class BasisSetImpl
+		{
+			static constexpr auto AlternativeOwnershipSemantics =
+			        static_cast<OwnershipSemantics>(!static_cast<bool>(Semantics));
+			using DataType = std::unordered_map<Element, std::vector<AngularMomentumBlock>>;
+			using StorageType =
+			        std::conditional_t<Semantics == OwnershipSemantics::Value, DataType, std::shared_ptr<DataType>>;
+			friend BasisSetImpl<OwnershipSemantics::Reference>;
+			friend BasisSetImpl<OwnershipSemantics::Value>;
+
+		public:
+			BasisSetImpl() : m_DataStorage(CreateStorage())
+			{
+				/* NO CODE */
+			}
+
+			explicit BasisSetImpl(const BasisSetImpl<AlternativeOf(Semantics)>& other)
+			{
+				if constexpr (Semantics == OwnershipSemantics::Value)
+				{
+					m_DataStorage = *other.m_DataStorage;
+				}
+				else
+				{
+					m_DataStorage = std::make_shared<DataType>(other.m_DataStorage);
+				}
+			}
+
+			explicit BasisSetImpl(BasisSetImpl<AlternativeOf(Semantics)>&& other)
+			{
+				static_assert(AlternativeOf(Semantics) == OwnershipSemantics::Value);
+				m_DataStorage = std::make_shared<DataType>(std::move(other.m_DataStorage));
+			}
+
+			BasisSetImpl Clone() const
+			{
+				static_assert(Semantics == OwnershipSemantics::Reference);
+				return {std::make_shared<DataType>(*m_DataStorage)};
+			}
+
+			const std::vector<AngularMomentumBlock>& operator[](const Element element) const
+			{
+				return Data().at(element);
+			}
+
+			std::vector<AngularMomentumBlock>& operator[](const Element element)
+			{
+				return Data().at(element);
+			}
+
+			std::vector<AngularMomentumBlock>& AddOrOverwriteEntryOf(const Element element)
+			{
+				Data()[element] = {};
+				return Data()[element];
+			}
+
+			std::vector<AngularMomentumBlock>& AddEntryFor(const Element element)
+			{
+				if (Data().find(element) != Data().end())
+				{
+					throw std::logic_error(
+					        "Duplicated entry from same element detected. This can be an indication of a bug in the "
+					        "input file or input parser. If you intend for an overwrite, please use "
+					        "OverwriteEntryOf(...), or rarely, AddOrOverwriteEntryOf(...) instead.");
+				}
+				return Data()[element];
+			}
+
+			std::vector<AngularMomentumBlock>& OverwriteEntryOf(const Element element)
+			{
+				Data().at(element) = {};
+				return Data().at(element);
+			}
+
+			bool Has(const Element element) const
+			{
+				return Data().find(element) != Data().end();
+			}
+
+		private:
+			static StorageType CreateStorage()
+			{
+				if constexpr (Semantics == OwnershipSemantics::Reference)
+				{
+					return std::make_shared<DataType>();
+				}
+				else
+				{
+					return {};
+				}
+			}
+
+			const DataType& Data() const noexcept
+			{
+				if constexpr (Semantics == OwnershipSemantics::Reference)
+				{
+					return *m_DataStorage;
+				}
+				else
+				{
+					return m_DataStorage;
+				}
+			}
+
+			DataType& Data() noexcept
+			{
+				if constexpr (Semantics == OwnershipSemantics::Reference)
+				{
+					return *m_DataStorage;
+				}
+				else
+				{
+					return m_DataStorage;
+				}
+			}
+
+		private:
+			StorageType m_DataStorage{};
+		};
+	}  // namespace Detail
+
+	using BasisSet = Detail::BasisSetImpl<OwnershipSemantics::Value>;
+	using SharedBasisSet = Detail::BasisSetImpl<OwnershipSemantics::Reference>;
+
+	namespace Detail
+	{
+		template <OwnershipSemantics Semantics>
+		class BasisSetLibraryImpl
+		{
+			friend Builder<BasisSetLibraryImpl>;
+			using DataStorage = std::unordered_map<std::string, BasisSetImpl<Semantics>>;
+
+		public:
+			BasisSetLibraryImpl Clone() const
+			{
+				static_assert(Semantics == OwnershipSemantics::Reference);
+
+				BasisSetLibraryImpl result;
+
+				for (const auto& [name, basisData] : *this)
+				{
+					result.m_Data[name] = basisData.Clone();
+				}
+
+				return result;
+			}
+
+			const BasisSetImpl<Semantics>& operator[](const std::string& basisSetName) const
+			{
+				return m_Data.at(basisSetName);
+			}
+
+		private:
+			DataStorage m_Data = {};
+		};
+	}  // namespace Detail
+
+	using BasisSetLibrary = Detail::BasisSetLibraryImpl<OwnershipSemantics::Value>;
+	using SharedBasisSetLibrary = Detail::BasisSetLibraryImpl<OwnershipSemantics::Reference>;
+}  // namespace SecChem::BasisSet::Gaussian
+
+template <SecChem::OwnershipSemantics Semantics>
+class SecChem::Builder<SecChem::BasisSet::Gaussian::Detail::BasisSetLibraryImpl<Semantics>>
+{
+	using Product = BasisSet::Gaussian::Detail::BasisSetLibraryImpl<Semantics>;
+
+public:
+	Builder() : m_ProductPtr(std::make_unique<Product>())
+	{
+		/* NO CODE */
+	}
+
+	Product Build()
+	{
+		return *std::exchange(m_ProductPtr, std::make_unique<Product>()).release();
+	}
+
+	Builder& AddBasisSet(std::string name, BasisSet::Gaussian::Detail::BasisSetImpl<Semantics> definition)
+	{
+		if (m_ProductPtr->m_Data.find(name) != m_ProductPtr->m_Data.end())
+		{
+			throw std::logic_error("A basis set with same name already exist in the basis set library");
+		}
+
+		m_ProductPtr->m_Data[std::move(name)] = std::move(definition);
+		return *this;
+	}
+
+private:
+	std::unique_ptr<Product> m_ProductPtr = nullptr;
+};
