@@ -125,6 +125,8 @@ namespace SecChem::BasisSet::Gaussian
 			return m_ContractionSets.row(index);
 		}
 
+		static constexpr Scalar ZeroTolerance = 1e-15;
+
 	private:
 		static std::vector<ContractionSetViewDescription> BuildContractionSetViewDescriptions(
 		        const Eigen::VectorXd& exponentSet, const Eigen::MatrixXd& contractionSets)
@@ -137,7 +139,7 @@ namespace SecChem::BasisSet::Gaussian
 				const auto contractionSet = contractionSets.col(i);
 				const auto head = std::find_if(contractionSet.begin(),
 				                               contractionSet.end(),
-				                               [](const Scalar c) { return std::abs(c) > 1e-15; });
+				                               [](const Scalar c) { return std::abs(c) >= ZeroTolerance; });
 				if (head == contractionSet.end())
 				{
 					throw std::runtime_error("Contraction coefficients from a contraction set is all zero");
@@ -145,7 +147,7 @@ namespace SecChem::BasisSet::Gaussian
 
 				const auto tail = std::find_if(std::reverse_iterator(contractionSet.end()),
 				                               std::reverse_iterator{contractionSet.begin()},
-				                               [](const Scalar c) { return std::abs(c) > 1e-15; });
+				                               [](const Scalar c) { return std::abs(c) >= ZeroTolerance; });
 				descriptions.push_back({std::distance(contractionSet.begin(), head), std::distance(head, tail.base())});
 			}
 
