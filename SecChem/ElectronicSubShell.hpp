@@ -199,7 +199,9 @@ namespace SecChem
 		}
 
 
-		constexpr AzimuthalQuantumNumber AzimuthalQuantumNumber() const
+		// GCC require elaborated type specifier
+		// ReSharper disable once CppRedundantElaboratedTypeSpecifier
+		constexpr class AzimuthalQuantumNumber AzimuthalQuantumNumber() const
 		{
 			return SecChem::AzimuthalQuantumNumber{m_Id % AzimuthalQuantumNumber::SupportedAzimuthalQuantumNumberCount};
 		}
