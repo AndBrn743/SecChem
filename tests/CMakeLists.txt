@@ -29,22 +29,25 @@ else ()
     message(STATUS "Found Catch2 VERSION ${Catch2_VERSION} DIR ${Catch2_DIR}")
 endif ()
 
-add_executable(AzimuthalQuantumNumberTest AzimuthalQuantumNumberTest.cpp)
-target_link_libraries(AzimuthalQuantumNumberTest PRIVATE Catch2::Catch2WithMain SecChem)
-
-add_executable(ElectronicSubShellTest ElectronicSubShellTest.cpp)
-target_link_libraries(ElectronicSubShellTest PRIVATE Catch2::Catch2WithMain SecChem)
-
-add_executable(AtomicElectronConfigurationTest AtomicElectronConfigurationTest.cpp)
-target_link_libraries(AtomicElectronConfigurationTest PRIVATE Catch2::Catch2WithMain SecChem)
-
-add_executable(ElementTest ElementTest.cpp)
-target_link_libraries(ElementTest PRIVATE Catch2::Catch2WithMain SecChem)
-
 include(CTest)
 include(Catch)
 
+add_executable(AzimuthalQuantumNumberTest AzimuthalQuantumNumberTest.cpp)
+target_link_libraries(AzimuthalQuantumNumberTest PRIVATE Catch2::Catch2WithMain SecChem)
 add_test(NAME AzimuthalQuantumNumberTest COMMAND AzimuthalQuantumNumberTest)
+
+add_executable(ElectronicSubShellTest ElectronicSubShellTest.cpp)
+target_link_libraries(ElectronicSubShellTest PRIVATE Catch2::Catch2WithMain SecChem)
 add_test(NAME ElectronicSubShellTest COMMAND ElectronicSubShellTest)
+
+add_executable(AtomicElectronConfigurationTest AtomicElectronConfigurationTest.cpp)
+target_link_libraries(AtomicElectronConfigurationTest PRIVATE Catch2::Catch2WithMain SecChem)
 add_test(NAME AtomicElectronConfigurationTest COMMAND AtomicElectronConfigurationTest)
+
+add_executable(ElementTest ElementTest.cpp)
+target_link_libraries(ElementTest PRIVATE Catch2::Catch2WithMain SecChem)
 add_test(NAME ElementTest COMMAND ElementTest)
+
+add_executable(ContractedRadialOrbitalSetTest ContractedRadialOrbitalSetTest.cpp)
+target_link_libraries(ContractedRadialOrbitalSetTest PRIVATE Catch2::Catch2WithMain SecChem)
+add_test(NAME ContractedRadialOrbitalSetTest COMMAND ContractedRadialOrbitalSetTest)
