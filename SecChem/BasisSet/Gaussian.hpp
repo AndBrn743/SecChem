@@ -277,6 +277,11 @@ namespace SecChem::BasisSet::Gaussian
 			return *this;
 		}
 
+		const AzimuthalQuantumNumber& AngularMomentum() const noexcept
+		{
+			return m_AzimuthalQuantumNumber;
+		}
+
 		bool HasSemiLocalEcp() const noexcept
 		{
 			return m_NullableSemiLocalEcp.has_value();
@@ -284,14 +289,20 @@ namespace SecChem::BasisSet::Gaussian
 
 		// GCC require elaborated type specifier
 		// ReSharper disable once CppRedundantElaboratedTypeSpecifier
-		const class SemiLocalEcp& SemiLocalEcp() const noexcept
+		const class SemiLocalEcp& SemiLocalEcp() const
 		{
+			if (!m_NullableSemiLocalEcp.has_value())
+			{
+				throw std::logic_error("AngularMomentumBlock::SemiLocalEcp() called without a SemiLocalEcp present. "
+				                       "Use HasSemiLocalEcp() to check availability.");
+			}
+
 			return m_NullableSemiLocalEcp.value();
 		}
 
 		// GCC require elaborated type specifier
 		// ReSharper disable once CppRedundantElaboratedTypeSpecifier
-		class ContractedRadialOrbitalSet ContractedRadialOrbitalSet()
+		const class ContractedRadialOrbitalSet& ContractedRadialOrbitalSet() const noexcept
 		{
 			return m_ContractedRadialOrbitalSet;
 		}
