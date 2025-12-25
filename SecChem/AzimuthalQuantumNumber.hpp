@@ -7,6 +7,8 @@
 #include <iostream>
 #include <string>
 
+#include "Utility/StringUtility.hpp"
+
 
 namespace SecChem
 {
@@ -146,7 +148,7 @@ namespace SecChem
 		}
 
 #define SECCHEM_AZIMUTHAL_QUANTUM_NUMBER_COMPARISON_OPERATOR(LHS, RHS, OP)                                             \
-	friend constexpr bool operator OP(LHS lhs, RHS rhs)                                                               \
+	friend constexpr bool operator OP(LHS lhs, RHS rhs)                                                                \
 	{                                                                                                                  \
 		return static_cast<int>(lhs) OP static_cast<int>(rhs);                                                         \
 	}
@@ -279,9 +281,9 @@ namespace SecChem
 			}
 		}
 
-		static int FuzzySubshellLabel2AzimuthalQuantumNumberValue(const char label)
+		static constexpr int FuzzySubshellLabel2AzimuthalQuantumNumberValue(const char label)
 		{
-			return SubshellLabel2AzimuthalQuantumNumberValue(static_cast<char>(std::tolower(label)));
+			return SubshellLabel2AzimuthalQuantumNumberValue(static_cast<char>(SecUtility::AsciiToLower(label)));
 		}
 
 	private:

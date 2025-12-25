@@ -7,59 +7,18 @@
 #include "AtomicElectronConfiguration.hpp"
 #include "AzimuthalQuantumNumber.hpp"
 #include <cassert>
+#include <cstring>
 #include <iostream>
 #include <string>
+#include <string_view>
 
+
+#if !defined(CONSTEXPR23)
 #define CONSTEXPR23
-
-#if __has_include(<SecUtility/IO/Stringtility.hpp>)
-#include <SecUtility/IO/Stringtility.hpp>
-#else
-namespace SecUtility
-{
-	inline int CaseInsensitiveStringComparison(const char* lhs, const char* rhs)
-	{
-#if defined(_WIN32)
-		return _stricmp(lhs, rhs);
-#else
-		return strcasecmp(lhs, rhs);
 #endif
-	}
 
-	inline int CaseInsensitiveStringComparison(const std::string& lhs, const char* rhs)
-	{
-		return CaseInsensitiveStringComparison(lhs.c_str(), rhs);
-	}
-
-	inline int CaseInsensitiveStringComparison(const char* lhs, const std::string& rhs)
-	{
-		return CaseInsensitiveStringComparison(lhs, rhs.c_str());
-	}
-
-	inline int CaseInsensitiveStringComparison(const std::string& lhs, const std::string& rhs)
-	{
-		return CaseInsensitiveStringComparison(lhs.c_str(), rhs.c_str());
-	}
-
-	template <typename LhsString, typename RhsString>
-	bool IsCaseInsensitiveStringEqual(LhsString&& lhs, RhsString&& rhs)
-	{
-		return CaseInsensitiveStringComparison(std::forward<decltype(lhs)>(lhs), std::forward<decltype(rhs)>(rhs)) == 0;
-	}
-}  // namespace SecUtility
-#endif
-#if __has_include(<SecUtility/UnitOfMeasurement.hpp>)
-#include <SecUtility/UnitOfMeasurement.hpp>
-#else
-namespace SecUtility::UnitOfMeasurement
-{
-	template <typename T>
-	constexpr decltype(auto) BohrRadius2Angstrom(const T length)
-	{
-		return length * 5.2917721090380e-1;
-	}
-}  // namespace SecUtility::UnitOfMeasurement
-#endif
+#include "Utility/StringUtility.hpp"
+#include "Utility/UnitOfMeasurement.hpp"
 
 
 namespace SecChem
