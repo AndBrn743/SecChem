@@ -51,3 +51,7 @@ add_test(NAME ElementTest COMMAND ElementTest)
 add_executable(ContractedRadialOrbitalSetTest ContractedRadialOrbitalSetTest.cpp)
 target_link_libraries(ContractedRadialOrbitalSetTest PRIVATE Catch2::Catch2WithMain SecChem)
 add_test(NAME ContractedRadialOrbitalSetTest COMMAND ContractedRadialOrbitalSetTest)
+
+add_executable(SemiLocalEcpTest SemiLocalEcpTest.cpp)
+target_link_libraries(SemiLocalEcpTest PRIVATE Catch2::Catch2WithMain SecChem)
+add_test(NAME SemiLocalEcpTest COMMAND SemiLocalEcpTest)

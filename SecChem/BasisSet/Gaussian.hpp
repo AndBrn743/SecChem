@@ -171,12 +171,6 @@ namespace SecChem::BasisSet::Gaussian
 			static_assert(std::is_base_of_v<Eigen::EigenBase<CoefficientSet>, CoefficientSet>);
 			static_assert(std::is_base_of_v<Eigen::EigenBase<RExponentSet>, RExponentSet>);
 			static_assert(std::is_base_of_v<Eigen::EigenBase<GaussianExponentSet>, GaussianExponentSet>);
-			assert(coefficientSet.size() > 0);
-			assert(coefficientSet.size() == rExponentSet.size());
-			assert(coefficientSet.size() == gaussianExponentSet.size());
-			assert(coefficientSet.rows() == 1 || coefficientSet.cols() == 1);
-			assert(rExponentSet.rows() == 1 || rExponentSet.cols() == 1);
-			assert(gaussianExponentSet.rows() == 1 || gaussianExponentSet.cols() == 1);
 		}
 
 		auto Coefficients() const noexcept
@@ -194,17 +188,17 @@ namespace SecChem::BasisSet::Gaussian
 			return m_Data.col(2);
 		}
 
-		auto Coefficient(const Eigen::Index index) const noexcept
+		const auto& Coefficient(const Eigen::Index index) const noexcept
 		{
 			return m_Data(index, 0);
 		}
 
-		auto RExponent(const Eigen::Index index) const noexcept
+		const auto& RExponent(const Eigen::Index index) const noexcept
 		{
 			return m_Data(index, 1);
 		}
 
-		auto GaussianExponent(const Eigen::Index index) const noexcept
+		const auto& GaussianExponent(const Eigen::Index index) const noexcept
 		{
 			return m_Data(index, 2);
 		}
@@ -216,11 +210,41 @@ namespace SecChem::BasisSet::Gaussian
 		                                                              const RExponentSet& rExponentSet,
 		                                                              const GaussianExponentSet& gaussianExponentSet)
 		{
+			ValidateInput(coefficientSet, rExponentSet, gaussianExponentSet);
 			Eigen::Matrix<Scalar, Eigen::Dynamic, 3> data(coefficientSet.size(), 3);
 			data.col(0) = coefficientSet;
 			data.col(1) = rExponentSet;
 			data.col(2) = gaussianExponentSet;
 			return data;
+		}
+
+		template <typename C, typename R, typename G>
+		static void ValidateInput(const C& c, const R& r, const G& g)
+		{
+			if (c.size() == 0)
+			{
+				throw std::invalid_argument("SemiLocalEcp: empty coefficient set");
+			}
+
+			if (c.size() != r.size() || c.size() != g.size())
+			{
+				throw std::invalid_argument("SemiLocalEcp: size mismatch");
+			}
+
+			if (!(c.rows() == 1 || c.cols() == 1))
+			{
+				throw std::invalid_argument("SemiLocalEcp: coefficients must be a vector");
+			}
+
+			if (!(r.rows() == 1 || r.cols() == 1))
+			{
+				throw std::invalid_argument("SemiLocalEcp: r exponents must be a vector");
+			}
+
+			if (!(g.rows() == 1 || g.cols() == 1))
+			{
+				throw std::invalid_argument("SemiLocalEcp: gaussian exponents must be a vector");
+			}
 		}
 
 		Eigen::Matrix<Scalar, Eigen::Dynamic, 3> m_Data;
