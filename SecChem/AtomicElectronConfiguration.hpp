@@ -6,6 +6,7 @@
 
 #include "ElectronicSubShell.hpp"
 #include <algorithm>
+#include <array>
 
 
 namespace SecChem
