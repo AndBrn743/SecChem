@@ -307,38 +307,25 @@ namespace SecChem
 			return static_cast<int>(m_Id);
 		}
 
-
-		constexpr const char* CName() const
+		std::string_view Name() const
 		{
 			return NameOfElement(AtomicNumber());
 		}
 
 
-		constexpr const char* CSymbol() const
+		std::string_view Symbol() const
 		{
 			return SymbolOfElement(AtomicNumber());
 		}
 
 
-		std::string Name() const
-		{
-			return CName();
-		}
-
-
-		std::string Symbol() const
-		{
-			return CSymbol();
-		}
-
-
-		constexpr const char* ToCString() const
-		{
-			return CSymbol();
-		}
-
-
 		std::string ToString() const
+		{
+			return std::string{Symbol()};
+		}
+
+
+		std::string_view ToStringView() const
 		{
 			return Symbol();
 		}
@@ -368,7 +355,7 @@ namespace SecChem
 		{
 			for (int i = 0; i < PeriodicTableElementCount; i++)
 			{
-				if (strcmp(identifier.c_str(), SymbolOfElement(i)) == 0)
+				if (identifier == SymbolOfElement(i))
 				{
 					return Element(i);
 				}
@@ -920,7 +907,7 @@ namespace SecChem
 		}
 
 
-		static constexpr const char* NameOfElement(const int atomicNumber)
+		static constexpr std::string_view NameOfElement(const int atomicNumber)
 		{
 			return PeriodicTableNames[atomicNumber];
 		}
@@ -947,7 +934,7 @@ namespace SecChem
 		        "Flerovium",  "Moscovium",    "Livermorium",   "Tennessine",  "Oganesson"};
 
 
-		static constexpr const char* SymbolOfElement(const int atomicNumber)
+		static constexpr std::string_view SymbolOfElement(const int atomicNumber)
 		{
 			return PeriodicTableSymbols[atomicNumber];
 		}
