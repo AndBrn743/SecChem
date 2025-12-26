@@ -57,6 +57,12 @@ struct SecUtility::Traits<SecChem::BasisSet::Gaussian::SemiLocalEcp>
 	static constexpr auto DefaultEqualityComparisonTolerance = 1e-15;
 };
 
+template <>
+struct SecUtility::Traits<SecChem::BasisSet::Gaussian::AngularMomentumBlock>
+{
+	static constexpr auto DefaultEqualityComparisonTolerance = 1e-15;
+};
+
 namespace SecChem::BasisSet::Gaussian
 {
 	class ContractedRadialOrbitalSet : public SecUtility::IEquatableWithTolerance<ContractedRadialOrbitalSet>
@@ -294,8 +300,10 @@ namespace SecChem::BasisSet::Gaussian
 		Eigen::Matrix<Scalar, Eigen::Dynamic, 3> m_Data;
 	};
 
-	class AngularMomentumBlock
+	class AngularMomentumBlock : public SecUtility::IEquatableWithTolerance<AngularMomentumBlock>
 	{
+		friend IEquatableWithTolerance;
+
 	public:
 		AngularMomentumBlock(const AzimuthalQuantumNumber angularMomentum,
 		                     ContractedRadialOrbitalSet contractedRadialOrbitalSet)
@@ -392,6 +400,14 @@ namespace SecChem::BasisSet::Gaussian
 		}
 
 	private:
+		bool EqualTo(const AngularMomentumBlock& other, const Scalar tolerance) const noexcept
+		{
+			return m_AzimuthalQuantumNumber == other.m_AzimuthalQuantumNumber
+			       && m_NullableSemiLocalEcp.has_value() == other.m_NullableSemiLocalEcp.has_value()
+			       && m_ContractedRadialOrbitalSet.EqualTo(other.m_ContractedRadialOrbitalSet, tolerance)
+			       && (!m_NullableSemiLocalEcp.has_value() || SemiLocalEcp().EqualTo(other.SemiLocalEcp(), tolerance));
+		}
+
 		AzimuthalQuantumNumber m_AzimuthalQuantumNumber;
 		Gaussian::ContractedRadialOrbitalSet m_ContractedRadialOrbitalSet;
 		std::optional<Gaussian::SemiLocalEcp> m_NullableSemiLocalEcp;
