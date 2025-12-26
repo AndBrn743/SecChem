@@ -495,6 +495,65 @@ namespace SecChem::BasisSet::Gaussian
 				return Data().find(element) != Data().end();
 			}
 
+			/// Value comparison will be done for BasisSet, reference comparison will be done for SharedBasisSet.
+			/// To compare the value of SharedBasisSet, one should use <c>EqualTo</c> method instead.
+			template <OwnershipSemantics OtherSemantics>
+			bool operator==(const BasisSetImpl<OtherSemantics>& other) const noexcept
+			{
+				return Semantics == OtherSemantics && m_DataStorage == other.m_DataStorage;
+			}
+
+			/// Value comparison will be done for BasisSet, reference comparison will be done for SharedBasisSet.
+			/// To compare the value of SharedBasisSet, one should use <c>NotEqualTo</c> method instead
+			template <OwnershipSemantics OtherSemantics>
+			bool operator!=(const BasisSetImpl<OtherSemantics>& other) const noexcept
+			{
+				return !(*this == other);
+			}
+
+			template <OwnershipSemantics OtherSemantics>
+			bool EqualTo(const BasisSetImpl<OtherSemantics>& other, const Scalar tolerance = 1e-15) const noexcept
+			{
+				if (Data().size() != other.Size())
+				{
+					return false;
+				}
+
+				for (const auto& [element, angularMomentumBlocks] : Data())
+				{
+					const auto iteratorToOtherAngularMomentumBlocks = other.find(element);
+					if (iteratorToOtherAngularMomentumBlocks == other.end())
+					{
+						return false;
+					}
+
+					const auto& otherAngularMomentumBlocks = *iteratorToOtherAngularMomentumBlocks;
+					if (angularMomentumBlocks.size() != otherAngularMomentumBlocks.size())
+					{
+						return false;
+					}
+
+					for (auto it0 = angularMomentumBlocks.cbegin(), it1 = otherAngularMomentumBlocks.cbegin();
+					     it0 != angularMomentumBlocks.cend();
+					     ++it0, ++it1)
+					{
+						if (it0->NotEqualTo(*it1, tolerance))
+						{
+							return false;
+						}
+					}
+				}
+
+				return true;
+			}
+
+			template <OwnershipSemantics OtherSemantics>
+			bool NotEqualTo(const BasisSetImpl<OtherSemantics>& other, const Scalar tolerance = 1e-15) const noexcept
+			{
+				return !EqualTo(other, tolerance);
+			}
+
+
 		private:
 			static StorageType CreateStorage()
 			{
