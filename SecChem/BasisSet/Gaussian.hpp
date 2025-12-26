@@ -26,6 +26,9 @@ namespace SecChem::BasisSet::Gaussian
 
 	class SemiLocalEcp;
 
+	template <typename>
+	class AbstractAngularMomentumBlock;
+
 	class AngularMomentumBlock;
 
 	namespace Detail
@@ -54,6 +57,12 @@ struct SecUtility::Traits<SecChem::BasisSet::Gaussian::ContractedRadialOrbitalSe
 
 template <>
 struct SecUtility::Traits<SecChem::BasisSet::Gaussian::SemiLocalEcp>
+{
+	static constexpr auto DefaultEqualityComparisonTolerance = 1e-15;
+};
+
+template <typename Derived>
+struct SecUtility::Traits<SecChem::BasisSet::Gaussian::AbstractAngularMomentumBlock<Derived>>
 {
 	static constexpr auto DefaultEqualityComparisonTolerance = 1e-15;
 };
@@ -495,15 +504,102 @@ namespace SecChem::BasisSet::Gaussian
 		Eigen::Matrix<Scalar, Eigen::Dynamic, 3> m_Data;
 	};
 
-	class AngularMomentumBlock : public SecUtility::IEquatableWithTolerance<AngularMomentumBlock>
+	template <typename Derived>
+	class AbstractAngularMomentumBlock
+	    : public SecUtility::IEquatableWithTolerance<AbstractAngularMomentumBlock<Derived>>
 	{
-		friend IEquatableWithTolerance;
+		friend SecUtility::IEquatableWithTolerance<AbstractAngularMomentumBlock>;
+		friend Derived;
+
+	public:
+		const auto& ExponentSet() const noexcept
+		{
+			return static_cast<const Derived&>(*this).ExponentSet_Impl();
+		}
+
+		const auto& ContractionSets() const noexcept
+		{
+			return static_cast<const Derived&>(*this).ContractionSets_Impl();
+		}
+
+		Eigen::Index PrimitiveShellCount() const noexcept
+		{
+			return ExponentSet().size();
+		}
+
+		Eigen::Index ContractedShellCount() const noexcept
+		{
+			return ContractionSets().cols();
+		}
+
+		Eigen::Index PrimitiveCartesianOrbitalCount() const noexcept
+		{
+			return PrimitiveShellCount() * m_AzimuthalQuantumNumber.CartesianMagneticQuantumNumberCount();
+		}
+
+		Eigen::Index PrimitiveSphericalOrbitalCount() const noexcept
+		{
+			return PrimitiveShellCount() * m_AzimuthalQuantumNumber.MagneticQuantumNumberCount();
+		}
+
+		Eigen::Index ContractedCartesianOrbitalCount() const noexcept
+		{
+			return ContractedShellCount() * m_AzimuthalQuantumNumber.CartesianMagneticQuantumNumberCount();
+		}
+
+		Eigen::Index ContractedSphericalOrbitalCount() const noexcept
+		{
+			return ContractedShellCount() * m_AzimuthalQuantumNumber.MagneticQuantumNumberCount();
+		}
+
+		const AzimuthalQuantumNumber& AngularMomentum() const noexcept
+		{
+			return m_AzimuthalQuantumNumber;
+		}
+
+	private:
+		const auto& ExponentSet_Impl() const noexcept = delete;
+
+		const auto& ContractionSets_Impl() const noexcept = delete;
+
+		bool EqualsTo(const AbstractAngularMomentumBlock& other, const Scalar tolerance) const noexcept
+		{
+			return PrimitiveShellCount() == other.PrimitiveShellCount()
+			       && ContractedShellCount() == other.ContractedShellCount()
+			       && (ExponentSet() - other.ExponentSet()).cwiseAbs().maxCoeff() <= tolerance
+			       && (ContractionSets() - other.ContractionSets()).cwiseAbs().maxCoeff() <= tolerance;
+		}
+
+		explicit constexpr AbstractAngularMomentumBlock(const AzimuthalQuantumNumber l) noexcept
+		    : m_AzimuthalQuantumNumber(l)
+		{
+			/* NO CODE */
+		}
+
+		constexpr AbstractAngularMomentumBlock(const AbstractAngularMomentumBlock&) noexcept = default;
+		constexpr AbstractAngularMomentumBlock(AbstractAngularMomentumBlock&&) noexcept = default;
+		constexpr AbstractAngularMomentumBlock& operator=(const AbstractAngularMomentumBlock&) noexcept = default;
+		constexpr AbstractAngularMomentumBlock& operator=(AbstractAngularMomentumBlock&&) noexcept = default;
+
+#if __cplusplus >= 202002L
+		constexpr
+#endif
+		        ~AbstractAngularMomentumBlock() noexcept = default;
+
+		AzimuthalQuantumNumber m_AzimuthalQuantumNumber;
+	};
+
+	class AngularMomentumBlock : public SecUtility::IEquatableWithTolerance<AngularMomentumBlock>,
+	                             public AbstractAngularMomentumBlock<AngularMomentumBlock>
+	{
+		friend IEquatableWithTolerance<AngularMomentumBlock>;
+		using Base = AbstractAngularMomentumBlock;
+		friend Base;
 
 	public:
 		AngularMomentumBlock(const AzimuthalQuantumNumber angularMomentum,
 		                     ContractedRadialOrbitalSet contractedRadialOrbitalSet)
-		    : m_AzimuthalQuantumNumber(angularMomentum),
-		      m_ContractedRadialOrbitalSet(std::move(contractedRadialOrbitalSet))
+		    : Base(angularMomentum), m_ContractedRadialOrbitalSet(std::move(contractedRadialOrbitalSet))
 		{
 			/* NO CODE */
 		}
@@ -511,8 +607,7 @@ namespace SecChem::BasisSet::Gaussian
 		AngularMomentumBlock(const AzimuthalQuantumNumber angularMomentum,
 		                     ContractedRadialOrbitalSet contractedRadialOrbitalSet,
 		                     SemiLocalEcp ecp)
-		    : m_AzimuthalQuantumNumber(angularMomentum),
-		      m_ContractedRadialOrbitalSet(std::move(contractedRadialOrbitalSet)),
+		    : Base(angularMomentum), m_ContractedRadialOrbitalSet(std::move(contractedRadialOrbitalSet)),
 		      m_NullableSemiLocalEcp(std::move(ecp))
 		{
 			/* NO CODE */
@@ -522,11 +617,6 @@ namespace SecChem::BasisSet::Gaussian
 		{
 			m_NullableSemiLocalEcp = std::move(ecp);
 			return *this;
-		}
-
-		const AzimuthalQuantumNumber& AngularMomentum() const noexcept
-		{
-			return m_AzimuthalQuantumNumber;
 		}
 
 		bool HasSemiLocalEcp() const noexcept
@@ -552,46 +642,6 @@ namespace SecChem::BasisSet::Gaussian
 		const class ContractedRadialOrbitalSet& ContractedRadialOrbitalSet() const noexcept
 		{
 			return m_ContractedRadialOrbitalSet;
-		}
-
-		const Eigen::VectorXd& ExponentSet() const noexcept
-		{
-			return m_ContractedRadialOrbitalSet.ExponentSet();
-		}
-
-		const Eigen::MatrixXd& ContractionSets() const noexcept
-		{
-			return m_ContractedRadialOrbitalSet.ContractionSets();
-		}
-
-		Eigen::Index PrimitiveShellCount() const noexcept
-		{
-			return m_ContractedRadialOrbitalSet.PrimitiveShellCount();
-		}
-
-		Eigen::Index ContractedShellCount() const noexcept
-		{
-			return m_ContractedRadialOrbitalSet.ContractedShellCount();
-		}
-
-		Eigen::Index PrimitiveCartesianOrbitalCount() const noexcept
-		{
-			return PrimitiveShellCount() * m_AzimuthalQuantumNumber.CartesianMagneticQuantumNumberCount();
-		}
-
-		Eigen::Index PrimitiveSphericalOrbitalCount() const noexcept
-		{
-			return PrimitiveShellCount() * m_AzimuthalQuantumNumber.MagneticQuantumNumberCount();
-		}
-
-		Eigen::Index ContractedCartesianOrbitalCount() const noexcept
-		{
-			return ContractedShellCount() * m_AzimuthalQuantumNumber.CartesianMagneticQuantumNumberCount();
-		}
-
-		Eigen::Index ContractedSphericalOrbitalCount() const noexcept
-		{
-			return ContractedShellCount() * m_AzimuthalQuantumNumber.MagneticQuantumNumberCount();
 		}
 
 		template <typename InputIterator, typename Getter>
@@ -632,16 +682,29 @@ namespace SecChem::BasisSet::Gaussian
 			return Concat(begin, end, [](auto&& item) -> decltype(auto) { return std::forward<decltype(item)>(item); });
 		}
 
+		using IEquatableWithTolerance<AngularMomentumBlock>::EqualsTo;
+		using IEquatableWithTolerance<AngularMomentumBlock>::NotEqualsTo;
+		using IEquatableWithTolerance<AngularMomentumBlock>::operator==;
+		using IEquatableWithTolerance<AngularMomentumBlock>::operator!=;
+
 	private:
 		bool EqualsTo_Impl(const AngularMomentumBlock& other, const Scalar tolerance) const noexcept
 		{
-			return m_AzimuthalQuantumNumber == other.m_AzimuthalQuantumNumber
-			       && m_NullableSemiLocalEcp.has_value() == other.m_NullableSemiLocalEcp.has_value()
-			       && m_ContractedRadialOrbitalSet.EqualsTo(other.m_ContractedRadialOrbitalSet, tolerance)
+			return m_NullableSemiLocalEcp.has_value() == other.m_NullableSemiLocalEcp.has_value()
+			       && static_cast<const Base&>(*this).EqualsTo(static_cast<const Base&>(other), tolerance)
 			       && (!m_NullableSemiLocalEcp.has_value() || SemiLocalEcp().EqualsTo(other.SemiLocalEcp(), tolerance));
 		}
 
-		AzimuthalQuantumNumber m_AzimuthalQuantumNumber;
+		const Eigen::VectorXd& ExponentSet_Impl() const noexcept
+		{
+			return m_ContractedRadialOrbitalSet.ExponentSet();
+		}
+
+		const Eigen::MatrixXd& ContractionSets_Impl() const noexcept
+		{
+			return m_ContractedRadialOrbitalSet.ContractionSets();
+		}
+
 		Gaussian::ContractedRadialOrbitalSet m_ContractedRadialOrbitalSet;
 		std::optional<Gaussian::SemiLocalEcp> m_NullableSemiLocalEcp;
 	};
