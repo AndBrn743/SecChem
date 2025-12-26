@@ -195,6 +195,8 @@ namespace SecChem::BasisSet::Gaussian
 	class SemiLocalEcp
 	{
 	public:
+		static constexpr Scalar ZeroTolerance = 1e-15;
+
 		template <typename CoefficientSet, typename RExponentSet, typename GaussianExponentSet>
 		SemiLocalEcp(const CoefficientSet& coefficientSet,
 		             const RExponentSet& rExponentSet,
@@ -236,6 +238,35 @@ namespace SecChem::BasisSet::Gaussian
 			return m_Data(index, 2);
 		}
 
+		bool EqualTo(const SemiLocalEcp& other, const Scalar tolerance = ZeroTolerance) const noexcept
+		{
+			if (m_Data.rows() != other.m_Data.rows())
+			{
+				return false;
+			}
+
+			if ((m_Data - other.m_Data).cwiseAbs().maxCoeff() > tolerance)
+			{
+				return false;
+			}
+
+			return true;
+		}
+
+		bool NotEqualTo(const SemiLocalEcp& other, const Scalar tolerance = ZeroTolerance) const noexcept
+		{
+			return !EqualTo(other, tolerance);
+		}
+
+		bool operator==(const SemiLocalEcp& other) const noexcept
+		{
+			return EqualTo(other, 0);
+		}
+
+		bool operator!=(const SemiLocalEcp& other) const noexcept
+		{
+			return !EqualTo(other, 0);
+		}
 
 	private:
 		template <typename CoefficientSet, typename RExponentSet, typename GaussianExponentSet>
