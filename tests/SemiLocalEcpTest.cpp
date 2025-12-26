@@ -262,3 +262,43 @@ TEST_CASE("SemiLocalEcp ValidateInput accepts valid mixed input", "[SemiLocalEcp
 	);
 }
 
+
+TEST_CASE("SemiLocalEcp's equality comparison should work", "[SemiLocalEcp]")
+{
+	Eigen::RowVectorXd coefficients(3);
+	coefficients << 1.0, -0.5, 0.25;
+
+	Eigen::VectorXd rExponents(3);
+	rExponents << 0.0, 1.0, 2.0;
+
+	Eigen::RowVectorXd gaussianExponents(3);
+	gaussianExponents << 3.0, 2.0, 1.0;
+
+	SemiLocalEcp ecp0(coefficients, rExponents, gaussianExponents);
+
+	{
+		SemiLocalEcp ecp1 = ecp0;
+		REQUIRE(ecp1 == ecp0);
+		REQUIRE_FALSE(ecp1 != ecp0);
+	}
+
+
+	{
+		Eigen::RowVectorXd gaussianExponentsToo = gaussianExponents;
+		gaussianExponentsToo[0] += 1e-6;
+
+		SemiLocalEcp ecp2(coefficients, rExponents, gaussianExponentsToo);
+		REQUIRE_FALSE(ecp2 == ecp0);
+		REQUIRE(ecp2 != ecp0);
+		REQUIRE_FALSE(ecp2.EqualTo(ecp0, 1e-9));
+		REQUIRE(ecp2.EqualTo(ecp0, 1e-5));
+	}
+
+	{
+		SemiLocalEcp ecp3(Eigen::VectorXd::Random(4), Eigen::VectorXd::Random(4), Eigen::VectorXd::Random(4));
+		REQUIRE_FALSE(ecp3 == ecp0);
+		REQUIRE(ecp3 != ecp0);
+		REQUIRE_FALSE(ecp3.EqualTo(ecp0));
+		REQUIRE(ecp3.NotEqualTo(ecp0));
+	}
+}

@@ -4,8 +4,6 @@
 
 #pragma once
 
-#include "../AzimuthalQuantumNumber.hpp"
-#include "../Element.hpp"
 #include <Eigen/Dense>
 #include <algorithm>
 #include <filesystem>
@@ -15,30 +13,56 @@
 #include <utility>
 #include <vector>
 
+#include "../Utility/IEquatableWithTolerance.hpp"
 
-namespace SecChem
-{
-	using Scalar = double;
-
-	enum class OwnershipSemantics : bool
-	{
-		Value,
-		Reference
-	};
-
-	constexpr OwnershipSemantics AlternativeOf(const OwnershipSemantics semantics) noexcept
-	{
-		return static_cast<OwnershipSemantics>(!static_cast<bool>(semantics));
-	}
-
-	template <typename T>
-	class Builder;
-}  // namespace SecChem
+#include "../AzimuthalQuantumNumber.hpp"
+#include "../Element.hpp"
+#include "../System.hpp"
 
 namespace SecChem::BasisSet::Gaussian
 {
-	class ContractedRadialOrbitalSet
+	class ContractedRadialOrbitalSet;
+
+	class SemiLocalEcp;
+
+	class AngularMomentumBlock;
+
+	namespace Detail
 	{
+		template <OwnershipSemantics Semantics>
+		class BasisSetImpl;
+
+		template <OwnershipSemantics Semantics>
+		class BasisSetLibraryImpl;
+	}  // namespace Detail
+
+	using BasisSet = Detail::BasisSetImpl<OwnershipSemantics::Value>;
+
+	using SharedBasisSet = Detail::BasisSetImpl<OwnershipSemantics::Reference>;
+
+	using BasisSetLibrary = Detail::BasisSetLibraryImpl<OwnershipSemantics::Value>;
+
+	using SharedBasisSetLibrary = Detail::BasisSetLibraryImpl<OwnershipSemantics::Reference>;
+}  // namespace SecChem::BasisSet::Gaussian
+
+template <>
+struct SecUtility::Traits<SecChem::BasisSet::Gaussian::ContractedRadialOrbitalSet>
+{
+	static constexpr auto DefaultEqualityComparisonTolerance = 1e-15;
+};
+
+template <>
+struct SecUtility::Traits<SecChem::BasisSet::Gaussian::SemiLocalEcp>
+{
+	static constexpr auto DefaultEqualityComparisonTolerance = 1e-15;
+};
+
+namespace SecChem::BasisSet::Gaussian
+{
+	class ContractedRadialOrbitalSet : public SecUtility::IEquatableWithTolerance<ContractedRadialOrbitalSet>
+	{
+		friend IEquatableWithTolerance;
+
 		struct ContractionSetViewDescription
 		{
 			Eigen::Index Offset;
@@ -127,38 +151,6 @@ namespace SecChem::BasisSet::Gaussian
 			return m_ContractionSets.row(index);
 		}
 
-		bool EqualTo(const ContractedRadialOrbitalSet& other, const Scalar tolerance = ZeroTolerance) const noexcept
-		{
-			if (m_ExponentSet.size() != other.m_ExponentSet.size()
-			    || m_ContractionSets.rows() != other.m_ContractionSets.rows()
-			    || m_ContractionSets.cols() != other.m_ContractionSets.cols())
-			{
-				return false;
-			}
-
-			if ((m_ExponentSet - other.m_ExponentSet).cwiseAbs().maxCoeff() > tolerance
-			    || (m_ContractionSets - other.m_ContractionSets).cwiseAbs().maxCoeff() > tolerance)
-			{
-				return false;
-			}
-
-			return true;
-		}
-
-		bool NotEqualTo(const ContractedRadialOrbitalSet& other, const Scalar tolerance = ZeroTolerance) const noexcept
-		{
-			return !EqualTo(other, tolerance);
-		}
-
-		bool operator==(const ContractedRadialOrbitalSet& other) const noexcept
-		{
-			return EqualTo(other, 0);
-		}
-
-		bool operator!=(const ContractedRadialOrbitalSet& other) const noexcept
-		{
-			return !EqualTo(other, 0);
-		}
 
 	private:
 		static std::vector<ContractionSetViewDescription> BuildContractionSetViewDescriptions(
@@ -190,10 +182,22 @@ namespace SecChem::BasisSet::Gaussian
 		Eigen::VectorX<Scalar> m_ExponentSet;
 		Eigen::MatrixX<Scalar> m_ContractionSets;
 		std::vector<ContractionSetViewDescription> m_ContractionSetViewDescriptions;
+
+		bool EqualTo_Impl(const ContractedRadialOrbitalSet& other,
+		                  const Scalar tolerance = ZeroTolerance) const noexcept
+		{
+			return m_ExponentSet.size() == other.m_ExponentSet.size()
+			       && m_ContractionSets.rows() == other.m_ContractionSets.rows()
+			       && m_ContractionSets.cols() == other.m_ContractionSets.cols()
+			       && (m_ExponentSet - other.m_ExponentSet).cwiseAbs().maxCoeff() <= tolerance
+			       && (m_ContractionSets - other.m_ContractionSets).cwiseAbs().maxCoeff() <= tolerance;
+		}
 	};
 
-	class SemiLocalEcp
+	class SemiLocalEcp : public SecUtility::IEquatableWithTolerance<SemiLocalEcp>
 	{
+		friend IEquatableWithTolerance;
+
 	public:
 		static constexpr Scalar ZeroTolerance = 1e-15;
 
@@ -238,35 +242,6 @@ namespace SecChem::BasisSet::Gaussian
 			return m_Data(index, 2);
 		}
 
-		bool EqualTo(const SemiLocalEcp& other, const Scalar tolerance = ZeroTolerance) const noexcept
-		{
-			if (m_Data.rows() != other.m_Data.rows())
-			{
-				return false;
-			}
-
-			if ((m_Data - other.m_Data).cwiseAbs().maxCoeff() > tolerance)
-			{
-				return false;
-			}
-
-			return true;
-		}
-
-		bool NotEqualTo(const SemiLocalEcp& other, const Scalar tolerance = ZeroTolerance) const noexcept
-		{
-			return !EqualTo(other, tolerance);
-		}
-
-		bool operator==(const SemiLocalEcp& other) const noexcept
-		{
-			return EqualTo(other, 0);
-		}
-
-		bool operator!=(const SemiLocalEcp& other) const noexcept
-		{
-			return !EqualTo(other, 0);
-		}
 
 	private:
 		template <typename CoefficientSet, typename RExponentSet, typename GaussianExponentSet>
@@ -309,6 +284,11 @@ namespace SecChem::BasisSet::Gaussian
 			{
 				throw std::invalid_argument("SemiLocalEcp: gaussian exponents must be a vector");
 			}
+		}
+
+		bool EqualTo_Impl(const SemiLocalEcp& other, const Scalar tolerance = ZeroTolerance) const noexcept
+		{
+			return m_Data.rows() == other.m_Data.rows() && (m_Data - other.m_Data).cwiseAbs().maxCoeff() <= tolerance;
 		}
 
 		Eigen::Matrix<Scalar, Eigen::Dynamic, 3> m_Data;
