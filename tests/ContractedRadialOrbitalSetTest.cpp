@@ -381,3 +381,40 @@ TEST_CASE("ContractedRadialOrbitalSet::EqualTo is order-sensitive")
 
 	REQUIRE_FALSE(a.EqualTo(b, 1e-6));
 }
+
+TEST_CASE("ContractedRadialOrbitalSet::Concat should work")
+{
+	Eigen::MatrixXd c0(3, 2);
+	c0 << 1.0, 0.0,
+		 0.5, 0.3,
+		 0.0, 0.7;
+	Eigen::MatrixXd c1(2, 1);
+	c1 << 1.0, 0.5;
+
+	std::array sets = {MakeSimpleSet({1.0, 2.0, 3.0}, c0), MakeSimpleSet({1.5, 2.5}, c1)};
+	auto a = ContractedRadialOrbitalSet::Concat(sets.begin(), sets.end());
+
+	REQUIRE(a.ExponentSet().size() == 5);
+	REQUIRE(a.ContractionSets().rows() == 5);
+	REQUIRE(a.ContractedShellCount() == 3);
+}
+
+TEST_CASE("ContractedRadialOrbitalSet::Concat should work on range of single set")
+{
+	Eigen::MatrixXd c0(3, 2);
+	c0 << 1.0, 0.0,
+		 0.5, 0.3,
+		 0.0, 0.7;
+
+	std::array sets = {MakeSimpleSet({1.0, 2.0, 3.0}, c0)};
+	auto a = ContractedRadialOrbitalSet::Concat(sets.begin(), sets.end());
+
+	REQUIRE(a.ExponentSet() == Eigen::Vector3d{1.0, 2.0, 3.0});
+	REQUIRE(a.ContractionSets() == c0);
+}
+
+TEST_CASE("ContractedRadialOrbitalSet::Concat should should throw on empty input range")
+{
+	std::vector<ContractedRadialOrbitalSet> sets;
+	REQUIRE_THROWS(ContractedRadialOrbitalSet::Concat(sets.begin(), sets.end()));
+}

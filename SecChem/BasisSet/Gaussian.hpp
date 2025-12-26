@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <filesystem>
 #include <memory>
+#include <numeric>
 #include <optional>
 #include <type_traits>
 #include <utility>
@@ -154,6 +155,49 @@ namespace SecChem::BasisSet::Gaussian
 			return m_ContractionSets.row(index);
 		}
 
+		template <typename InputIterator>
+		static std::enable_if_t<
+		        std::is_same_v<std::decay_t<decltype(*std::declval<InputIterator>())>, ContractedRadialOrbitalSet>,
+		        ContractedRadialOrbitalSet>
+		Concat(InputIterator begin, const InputIterator end)
+		{
+			if (begin == end)
+			{
+				throw std::runtime_error("ContractedRadialOrbitalSet: input range is empty");
+			}
+
+			if (std::distance(begin, end) == 1)
+			{
+				return *begin;
+			}
+
+			using IndexPair = std::pair<Eigen::Index, Eigen::Index>;
+			const auto dimensions = std::accumulate(begin,
+			                                        end,
+			                                        IndexPair{0, 0},
+			                                        [](const IndexPair& acc, const ContractedRadialOrbitalSet& block)
+			                                        {
+				                                        return IndexPair{acc.first + block.m_ContractionSets.rows(),
+				                                                         acc.second + block.m_ContractionSets.cols()};
+			                                        });
+
+			Eigen::VectorX<Scalar> exponentSet = Eigen::VectorX<Scalar>::Zero(dimensions.first);
+			Eigen::MatrixX<Scalar> contractionSets = Eigen::MatrixX<Scalar>::Zero(dimensions.first, dimensions.second);
+
+			for (IndexPair offsets = {0, 0}; begin != end; ++begin)
+			{
+				exponentSet.segment(offsets.first, begin->m_ExponentSet.size()) = begin->m_ExponentSet;
+				contractionSets.block(offsets.first,
+				                      offsets.second,
+				                      begin->m_ContractionSets.rows(),
+				                      begin->m_ContractionSets.cols()) = begin->m_ContractionSets;
+
+				offsets.first += begin->m_ContractionSets.rows();
+				offsets.second += begin->m_ContractionSets.cols();
+			}
+
+			return {std::move(exponentSet), std::move(contractionSets)};
+		}
 
 	private:
 		static std::vector<ContractionSetViewDescription> BuildContractionSetViewDescriptions(
@@ -415,6 +459,13 @@ namespace SecChem::BasisSet::Gaussian
 			return ContractedShellCount() * m_AzimuthalQuantumNumber.MagneticQuantumNumberCount();
 		}
 
+		// template <typename IteratorToAngularMomentumBlock>
+		// static AngularMomentumBlock Concat(IteratorToAngularMomentumBlock begin,
+		//                                    const IteratorToAngularMomentumBlock end)
+		// {
+		// 	const auto
+		// }
+
 	private:
 		bool EqualTo(const AngularMomentumBlock& other, const Scalar tolerance) const noexcept
 		{
@@ -441,6 +492,22 @@ namespace SecChem::BasisSet::Gaussian
 			        std::conditional_t<Semantics == OwnershipSemantics::Value, DataType, std::shared_ptr<DataType>>;
 			friend BasisSetImpl<OwnershipSemantics::Reference>;
 			friend BasisSetImpl<OwnershipSemantics::Value>;
+
+			static constexpr auto IsInStandardStorageOrder =
+			        [](const AngularMomentumBlock& lhs, const AngularMomentumBlock& rhs)
+			{
+				if (lhs.AngularMomentum() != rhs.AngularMomentum())
+				{
+					return lhs.AngularMomentum() <= rhs.AngularMomentum();
+				}
+
+				if (lhs.ExponentSet().size() != rhs.ExponentSet().size())
+				{
+					return lhs.ExponentSet().size() <= rhs.ExponentSet().size();
+				}
+
+				return lhs.ExponentSet()[0] <= rhs.ExponentSet()[0];
+			};
 
 		public:
 			BasisSetImpl() : m_DataStorage(CreateStorage())
@@ -569,6 +636,69 @@ namespace SecChem::BasisSet::Gaussian
 				return !EqualTo(other, tolerance);
 			}
 
+			bool IsInStandardRepresentation() const noexcept
+			{
+				if (Data().empty())
+				{
+					return true;
+				}
+
+				for (const auto& [_, angularMomentumBlocks] : Data())
+				{
+					if (angularMomentumBlocks.size() <= 1)
+					{
+						continue;
+					}
+
+					if (!std::is_sorted(
+					            angularMomentumBlocks.cbegin(), angularMomentumBlocks.cend(), IsInStandardStorageOrder))
+					{
+						return false;
+					}
+
+					// for (auto it0 = angularMomentumBlocks.cbegin(), it1 = std::next(angularMomentumBlocks.cbegin());
+					//      it1 != angularMomentumBlocks.cend();
+					//      ++it0, ++it1)
+					// {
+					// 	if (it0->AngularMomentum() == it1->AngularMomentum())
+					// 	{
+					// 		return false;
+					// 	}
+					// }
+				}
+
+				return true;
+			}
+
+			void StandardizeRepresentation()
+			{
+				for (const auto& [_, angularMomentumBlocks] : Data())
+				{
+					if (angularMomentumBlocks.size() <= 1)
+					{
+						continue;
+					}
+
+					std::sort(angularMomentumBlocks.begin(), angularMomentumBlocks.end(), IsInStandardStorageOrder);
+
+					const auto concatSets = AngularMomentumBlockConcatSets(angularMomentumBlocks);
+					if (concatSets.empty())
+					{
+						continue;
+					}
+
+					// const auto concatenatedExponents = std::reduce(angularMomentumBlocks.cbegin(),
+					// angularMomentumBlocks.cend(),)
+				}
+			}
+
+			BasisSetImpl ToStandardizeRepresentation() const
+			{
+				BasisSetImpl result;
+				result.StandardizeRepresentation();
+				return result;
+			}
+
 
 		private:
 			static StorageType CreateStorage()
@@ -606,6 +736,32 @@ namespace SecChem::BasisSet::Gaussian
 					return m_DataStorage;
 				}
 			}
+
+			static auto AngularMomentumBlockConcatSets(
+			        const std::vector<AngularMomentumBlock>& sortedAngularMomentumBlocks)
+			{
+				using Iterator = std::vector<AngularMomentumBlock>::const_iterator;
+				std::vector<std::pair<Iterator, Iterator>> concatSets;
+				auto it0 = sortedAngularMomentumBlocks.begin();
+				while (it0 != sortedAngularMomentumBlocks.end())
+				{
+					auto it1 = std::find_if_not(std::next(it0),
+					                            sortedAngularMomentumBlocks.end(),
+					                            [l0 = it0->AngularMomentum()](const AngularMomentumBlock& block)
+					                            { return block.AngularMomentum() != l0; });
+
+					if (it1 != std::next(it0))
+					{
+						concatSets.push_back({it0, it1});
+						it0 = it1;
+					}
+					else
+					{
+						++it0;
+					}
+				}
+			}
+
 
 		private:
 			StorageType m_DataStorage{};
