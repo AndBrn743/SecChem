@@ -155,11 +155,8 @@ namespace SecChem::BasisSet::Gaussian
 			return m_ContractionSets.row(index);
 		}
 
-		template <typename InputIterator>
-		static std::enable_if_t<
-		        std::is_same_v<std::decay_t<decltype(*std::declval<InputIterator>())>, ContractedRadialOrbitalSet>,
-		        ContractedRadialOrbitalSet>
-		Concat(InputIterator begin, const InputIterator end)
+		template <typename InputIterator, typename Getter>
+		static ContractedRadialOrbitalSet Concat(InputIterator begin, const InputIterator end, Getter get)
 		{
 			if (begin == end)
 			{
@@ -168,35 +165,42 @@ namespace SecChem::BasisSet::Gaussian
 
 			if (std::distance(begin, end) == 1)
 			{
-				return *begin;
+				return get(*begin);
 			}
 
 			using IndexPair = std::pair<Eigen::Index, Eigen::Index>;
-			const auto dimensions = std::accumulate(begin,
-			                                        end,
-			                                        IndexPair{0, 0},
-			                                        [](const IndexPair& acc, const ContractedRadialOrbitalSet& block)
-			                                        {
-				                                        return IndexPair{acc.first + block.m_ContractionSets.rows(),
-				                                                         acc.second + block.m_ContractionSets.cols()};
-			                                        });
+			const auto dimensions =
+			        std::accumulate(begin,
+			                        end,
+			                        IndexPair{0, 0},
+			                        [get](const IndexPair& acc, const auto& block)
+			                        {
+				                        return IndexPair{acc.first + get(block).m_ContractionSets.rows(),
+				                                         acc.second + get(block).m_ContractionSets.cols()};
+			                        });
 
 			Eigen::VectorX<Scalar> exponentSet = Eigen::VectorX<Scalar>::Zero(dimensions.first);
 			Eigen::MatrixX<Scalar> contractionSets = Eigen::MatrixX<Scalar>::Zero(dimensions.first, dimensions.second);
 
 			for (IndexPair offsets = {0, 0}; begin != end; ++begin)
 			{
-				exponentSet.segment(offsets.first, begin->m_ExponentSet.size()) = begin->m_ExponentSet;
+				exponentSet.segment(offsets.first, get(*begin).m_ExponentSet.size()) = get(*begin).m_ExponentSet;
 				contractionSets.block(offsets.first,
 				                      offsets.second,
-				                      begin->m_ContractionSets.rows(),
-				                      begin->m_ContractionSets.cols()) = begin->m_ContractionSets;
+				                      get(*begin).m_ContractionSets.rows(),
+				                      get(*begin).m_ContractionSets.cols()) = get(*begin).m_ContractionSets;
 
-				offsets.first += begin->m_ContractionSets.rows();
-				offsets.second += begin->m_ContractionSets.cols();
+				offsets.first += get(*begin).m_ContractionSets.rows();
+				offsets.second += get(*begin).m_ContractionSets.cols();
 			}
 
 			return {std::move(exponentSet), std::move(contractionSets)};
+		}
+
+		template <typename InputIterator>
+		static ContractedRadialOrbitalSet Concat(InputIterator begin, const InputIterator end)
+		{
+			return Concat(begin, end, [](auto&& item) -> decltype(auto) { return std::forward<decltype(item)>(item); });
 		}
 
 	private:
@@ -308,10 +312,8 @@ namespace SecChem::BasisSet::Gaussian
 			return m_Data(index, 2);
 		}
 
-		template <typename InputIterator>
-		static std::enable_if_t<std::is_same_v<std::decay_t<decltype(*std::declval<InputIterator>())>, SemiLocalEcp>,
-		                        SemiLocalEcp>
-		Concat(InputIterator begin, const InputIterator end)
+		template <typename InputIterator, typename Getter>
+		static SemiLocalEcp Concat(InputIterator begin, const InputIterator end, const Getter get)
 		{
 			if (begin == end)
 			{
@@ -320,26 +322,30 @@ namespace SecChem::BasisSet::Gaussian
 
 			if (std::distance(begin, end) == 1)
 			{
-				return *begin;
+				return get(*begin);
 			}
 
-			Eigen::Matrix<Scalar, Eigen::Dynamic, 3> data(
-			        std::accumulate(begin,
-			                        end,
-			                        Eigen::Index{0},
-			                        [](const Eigen::Index acc, const SemiLocalEcp& ecp)
-			                        { return acc + ecp.m_Data.rows(); }),
-			        3);
+			Eigen::Matrix<Scalar, Eigen::Dynamic, 3> data(std::accumulate(begin,
+			                                                              end,
+			                                                              Eigen::Index{0},
+			                                                              [get](const Eigen::Index acc, const auto& ecp)
+			                                                              { return acc + get(ecp).m_Data.rows(); }),
+			                                              3);
 
 			for (Eigen::Index offset = 0; begin != end; ++begin)
 			{
-				data.middleRows(offset, begin->m_Data.rows()) = begin->m_Data;
-				offset += begin->m_Data.rows();
+				data.middleRows(offset, get(*begin).m_Data.rows()) = get(*begin).m_Data;
+				offset += get(*begin).m_Data.rows();
 			}
 
 			return SemiLocalEcp{std::move(data)};
 		}
 
+		template <typename InputIterator>
+		static SemiLocalEcp Concat(InputIterator begin, const InputIterator end)
+		{
+			return Concat(begin, end, [](auto&& item) -> decltype(auto) { return std::forward<decltype(item)>(item); });
+		}
 
 	private:
 		explicit SemiLocalEcp(Eigen::Matrix<Scalar, Eigen::Dynamic, 3> data) : m_Data(std::move(data))
