@@ -397,6 +397,14 @@ TEST_CASE("ContractedRadialOrbitalSet::Concat should work")
 	REQUIRE(a.ExponentSet().size() == 5);
 	REQUIRE(a.ContractionSets().rows() == 5);
 	REQUIRE(a.ContractedShellCount() == 3);
+
+	REQUIRE(a.ExponentSet().head(3) == Eigen::Vector3d{{1.0, 2.0, 3.0}});
+	REQUIRE(a.ExponentSet().tail(2) == Eigen::Vector2d{{1.5, 2.5}});
+	REQUIRE(a.ContractionSets().topLeftCorner(3, 2) == c0);
+	REQUIRE(a.ContractionSets().bottomRightCorner(2, 1) == c1);
+
+	REQUIRE(a.ContractionSets().topRightCorner(3, 1).norm() == 0);
+	REQUIRE(a.ContractionSets().bottomLeftCorner(2, 2).norm() == 0);
 }
 
 TEST_CASE("ContractedRadialOrbitalSet::Concat should work on range of single set")
