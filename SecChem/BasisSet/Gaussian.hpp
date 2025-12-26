@@ -564,7 +564,7 @@ namespace SecChem::BasisSet::Gaussian
 		// }
 
 	private:
-		bool EqualTo(const AngularMomentumBlock& other, const Scalar tolerance) const noexcept
+		bool EqualTo_Impl(const AngularMomentumBlock& other, const Scalar tolerance) const noexcept
 		{
 			return m_AzimuthalQuantumNumber == other.m_AzimuthalQuantumNumber
 			       && m_NullableSemiLocalEcp.has_value() == other.m_NullableSemiLocalEcp.has_value()
