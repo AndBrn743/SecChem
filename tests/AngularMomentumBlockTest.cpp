@@ -33,12 +33,12 @@ static ContractedRadialOrbitalSet MakeSimpleContractedSet(const Eigen::Index pri
 	return ContractedRadialOrbitalSet{std::move(exponents), std::move(contractions)};
 }
 
-static SemiLocalEcp MakeSimpleSemiLocalEcp(const Eigen::Index termCount)
+static SemiLocalEcp MakeSimpleSemiLocalEcp(const Eigen::Index electronCount, const Eigen::Index termCount)
 {
 	Eigen::VectorXd coefficients = Eigen::VectorXd::Random(termCount);
 	Eigen::VectorXd rExponents = Eigen::VectorXd::Random(termCount);
 	Eigen::VectorXd gaussianExponents = Eigen::VectorXd::Random(termCount);
-	return {coefficients, rExponents, gaussianExponents};
+	return {electronCount, coefficients, rExponents, gaussianExponents};
 }
 
 //--------------------------------------------------------------------------------------------------------------------//
@@ -59,7 +59,7 @@ TEST_CASE("AngularMomentumBlock construction with ECP", "[AngularMomentumBlock]"
 {
 	AzimuthalQuantumNumber l{2};  // d shell
 	auto crs = MakeSimpleContractedSet(4, 1);
-	SemiLocalEcp ecp = MakeSimpleSemiLocalEcp(2);
+	SemiLocalEcp ecp = MakeSimpleSemiLocalEcp(14, 2);
 
 	AngularMomentumBlock block{l, crs, ecp};
 
@@ -81,7 +81,7 @@ TEST_CASE("SemiLocalEcp() returns reference when present", "[AngularMomentumBloc
 {
 	AzimuthalQuantumNumber l{0};
 	auto crs = MakeSimpleContractedSet(1, 1);
-	SemiLocalEcp ecp = MakeSimpleSemiLocalEcp(4);
+	SemiLocalEcp ecp = MakeSimpleSemiLocalEcp(14, 4);
 
 	AngularMomentumBlock block{l, crs, ecp};
 
@@ -97,13 +97,13 @@ TEST_CASE("OverrideOrAddSemiLocalEcp adds ECP when missing", "[AngularMomentumBl
 	AngularMomentumBlock block{l, crs};
 	REQUIRE_FALSE(block.HasSemiLocalEcp());
 
-	SemiLocalEcp ecp = MakeSimpleSemiLocalEcp(1);
+	SemiLocalEcp ecp = MakeSimpleSemiLocalEcp(8, 1);
 	block.OverrideOrAddSemiLocalEcp(ecp);
 
 	REQUIRE(block.HasSemiLocalEcp());
 	REQUIRE(block.SemiLocalEcp().Coefficients().size() == 1);
 
-	block.OverrideOrAddSemiLocalEcp(MakeSimpleSemiLocalEcp(3));
+	block.OverrideOrAddSemiLocalEcp(MakeSimpleSemiLocalEcp(8, 3));
 	REQUIRE(block.SemiLocalEcp().Coefficients().size() == 3);
 }
 
@@ -112,8 +112,8 @@ TEST_CASE("OverrideOrAddSemiLocalEcp replaces existing ECP", "[AngularMomentumBl
 	AzimuthalQuantumNumber l{1};
 	auto crs = MakeSimpleContractedSet(2, 1);
 
-	SemiLocalEcp ecp1 = MakeSimpleSemiLocalEcp(4);
-	SemiLocalEcp ecp2 = MakeSimpleSemiLocalEcp(3);
+	SemiLocalEcp ecp1 = MakeSimpleSemiLocalEcp(42, 4);
+	SemiLocalEcp ecp2 = MakeSimpleSemiLocalEcp(42, 3);
 
 	AngularMomentumBlock block{l, crs, ecp1};
 	block.OverrideOrAddSemiLocalEcp(ecp2);
@@ -161,8 +161,8 @@ TEST_CASE("AngularMomentumBlock::Concat should work")
 {
 	const auto crs0 = MakeSimpleContractedSet(6, 3);
 	const auto crs1 = MakeSimpleContractedSet(3, 2);
-	const auto ecp0 = MakeSimpleSemiLocalEcp(3);
-	const auto ecp1 = MakeSimpleSemiLocalEcp(1);
+	const auto ecp0 = MakeSimpleSemiLocalEcp(32, 3);
+	const auto ecp1 = MakeSimpleSemiLocalEcp(32, 1);
 
 	AngularMomentumBlock amb0 = {AzimuthalQuantumNumber::S, crs0, ecp0};
 	AngularMomentumBlock amb1 = {AzimuthalQuantumNumber::S, crs1, ecp1};
@@ -213,8 +213,8 @@ TEST_CASE("AngularMomentumBlock::Concat should refuse concat blocks of different
 {
 	const auto crs0 = MakeSimpleContractedSet(6, 3);
 	const auto crs1 = MakeSimpleContractedSet(3, 2);
-	const auto ecp0 = MakeSimpleSemiLocalEcp(3);
-	const auto ecp1 = MakeSimpleSemiLocalEcp(1);
+	const auto ecp0 = MakeSimpleSemiLocalEcp(67, 3);
+	const auto ecp1 = MakeSimpleSemiLocalEcp(67, 1);
 
 	AngularMomentumBlock amb0 = {AzimuthalQuantumNumber::S, crs0, ecp0};
 	AngularMomentumBlock amb1 = {AzimuthalQuantumNumber::P, crs1, ecp1};
