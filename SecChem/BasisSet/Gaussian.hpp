@@ -613,7 +613,7 @@ namespace SecChem::BasisSet::Gaussian
 			/* NO CODE */
 		}
 
-		AngularMomentumBlock& OverrideOrAddSemiLocalEcp(SemiLocalEcp ecp)
+		AngularMomentumBlock& AllOrOverrideSemiLocalEcp(SemiLocalEcp ecp)
 		{
 			m_NullableSemiLocalEcp = std::move(ecp);
 			return *this;

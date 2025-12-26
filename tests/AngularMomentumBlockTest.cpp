@@ -89,7 +89,7 @@ TEST_CASE("SemiLocalEcp() returns reference when present", "[AngularMomentumBloc
 	REQUIRE(&block.SemiLocalEcp() != nullptr);
 }
 
-TEST_CASE("OverrideOrAddSemiLocalEcp adds ECP when missing", "[AngularMomentumBlock][ECP]")
+TEST_CASE("AllOrOverrideSemiLocalEcp adds ECP when missing", "[AngularMomentumBlock][ECP]")
 {
 	AzimuthalQuantumNumber l{1};
 	auto crs = MakeSimpleContractedSet(2, 1);
@@ -98,16 +98,16 @@ TEST_CASE("OverrideOrAddSemiLocalEcp adds ECP when missing", "[AngularMomentumBl
 	REQUIRE_FALSE(block.HasSemiLocalEcp());
 
 	SemiLocalEcp ecp = MakeSimpleSemiLocalEcp(8, 1);
-	block.OverrideOrAddSemiLocalEcp(ecp);
+	block.AllOrOverrideSemiLocalEcp(ecp);
 
 	REQUIRE(block.HasSemiLocalEcp());
 	REQUIRE(block.SemiLocalEcp().Coefficients().size() == 1);
 
-	block.OverrideOrAddSemiLocalEcp(MakeSimpleSemiLocalEcp(8, 3));
+	block.AllOrOverrideSemiLocalEcp(MakeSimpleSemiLocalEcp(8, 3));
 	REQUIRE(block.SemiLocalEcp().Coefficients().size() == 3);
 }
 
-TEST_CASE("OverrideOrAddSemiLocalEcp replaces existing ECP", "[AngularMomentumBlock][ECP]")
+TEST_CASE("AllOrOverrideSemiLocalEcp replaces existing ECP", "[AngularMomentumBlock][ECP]")
 {
 	AzimuthalQuantumNumber l{1};
 	auto crs = MakeSimpleContractedSet(2, 1);
@@ -116,7 +116,7 @@ TEST_CASE("OverrideOrAddSemiLocalEcp replaces existing ECP", "[AngularMomentumBl
 	SemiLocalEcp ecp2 = MakeSimpleSemiLocalEcp(42, 3);
 
 	AngularMomentumBlock block{l, crs, ecp1};
-	block.OverrideOrAddSemiLocalEcp(ecp2);
+	block.AllOrOverrideSemiLocalEcp(ecp2);
 
 	REQUIRE(block.HasSemiLocalEcp());
 	REQUIRE(block.SemiLocalEcp().RExponents().size() == 3);
