@@ -556,12 +556,43 @@ namespace SecChem::BasisSet::Gaussian
 			return ContractedShellCount() * m_AzimuthalQuantumNumber.MagneticQuantumNumberCount();
 		}
 
-		// template <typename IteratorToAngularMomentumBlock>
-		// static AngularMomentumBlock Concat(IteratorToAngularMomentumBlock begin,
-		//                                    const IteratorToAngularMomentumBlock end)
-		// {
-		// 	const auto
-		// }
+		template <typename InputIterator, typename Getter>
+		static AngularMomentumBlock Concat(InputIterator begin, const InputIterator end, Getter get)
+		{
+			if (begin == end)
+			{
+				throw std::runtime_error("AngularMomentumBlock: input range is empty");
+			}
+
+			if (std::distance(begin, end) == 1)
+			{
+				return get(*begin);
+			}
+
+			const auto azimuthalQuantumNumber = get(*begin).m_AzimuthalQuantumNumber;
+
+			if (std::any_of(begin,
+			                end,
+			                [get, azimuthalQuantumNumber](const auto& item)
+			                { return get(item).m_AzimuthalQuantumNumber != azimuthalQuantumNumber; }))
+			{
+				throw std::runtime_error("AngularMomentumBlock: cannot concat blocks with different angular momenta");
+			}
+
+			auto crs = ContractedRadialOrbitalSet::Concat(
+			        begin, end, [get](const auto& block) { return get(block).m_ContractedRadialOrbitalSet; });
+			auto ecp = SemiLocalEcp::ConcatNullable(
+			        begin, end, [get](const auto& block) { return get(block).m_NullableSemiLocalEcp; });
+
+			return ecp.has_value() ? AngularMomentumBlock{azimuthalQuantumNumber, crs, ecp.value()}
+			                       : AngularMomentumBlock{azimuthalQuantumNumber, crs};
+		}
+
+		template <typename InputIterator>
+		static AngularMomentumBlock Concat(InputIterator begin, const InputIterator end)
+		{
+			return Concat(begin, end, [](auto&& item) -> decltype(auto) { return std::forward<decltype(item)>(item); });
+		}
 
 	private:
 		bool EqualTo_Impl(const AngularMomentumBlock& other, const Scalar tolerance) const noexcept
