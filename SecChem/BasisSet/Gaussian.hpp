@@ -46,6 +46,8 @@ namespace SecChem::BasisSet::Gaussian
 		};
 
 	public:
+		static constexpr Scalar ZeroTolerance = 1e-15;
+
 		class ContractionSetView
 		{
 		public:
@@ -125,7 +127,38 @@ namespace SecChem::BasisSet::Gaussian
 			return m_ContractionSets.row(index);
 		}
 
-		static constexpr Scalar ZeroTolerance = 1e-15;
+		bool EqualTo(const ContractedRadialOrbitalSet& other, const Scalar tolerance = ZeroTolerance) const noexcept
+		{
+			if (m_ExponentSet.size() != other.m_ExponentSet.size()
+			    || m_ContractionSets.rows() != other.m_ContractionSets.rows()
+			    || m_ContractionSets.cols() != other.m_ContractionSets.cols())
+			{
+				return false;
+			}
+
+			if ((m_ExponentSet - other.m_ExponentSet).cwiseAbs().maxCoeff() > tolerance
+			    || (m_ContractionSets - other.m_ContractionSets).cwiseAbs().maxCoeff() > tolerance)
+			{
+				return false;
+			}
+
+			return true;
+		}
+
+		bool NotEqualTo(const ContractedRadialOrbitalSet& other, const Scalar tolerance = ZeroTolerance) const noexcept
+		{
+			return !EqualTo(other, tolerance);
+		}
+
+		bool operator==(const ContractedRadialOrbitalSet& other) const noexcept
+		{
+			return EqualTo(other, 0);
+		}
+
+		bool operator!=(const ContractedRadialOrbitalSet& other) const noexcept
+		{
+			return !EqualTo(other, 0);
+		}
 
 	private:
 		static std::vector<ContractionSetViewDescription> BuildContractionSetViewDescriptions(

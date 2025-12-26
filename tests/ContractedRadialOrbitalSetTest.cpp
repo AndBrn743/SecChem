@@ -6,14 +6,11 @@
 #include <catch2/catch_approx.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 
-#include <Eigen/Dense>
 #include <stdexcept>
 
 using Catch::Matchers::WithinRel;
 using Catch::Approx;
 
-// Adjust this include to your actual header
-// #include "ContractedRadialOrbitalSet.hpp"
 #include "../SecChem/BasisSet/Gaussian.hpp"
 using namespace SecChem::BasisSet::Gaussian;
 
@@ -269,4 +266,118 @@ TEST_CASE("Multiple contraction sets with distinct trimming windows", "[Contract
 
 	const auto v2 = set.ContractionSet(2);
 	REQUIRE(v2.Exponents().size() == 2); // 3,2
+}
+
+static ContractedRadialOrbitalSet MakeSimpleSet(const std::vector<double>& exponents,
+												const Eigen::MatrixXd& contractions)
+{
+	Eigen::VectorXd e(exponents.size());
+	for (Eigen::Index i = 0; i < e.size(); ++i)
+	{
+		e[i] = exponents[i];
+	}
+
+	return ContractedRadialOrbitalSet(e, contractions);
+}
+
+TEST_CASE("ContractedRadialOrbitalSet::operator== exact equality")
+{
+	Eigen::MatrixXd c(3, 2);
+	c << 1.0, 0.0,
+		 0.5, 0.3,
+		 0.0, 0.7;
+
+	auto a = MakeSimpleSet({1.0, 2.0, 3.0}, c);
+	auto b = MakeSimpleSet({1.0, 2.0, 3.0}, c);
+	auto a2 = a;
+
+	REQUIRE(a == b);
+	REQUIRE_FALSE(a != b);
+	REQUIRE(a == a2);
+	REQUIRE_FALSE(a != a2);
+}
+
+TEST_CASE("ContractedRadialOrbitalSet::operator== detects exponent difference")
+{
+	Eigen::MatrixXd c = Eigen::MatrixXd::Identity(2, 1);
+
+	auto a = MakeSimpleSet({1.0, 2.0}, c);
+	auto b = MakeSimpleSet({1.0, 2.0000001}, c);
+
+	REQUIRE(a != b);
+	REQUIRE_FALSE(a == b);
+}
+
+TEST_CASE("ContractedRadialOrbitalSet::operator== detects contraction difference")
+{
+	Eigen::MatrixXd c1(2, 1);
+	c1 << 1.0, 0.5;
+
+	Eigen::MatrixXd c2(2, 1);
+	c2 << 1.0, 0.5000001;
+
+	auto a = MakeSimpleSet({1.0, 2.0}, c1);
+	auto b = MakeSimpleSet({1.0, 2.0}, c2);
+
+	REQUIRE(a != b);
+}
+
+TEST_CASE("ContractedRadialOrbitalSet::EqualTo respects tolerance")
+{
+	Eigen::MatrixXd c1(3, 1);
+	c1 << 1.0, 0.5, 0.25;
+
+	Eigen::MatrixXd c2 = c1;
+	c2(1, 0) += 1e-10;
+
+	auto a = MakeSimpleSet({1.0, 2.0, 3.0}, c1);
+	auto b = MakeSimpleSet({1.0, 2.0 + 5e-11, 3.0}, c2);
+
+	REQUIRE(a.EqualTo(b, 1e-9));
+	REQUIRE_FALSE(a.EqualTo(b, 1e-12));
+}
+
+TEST_CASE("ContractedRadialOrbitalSet::EqualTo detects shape mismatch")
+{
+	Eigen::MatrixXd c1(2, 1);
+	c1 << 1.0, 0.5;
+
+	Eigen::MatrixXd c2(2, 2);
+	c2 << 1.0, 0.0,
+		  0.5, 1.0;
+
+	auto a = MakeSimpleSet({1.0, 2.0}, c1);
+	auto b = MakeSimpleSet({1.0, 2.0}, c2);
+
+	REQUIRE_FALSE(a.EqualTo(b, 1e-6));
+	REQUIRE(a.NotEqualTo(b, 1e-6));
+}
+
+TEST_CASE("ContractedRadialOrbitalSet::EqualTo is strict with tolerance boundary")
+{
+	static constexpr double Delta = 0.00390625;  // 2^(-8), it can be expressed exactly with binary float
+
+	Eigen::MatrixXd c1(1, 1);
+	c1 << 1.0;
+
+	Eigen::MatrixXd c2(1, 1);
+	c2 << 1.0 + Delta;
+
+	auto a = MakeSimpleSet({1.0}, c1);
+	auto b = MakeSimpleSet({1.0 - Delta}, c2);
+
+	REQUIRE_FALSE(a.EqualTo(b, Delta - 2e-16));
+	REQUIRE(a.EqualTo(b, Delta));
+	REQUIRE(a.EqualTo(b, Delta + 2e-16));
+}
+
+TEST_CASE("ContractedRadialOrbitalSet::EqualTo is order-sensitive")
+{
+	Eigen::MatrixXd c(2, 1);
+	c << 1.0, 0.5;
+
+	auto a = MakeSimpleSet({1.0, 2.0}, c);
+	auto b = MakeSimpleSet({2.0, 1.0}, c);
+
+	REQUIRE_FALSE(a.EqualTo(b, 1e-6));
 }
