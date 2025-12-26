@@ -253,7 +253,7 @@ namespace SecChem::BasisSet::Gaussian
 		Eigen::MatrixX<Scalar> m_ContractionSets;
 		std::vector<ContractionSetViewDescription> m_ContractionSetViewDescriptions;
 
-		bool EqualTo_Impl(const ContractedRadialOrbitalSet& other,
+		bool EqualsTo_Impl(const ContractedRadialOrbitalSet& other,
 		                  const Scalar tolerance = ZeroTolerance) const noexcept
 		{
 			return m_ExponentSet.size() == other.m_ExponentSet.size()
@@ -449,7 +449,7 @@ namespace SecChem::BasisSet::Gaussian
 			}
 		}
 
-		bool EqualTo_Impl(const SemiLocalEcp& other, const Scalar tolerance = ZeroTolerance) const noexcept
+		bool EqualsTo_Impl(const SemiLocalEcp& other, const Scalar tolerance = ZeroTolerance) const noexcept
 		{
 			return m_Data.rows() == other.m_Data.rows() && (m_Data - other.m_Data).cwiseAbs().maxCoeff() <= tolerance;
 		}
@@ -595,12 +595,12 @@ namespace SecChem::BasisSet::Gaussian
 		}
 
 	private:
-		bool EqualTo_Impl(const AngularMomentumBlock& other, const Scalar tolerance) const noexcept
+		bool EqualsTo_Impl(const AngularMomentumBlock& other, const Scalar tolerance) const noexcept
 		{
 			return m_AzimuthalQuantumNumber == other.m_AzimuthalQuantumNumber
 			       && m_NullableSemiLocalEcp.has_value() == other.m_NullableSemiLocalEcp.has_value()
-			       && m_ContractedRadialOrbitalSet.EqualTo(other.m_ContractedRadialOrbitalSet, tolerance)
-			       && (!m_NullableSemiLocalEcp.has_value() || SemiLocalEcp().EqualTo(other.SemiLocalEcp(), tolerance));
+			       && m_ContractedRadialOrbitalSet.EqualsTo(other.m_ContractedRadialOrbitalSet, tolerance)
+			       && (!m_NullableSemiLocalEcp.has_value() || SemiLocalEcp().EqualsTo(other.SemiLocalEcp(), tolerance));
 		}
 
 		AzimuthalQuantumNumber m_AzimuthalQuantumNumber;
@@ -707,7 +707,7 @@ namespace SecChem::BasisSet::Gaussian
 			}
 
 			/// Value comparison will be done for BasisSet, reference comparison will be done for SharedBasisSet.
-			/// To compare the value of SharedBasisSet, one should use <c>EqualTo</c> method instead.
+			/// To compare the value of SharedBasisSet, one should use <c>EqualsTo</c> method instead.
 			template <OwnershipSemantics OtherSemantics>
 			bool operator==(const BasisSetImpl<OtherSemantics>& other) const noexcept
 			{
@@ -715,7 +715,7 @@ namespace SecChem::BasisSet::Gaussian
 			}
 
 			/// Value comparison will be done for BasisSet, reference comparison will be done for SharedBasisSet.
-			/// To compare the value of SharedBasisSet, one should use <c>NotEqualTo</c> method instead
+			/// To compare the value of SharedBasisSet, one should use <c>NotEqualsTo</c> method instead
 			template <OwnershipSemantics OtherSemantics>
 			bool operator!=(const BasisSetImpl<OtherSemantics>& other) const noexcept
 			{
@@ -723,7 +723,7 @@ namespace SecChem::BasisSet::Gaussian
 			}
 
 			template <OwnershipSemantics OtherSemantics>
-			bool EqualTo(const BasisSetImpl<OtherSemantics>& other, const Scalar tolerance = 1e-15) const noexcept
+			bool EqualsTo(const BasisSetImpl<OtherSemantics>& other, const Scalar tolerance = 1e-15) const noexcept
 			{
 				if (Data().size() != other.Size())
 				{
@@ -748,7 +748,7 @@ namespace SecChem::BasisSet::Gaussian
 					     it0 != angularMomentumBlocks.cend();
 					     ++it0, ++it1)
 					{
-						if (it0->NotEqualTo(*it1, tolerance))
+						if (it0->NotEqualsTo(*it1, tolerance))
 						{
 							return false;
 						}
@@ -759,9 +759,9 @@ namespace SecChem::BasisSet::Gaussian
 			}
 
 			template <OwnershipSemantics OtherSemantics>
-			bool NotEqualTo(const BasisSetImpl<OtherSemantics>& other, const Scalar tolerance = 1e-15) const noexcept
+			bool NotEqualsTo(const BasisSetImpl<OtherSemantics>& other, const Scalar tolerance = 1e-15) const noexcept
 			{
-				return !EqualTo(other, tolerance);
+				return !EqualsTo(other, tolerance);
 			}
 
 			bool IsInStandardRepresentation() const noexcept

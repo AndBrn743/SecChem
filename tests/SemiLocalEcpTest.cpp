@@ -276,16 +276,16 @@ TEST_CASE("SemiLocalEcp's equality comparison should work", "[SemiLocalEcp]")
 		SemiLocalEcp ecp2(coefficients, rExponents, gaussianExponentsToo);
 		REQUIRE_FALSE(ecp2 == ecp0);
 		REQUIRE(ecp2 != ecp0);
-		REQUIRE_FALSE(ecp2.EqualTo(ecp0, 1e-9));
-		REQUIRE(ecp2.EqualTo(ecp0, 1e-5));
+		REQUIRE_FALSE(ecp2.EqualsTo(ecp0, 1e-9));
+		REQUIRE(ecp2.EqualsTo(ecp0, 1e-5));
 	}
 
 	{
 		SemiLocalEcp ecp3(Eigen::VectorXd::Random(4), Eigen::VectorXd::Random(4), Eigen::VectorXd::Random(4));
 		REQUIRE_FALSE(ecp3 == ecp0);
 		REQUIRE(ecp3 != ecp0);
-		REQUIRE_FALSE(ecp3.EqualTo(ecp0));
-		REQUIRE(ecp3.NotEqualTo(ecp0));
+		REQUIRE_FALSE(ecp3.EqualsTo(ecp0));
+		REQUIRE(ecp3.NotEqualsTo(ecp0));
 	}
 }
 

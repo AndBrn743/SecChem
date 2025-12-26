@@ -19,26 +19,26 @@ namespace SecUtility
 		using Scalar = std::decay_t<decltype(DefaultEqualityComparisonTolerance)>;
 
 	public:
-		constexpr bool EqualTo(const Derived& other,
+		constexpr bool EqualsTo(const Derived& other,
 							   const Scalar tolerance = DefaultEqualityComparisonTolerance) const noexcept
 		{
-			return static_cast<const Derived*>(this)->EqualTo_Impl(other, tolerance);
+			return static_cast<const Derived*>(this)->EqualsTo_Impl(other, tolerance);
 		}
 
-		constexpr bool NotEqualTo(const Derived& other,
+		constexpr bool NotEqualsTo(const Derived& other,
 								  const Scalar tolerance = DefaultEqualityComparisonTolerance) const noexcept
 		{
-			return !static_cast<const Derived*>(this)->EqualTo_Impl(other, tolerance);
+			return !static_cast<const Derived*>(this)->EqualsTo_Impl(other, tolerance);
 		}
 
 		constexpr bool operator==(const Derived& other) const noexcept
 		{
-			return static_cast<const Derived*>(this)->EqualTo_Impl(other, static_cast<Scalar>(0));
+			return static_cast<const Derived*>(this)->EqualsTo_Impl(other, static_cast<Scalar>(0));
 		}
 
 		constexpr bool operator!=(const Derived& other) const noexcept
 		{
-			return !static_cast<const Derived*>(this)->EqualTo_Impl(other, static_cast<Scalar>(0));
+			return !static_cast<const Derived*>(this)->EqualsTo_Impl(other, static_cast<Scalar>(0));
 		}
 
 	private:
@@ -54,6 +54,6 @@ namespace SecUtility
 #endif
 				~IEquatableWithTolerance() noexcept = default;
 
-		bool EqualTo_Impl(const Derived& other, Scalar tolerance) = delete;
+		bool EqualsTo_Impl(const Derived& other, Scalar tolerance) = delete;
 	};
 }  // namespace SecUtility

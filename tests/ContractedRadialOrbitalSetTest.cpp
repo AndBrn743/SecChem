@@ -322,7 +322,7 @@ TEST_CASE("ContractedRadialOrbitalSet::operator== detects contraction difference
 	REQUIRE(a != b);
 }
 
-TEST_CASE("ContractedRadialOrbitalSet::EqualTo respects tolerance")
+TEST_CASE("ContractedRadialOrbitalSet::EqualsTo respects tolerance")
 {
 	Eigen::MatrixXd c1(3, 1);
 	c1 << 1.0, 0.5, 0.25;
@@ -333,11 +333,11 @@ TEST_CASE("ContractedRadialOrbitalSet::EqualTo respects tolerance")
 	auto a = MakeSimpleSet({1.0, 2.0, 3.0}, c1);
 	auto b = MakeSimpleSet({1.0, 2.0 + 5e-11, 3.0}, c2);
 
-	REQUIRE(a.EqualTo(b, 1e-9));
-	REQUIRE_FALSE(a.EqualTo(b, 1e-12));
+	REQUIRE(a.EqualsTo(b, 1e-9));
+	REQUIRE_FALSE(a.EqualsTo(b, 1e-12));
 }
 
-TEST_CASE("ContractedRadialOrbitalSet::EqualTo detects shape mismatch")
+TEST_CASE("ContractedRadialOrbitalSet::EqualsTo detects shape mismatch")
 {
 	Eigen::MatrixXd c1(2, 1);
 	c1 << 1.0, 0.5;
@@ -349,11 +349,11 @@ TEST_CASE("ContractedRadialOrbitalSet::EqualTo detects shape mismatch")
 	auto a = MakeSimpleSet({1.0, 2.0}, c1);
 	auto b = MakeSimpleSet({1.0, 2.0}, c2);
 
-	REQUIRE_FALSE(a.EqualTo(b, 1e-6));
-	REQUIRE(a.NotEqualTo(b, 1e-6));
+	REQUIRE_FALSE(a.EqualsTo(b, 1e-6));
+	REQUIRE(a.NotEqualsTo(b, 1e-6));
 }
 
-TEST_CASE("ContractedRadialOrbitalSet::EqualTo is strict with tolerance boundary")
+TEST_CASE("ContractedRadialOrbitalSet::EqualsTo is strict with tolerance boundary")
 {
 	static constexpr double Delta = 0.00390625;  // 2^(-8), it can be expressed exactly with binary float
 
@@ -366,12 +366,12 @@ TEST_CASE("ContractedRadialOrbitalSet::EqualTo is strict with tolerance boundary
 	auto a = MakeSimpleSet({1.0}, c1);
 	auto b = MakeSimpleSet({1.0 - Delta}, c2);
 
-	REQUIRE_FALSE(a.EqualTo(b, Delta - 2e-16));
-	REQUIRE(a.EqualTo(b, Delta));
-	REQUIRE(a.EqualTo(b, Delta + 2e-16));
+	REQUIRE_FALSE(a.EqualsTo(b, Delta - 2e-16));
+	REQUIRE(a.EqualsTo(b, Delta));
+	REQUIRE(a.EqualsTo(b, Delta + 2e-16));
 }
 
-TEST_CASE("ContractedRadialOrbitalSet::EqualTo is order-sensitive")
+TEST_CASE("ContractedRadialOrbitalSet::EqualsTo is order-sensitive")
 {
 	Eigen::MatrixXd c(2, 1);
 	c << 1.0, 0.5;
@@ -379,7 +379,7 @@ TEST_CASE("ContractedRadialOrbitalSet::EqualTo is order-sensitive")
 	auto a = MakeSimpleSet({1.0, 2.0}, c);
 	auto b = MakeSimpleSet({2.0, 1.0}, c);
 
-	REQUIRE_FALSE(a.EqualTo(b, 1e-6));
+	REQUIRE_FALSE(a.EqualsTo(b, 1e-6));
 }
 
 TEST_CASE("ContractedRadialOrbitalSet::Concat should work")
