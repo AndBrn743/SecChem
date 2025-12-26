@@ -4,9 +4,9 @@
 
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_exception.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
-#include <catch2/matchers/catch_matchers_exception.hpp>
 
 #include <Eigen/Dense>
 #include <stdexcept>
@@ -160,11 +160,9 @@ TEST_CASE("SemiLocalEcp rejects size mismatch", "[SemiLocalEcp][invalid]")
 	Eigen::VectorXd gaussianExponents(3);
 	gaussianExponents << 1.0, 2.0, 3.0;
 
-	REQUIRE_THROWS_MATCHES(
-		SemiLocalEcp(coefficients, rExponents, gaussianExponents),
-		std::invalid_argument,
-		MessageMatches(ContainsSubstring("size"))
-	);
+	REQUIRE_THROWS_MATCHES(SemiLocalEcp(coefficients, rExponents, gaussianExponents),
+	                       std::invalid_argument,
+	                       MessageMatches(ContainsSubstring("size")));
 }
 
 TEST_CASE("SemiLocalEcp rejects non-vector coefficient input", "[SemiLocalEcp][invalid]")
@@ -180,11 +178,9 @@ TEST_CASE("SemiLocalEcp rejects non-vector coefficient input", "[SemiLocalEcp][i
 	Eigen::VectorXd gaussianExponents(4);
 	gaussianExponents << 1.0, 2.0, 3.0, 4.0;
 
-	REQUIRE_THROWS_MATCHES(
-		SemiLocalEcp(coefficients, rExponents, gaussianExponents),
-		std::invalid_argument,
-		MessageMatches(ContainsSubstring("vector"))
-	);
+	REQUIRE_THROWS_MATCHES(SemiLocalEcp(coefficients, rExponents, gaussianExponents),
+	                       std::invalid_argument,
+	                       MessageMatches(ContainsSubstring("vector")));
 }
 
 TEST_CASE("SemiLocalEcp rejects non-vector r-exponent input", "[SemiLocalEcp][invalid]")
@@ -200,11 +196,9 @@ TEST_CASE("SemiLocalEcp rejects non-vector r-exponent input", "[SemiLocalEcp][in
 	Eigen::VectorXd gaussianExponents(4);
 	gaussianExponents << 1.0, 2.0, 3.0, 4.0;
 
-	REQUIRE_THROWS_MATCHES(
-		SemiLocalEcp(coefficients, rExponents, gaussianExponents),
-		std::invalid_argument,
-		MessageMatches(ContainsSubstring("size mismatch"))
-	);
+	REQUIRE_THROWS_MATCHES(SemiLocalEcp(coefficients, rExponents, gaussianExponents),
+	                       std::invalid_argument,
+	                       MessageMatches(ContainsSubstring("size mismatch")));
 }
 
 TEST_CASE("SemiLocalEcp rejects non-vector gaussian exponent input", "[SemiLocalEcp][invalid]")
@@ -220,11 +214,9 @@ TEST_CASE("SemiLocalEcp rejects non-vector gaussian exponent input", "[SemiLocal
 		0.1, 0.2,
 		0.3, 0.4;
 
-	REQUIRE_THROWS_MATCHES(
-		SemiLocalEcp(coefficients, rExponents, gaussianExponents),
-		std::invalid_argument,
-		MessageMatches(ContainsSubstring("size mismatch"))
-	);
+	REQUIRE_THROWS_MATCHES(SemiLocalEcp(coefficients, rExponents, gaussianExponents),
+	                       std::invalid_argument,
+	                       MessageMatches(ContainsSubstring("size mismatch")));
 }
 
 TEST_CASE("SemiLocalEcp rejects multiple simultaneous input errors", "[SemiLocalEcp][invalid]")
@@ -240,10 +232,7 @@ TEST_CASE("SemiLocalEcp rejects multiple simultaneous input errors", "[SemiLocal
 	Eigen::RowVectorXd gaussianExponents(1);
 	gaussianExponents << 0.5;
 
-	REQUIRE_THROWS_AS(
-		SemiLocalEcp(coefficients, rExponents, gaussianExponents),
-		std::invalid_argument
-	);
+	REQUIRE_THROWS_AS(SemiLocalEcp(coefficients, rExponents, gaussianExponents), std::invalid_argument);
 }
 
 TEST_CASE("SemiLocalEcp ValidateInput accepts valid mixed input", "[SemiLocalEcp][valid]")
@@ -257,11 +246,8 @@ TEST_CASE("SemiLocalEcp ValidateInput accepts valid mixed input", "[SemiLocalEcp
 	Eigen::RowVectorXd gaussianExponents(3);
 	gaussianExponents << 3.0, 2.0, 1.0;
 
-	REQUIRE_NOTHROW(
-		SemiLocalEcp(coefficients, rExponents, gaussianExponents)
-	);
+	REQUIRE_NOTHROW(SemiLocalEcp(coefficients, rExponents, gaussianExponents));
 }
-
 
 TEST_CASE("SemiLocalEcp's equality comparison should work", "[SemiLocalEcp]")
 {
@@ -300,5 +286,123 @@ TEST_CASE("SemiLocalEcp's equality comparison should work", "[SemiLocalEcp]")
 		REQUIRE(ecp3 != ecp0);
 		REQUIRE_FALSE(ecp3.EqualTo(ecp0));
 		REQUIRE(ecp3.NotEqualTo(ecp0));
+	}
+}
+
+static const auto ecpExampleA = []
+{
+	Eigen::VectorXd coefficients(3);
+	coefficients << 1.0, -0.5, 0.25;
+
+	Eigen::VectorXd rExponents(3);
+	rExponents << 0.0, 1.0, 2.0;
+
+	Eigen::VectorXd gaussianExponents(3);
+	gaussianExponents << 3.0, 2.0, 1.0;
+
+	SemiLocalEcp ecp(coefficients, rExponents, gaussianExponents);
+	return ecp;
+}();
+
+static const auto ecpExampleB = []
+{
+	Eigen::VectorXd coefficients(2);
+	coefficients << 10.0, -10.5;
+
+	Eigen::VectorXd rExponents(2);
+	rExponents << 1.9, 1.8;
+
+	Eigen::VectorXd gaussianExponents(2);
+	gaussianExponents << 3.2, 2.2;
+
+	SemiLocalEcp ecp(coefficients, rExponents, gaussianExponents);
+	return ecp;
+}();
+
+TEST_CASE("SemiLocalEcp::Concat should work", "[SemiLocalEcp]")
+{
+	auto ecps = {ecpExampleA, ecpExampleB};
+	auto ecp = SemiLocalEcp::Concat(ecps.begin(), ecps.end());
+
+	REQUIRE(ecp.Coefficients().size() == 5);
+	REQUIRE(ecp.Coefficients().head(3) == ecpExampleA.Coefficients());
+	REQUIRE(ecp.Coefficients().tail(2) == ecpExampleB.Coefficients());
+	REQUIRE(ecp.RExponents().head(3) == ecpExampleA.RExponents());
+	REQUIRE(ecp.RExponents().tail(2) == ecpExampleB.RExponents());
+	REQUIRE(ecp.GaussianExponents().head(3) == ecpExampleA.GaussianExponents());
+	REQUIRE(ecp.GaussianExponents().tail(2) == ecpExampleB.GaussianExponents());
+}
+
+TEST_CASE("SemiLocalEcp::Concat should throw with empty input range", "[SemiLocalEcp]")
+{
+	std::vector<SemiLocalEcp> empty{};
+	REQUIRE_THROWS(SemiLocalEcp::Concat(empty.begin(), empty.end()));
+}
+
+TEST_CASE("SemiLocalEcp::Concat should work with single item range", "[SemiLocalEcp]")
+{
+	auto ecps = {ecpExampleA};
+	auto ecp = SemiLocalEcp::Concat(ecps.begin(), ecps.end());
+	REQUIRE(ecp == ecpExampleA);
+}
+
+TEST_CASE("SemiLocalEcp::ConcatNullable should work", "[SemiLocalEcp]")
+{
+	{
+		auto ecps = {std::optional{ecpExampleA}, std::optional{ecpExampleB}};
+		auto nullableEcp = SemiLocalEcp::ConcatNullable(ecps.begin(), ecps.end());
+
+		REQUIRE(nullableEcp.has_value());
+		const auto& ecp = nullableEcp.value();
+
+		REQUIRE(ecp.Coefficients().size() == 5);
+		REQUIRE(ecp.Coefficients().head(3) == ecpExampleA.Coefficients());
+		REQUIRE(ecp.Coefficients().tail(2) == ecpExampleB.Coefficients());
+		REQUIRE(ecp.RExponents().head(3) == ecpExampleA.RExponents());
+		REQUIRE(ecp.RExponents().tail(2) == ecpExampleB.RExponents());
+		REQUIRE(ecp.GaussianExponents().head(3) == ecpExampleA.GaussianExponents());
+		REQUIRE(ecp.GaussianExponents().tail(2) == ecpExampleB.GaussianExponents());
+	}
+	{
+		std::initializer_list<std::optional<SemiLocalEcp>> ecps = {std::optional{ecpExampleA}, std::nullopt};
+		auto nullableEcp = SemiLocalEcp::ConcatNullable(ecps.begin(), ecps.end());
+
+		REQUIRE(nullableEcp.has_value());
+		const auto& ecp = nullableEcp.value();
+		REQUIRE(ecp == ecpExampleA);
+	}
+	{
+		std::initializer_list<std::optional<SemiLocalEcp>> ecps = {std::nullopt, std::nullopt};
+		auto nullableEcp = SemiLocalEcp::ConcatNullable(ecps.begin(), ecps.end());
+
+		REQUIRE_FALSE(nullableEcp.has_value());
+	}
+}
+
+TEST_CASE("SemiLocalEcp::ConcatNullable should return std::nullopt with empty input range", "[SemiLocalEcp]")
+{
+	{
+		std::initializer_list<std::optional<SemiLocalEcp>> ecps = {};
+		auto nullableEcp = SemiLocalEcp::ConcatNullable(ecps.begin(), ecps.end());
+
+		REQUIRE_FALSE(nullableEcp.has_value());
+	}
+}
+
+TEST_CASE("SemiLocalEcp::ConcatNullable should work with single item range", "[SemiLocalEcp]")
+{
+	{
+		std::initializer_list<std::optional<SemiLocalEcp>> ecps = {std::optional{ecpExampleA}};
+		auto nullableEcp = SemiLocalEcp::ConcatNullable(ecps.begin(), ecps.end());
+
+		REQUIRE(nullableEcp.has_value());
+		const auto& ecp = nullableEcp.value();
+		REQUIRE(ecp == ecpExampleA);
+	}
+	{
+		std::initializer_list<std::optional<SemiLocalEcp>> ecps = {std::nullopt};
+		auto nullableEcp = SemiLocalEcp::ConcatNullable(ecps.begin(), ecps.end());
+
+		REQUIRE_FALSE(nullableEcp.has_value());
 	}
 }
