@@ -119,10 +119,7 @@ namespace SecChem::BasisSet::Gaussian
 		    : m_ExponentSet(std::move(exponentSet)), m_ContractionSets(std::move(contractionSets)),
 		      m_ContractionSetViewDescriptions(BuildContractionSetViewDescriptions(m_ExponentSet, m_ContractionSets))
 		{
-			assert(m_ExponentSet.size() > 0);
-			assert(m_ExponentSet.size() == m_ContractionSets.rows());
-			assert(m_ExponentSet.size() >= m_ContractionSets.cols());
-			assert(m_ContractionSets.cols() >= 0);
+			ValidateInput();
 		}
 
 		const Eigen::VectorXd& ExponentSet() const noexcept
@@ -183,6 +180,25 @@ namespace SecChem::BasisSet::Gaussian
 			}
 
 			return descriptions;
+		}
+
+		// this method shall be called only from ctors
+		void ValidateInput() const
+		{
+			if (m_ExponentSet.size() == 0)
+			{
+				throw std::invalid_argument("ContractedRadialOrbitalSet: empty exponent set");
+			}
+
+			if (m_ContractionSets.size() == 0)
+			{
+				throw std::invalid_argument("ContractedRadialOrbitalSet: empty coefficient set");
+			}
+
+			if (m_ExponentSet.size() != m_ContractionSets.rows())
+			{
+				throw std::invalid_argument("ContractedRadialOrbitalSet: size mismatch");
+			}
 		}
 
 		Eigen::VectorX<Scalar> m_ExponentSet;
