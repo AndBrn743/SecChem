@@ -429,7 +429,7 @@ namespace SecChem::BasisSet::Gaussian
 			{
 				if (get(*begin).has_value())
 				{
-					const auto& ecpData = get(*begin).value().m_Data;
+					decltype(auto) ecpData = get(*begin).value().m_Data;
 					data.middleRows(offset, ecpData.rows()) = ecpData;
 					offset += ecpData.rows();
 				}
@@ -668,9 +668,9 @@ namespace SecChem::BasisSet::Gaussian
 			}
 
 			auto crs = ContractedRadialOrbitalSet::Concat(
-			        begin, end, [get](const auto& block) { return get(block).m_ContractedRadialOrbitalSet; });
+			        begin, end, [get](const auto& block) -> const auto& { return get(block).m_ContractedRadialOrbitalSet; });
 			auto ecp = SemiLocalEcp::ConcatNullable(
-			        begin, end, [get](const auto& block) { return get(block).m_NullableSemiLocalEcp; });
+			        begin, end, [get](const auto& block) -> const auto& { return get(block).m_NullableSemiLocalEcp; });
 
 			return ecp.has_value() ? AngularMomentumBlock{azimuthalQuantumNumber, crs, ecp.value()}
 			                       : AngularMomentumBlock{azimuthalQuantumNumber, crs};
