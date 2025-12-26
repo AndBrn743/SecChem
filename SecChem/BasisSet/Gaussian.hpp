@@ -308,8 +308,45 @@ namespace SecChem::BasisSet::Gaussian
 			return m_Data(index, 2);
 		}
 
+		template <typename InputIterator>
+		static std::enable_if_t<std::is_same_v<std::decay_t<decltype(*std::declval<InputIterator>())>, SemiLocalEcp>,
+		                        SemiLocalEcp>
+		Concat(InputIterator begin, const InputIterator end)
+		{
+			if (begin == end)
+			{
+				throw std::runtime_error("SemiLocalEcp: input range is empty");
+			}
+
+			if (std::distance(begin, end) == 1)
+			{
+				return *begin;
+			}
+
+			Eigen::Matrix<Scalar, Eigen::Dynamic, 3> data(
+			        std::accumulate(begin,
+			                        end,
+			                        Eigen::Index{0},
+			                        [](const Eigen::Index acc, const SemiLocalEcp& ecp)
+			                        { return acc + ecp.m_Data.rows(); }),
+			        3);
+
+			for (Eigen::Index offset = 0; begin != end; ++begin)
+			{
+				data.middleRows(offset, begin->m_Data.rows()) = begin->m_Data;
+				offset += begin->m_Data.rows();
+			}
+
+			return SemiLocalEcp{std::move(data)};
+		}
+
 
 	private:
+		explicit SemiLocalEcp(Eigen::Matrix<Scalar, Eigen::Dynamic, 3> data) : m_Data(std::move(data))
+		{
+			/* NO CODE */
+		}
+
 		template <typename CoefficientSet, typename RExponentSet, typename GaussianExponentSet>
 		static Eigen::Matrix<Scalar, Eigen::Dynamic, 3> CreateDataSet(const CoefficientSet& coefficientSet,
 		                                                              const RExponentSet& rExponentSet,
