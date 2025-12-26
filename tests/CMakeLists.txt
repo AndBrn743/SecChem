@@ -59,3 +59,7 @@ add_test(NAME SemiLocalEcpTest COMMAND SemiLocalEcpTest)
 add_executable(AngularMomentumBlockTest AngularMomentumBlockTest.cpp)
 target_link_libraries(AngularMomentumBlockTest PRIVATE Catch2::Catch2WithMain SecChem)
 add_test(NAME AngularMomentumBlockTest COMMAND AngularMomentumBlockTest)
+
+add_executable(BasisSetTest BasisSetTest.cpp)
+target_link_libraries(BasisSetTest PRIVATE Catch2::Catch2WithMain SecChem)
+add_test(NAME BasisSetTest COMMAND BasisSetTest)

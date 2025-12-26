@@ -858,10 +858,10 @@ namespace SecChem::BasisSet::Gaussian
 				m_DataStorage = std::make_shared<DataType>(std::move(other.m_DataStorage));
 			}
 
-			BasisSetImpl Clone() const
+			template <typename ..., OwnershipSemantics SemanticsToo = Semantics>  // poor man's `requires`
+			std::enable_if_t<SemanticsToo == OwnershipSemantics::Reference, BasisSetImpl> Clone() const
 			{
-				static_assert(Semantics == OwnershipSemantics::Reference);
-				return {std::make_shared<DataType>(*m_DataStorage)};
+				return BasisSetImpl{std::make_shared<DataType>(*m_DataStorage)};
 			}
 
 			const std::vector<AngularMomentumBlock>& operator[](const Element element) const
@@ -909,7 +909,7 @@ namespace SecChem::BasisSet::Gaussian
 			template <OwnershipSemantics OtherSemantics>
 			bool operator==(const BasisSetImpl<OtherSemantics>& other) const noexcept
 			{
-				return Semantics == OtherSemantics && m_DataStorage == other.m_DataStorage;
+				return this == &other || (Semantics == OtherSemantics && m_DataStorage == other.m_DataStorage);
 			}
 
 			/// Value comparison will be done for BasisSet, reference comparison will be done for SharedBasisSet.
@@ -924,20 +924,25 @@ namespace SecChem::BasisSet::Gaussian
 			template <OwnershipSemantics OtherSemantics>
 			bool EqualsTo(const BasisSetImpl<OtherSemantics>& other, const Scalar tolerance = 1e-15) const noexcept
 			{
-				if (Data().size() != other.Size())
+				if (this == &other)
+				{
+					return true;
+				}
+
+				if (Data().size() != other.Data().size())
 				{
 					return false;
 				}
 
 				for (const auto& [element, angularMomentumBlocks] : Data())
 				{
-					const auto iteratorToOtherAngularMomentumBlocks = other.find(element);
-					if (iteratorToOtherAngularMomentumBlocks == other.end())
+					const auto iteratorToOtherAngularMomentumBlocks = other.Data().find(element);
+					if (iteratorToOtherAngularMomentumBlocks == other.Data().end())
 					{
 						return false;
 					}
 
-					const auto& otherAngularMomentumBlocks = *iteratorToOtherAngularMomentumBlocks;
+					const auto& [_, otherAngularMomentumBlocks] = *iteratorToOtherAngularMomentumBlocks;
 					if (angularMomentumBlocks.size() != otherAngularMomentumBlocks.size())
 					{
 						return false;
@@ -1077,6 +1082,12 @@ namespace SecChem::BasisSet::Gaussian
 
 
 		private:
+			explicit BasisSetImpl(StorageType&& storage)
+				: m_DataStorage(std::move(storage))
+			{
+				/* NO CODE */
+			}
+
 			static StorageType CreateStorage()
 			{
 				if constexpr (Semantics == OwnershipSemantics::Reference)
