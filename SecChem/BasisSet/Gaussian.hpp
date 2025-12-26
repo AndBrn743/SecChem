@@ -800,6 +800,84 @@ namespace SecChem::BasisSet::Gaussian
 				return result;
 			}
 
+			bool IsInStandardAndConcatenatedRepresentation() const noexcept
+			{
+				if (Data().empty())
+				{
+					return true;
+				}
+
+				for (const auto& [_, angularMomentumBlocks] : Data())
+				{
+					if (!std::is_sorted(
+					            angularMomentumBlocks.cbegin(), angularMomentumBlocks.cend(), IsInStandardStorageOrder)
+					    || !AngularMomentumBlockConcatSets(angularMomentumBlocks).empty())
+					{
+						return false;
+					}
+				}
+
+				return true;
+			}
+
+			void StandardizeAndConcatenatedRepresentation()
+			{
+				for (auto& [_, angularMomentumBlocks] : Data())
+				{
+					if (angularMomentumBlocks.size() <= 1)
+					{
+						continue;
+					}
+
+					std::sort(angularMomentumBlocks.begin(), angularMomentumBlocks.end(), IsInStandardStorageOrder);
+
+					const auto concatSets = AngularMomentumBlockConcatSets(angularMomentumBlocks);
+					if (concatSets.empty())
+					{
+						continue;
+					}
+
+					const auto concatenatedAmbCount =
+					        angularMomentumBlocks.size()
+					        - std::accumulate(
+					                concatSets.cbegin(),
+					                concatSets.cend(),
+					                Eigen::Index{0},
+					                [](const Eigen::Index acc, const auto& iteratorPair)
+					                { return acc + std::distance(iteratorPair.first, iteratorPair.second) - 1; });
+
+					std::vector<AngularMomentumBlock> concatenatedAngularMomentumBlocks;
+					concatenatedAngularMomentumBlocks.reserve(concatenatedAmbCount);
+
+					auto ambIterator = angularMomentumBlocks.cbegin();
+					auto concatSetIterator = concatSets.cbegin();
+					while (ambIterator != angularMomentumBlocks.cend())
+					{
+						if (ambIterator == concatSetIterator->first)
+						{
+							concatenatedAngularMomentumBlocks.emplace_back(
+							        AngularMomentumBlock::Concat(concatSetIterator->first, concatSetIterator->second));
+							ambIterator = concatSetIterator->second;
+							++concatSetIterator;
+						}
+						else
+						{
+							concatenatedAngularMomentumBlocks.emplace_back(*ambIterator);
+							++ambIterator;
+						}
+					}
+
+					angularMomentumBlocks = concatenatedAngularMomentumBlocks;
+				}
+			}
+
+			BasisSetImpl ToStandardizeAndConcatenatedRepresentation() const
+			{
+				BasisSetImpl result;
+				result.StandardizeAndConcatenatedRepresentation();
+				return result;
+			}
+
 
 		private:
 			static StorageType CreateStorage()
@@ -861,6 +939,8 @@ namespace SecChem::BasisSet::Gaussian
 						++it0;
 					}
 				}
+
+				return concatSets;
 			}
 
 
