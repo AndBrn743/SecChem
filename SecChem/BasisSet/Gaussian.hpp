@@ -254,7 +254,7 @@ namespace SecChem::BasisSet::Gaussian
 		std::vector<ContractionSetViewDescription> m_ContractionSetViewDescriptions;
 
 		bool EqualsTo_Impl(const ContractedRadialOrbitalSet& other,
-		                  const Scalar tolerance = ZeroTolerance) const noexcept
+		                   const Scalar tolerance = ZeroTolerance) const noexcept
 		{
 			return m_ExponentSet.size() == other.m_ExponentSet.size()
 			       && m_ContractionSets.rows() == other.m_ContractionSets.rows()
@@ -708,6 +708,7 @@ namespace SecChem::BasisSet::Gaussian
 
 			/// Value comparison will be done for BasisSet, reference comparison will be done for SharedBasisSet.
 			/// To compare the value of SharedBasisSet, one should use <c>EqualsTo</c> method instead.
+			/// Please note that value comparison is depended on the underlying storage representation.
 			template <OwnershipSemantics OtherSemantics>
 			bool operator==(const BasisSetImpl<OtherSemantics>& other) const noexcept
 			{
@@ -716,6 +717,7 @@ namespace SecChem::BasisSet::Gaussian
 
 			/// Value comparison will be done for BasisSet, reference comparison will be done for SharedBasisSet.
 			/// To compare the value of SharedBasisSet, one should use <c>NotEqualsTo</c> method instead
+			/// Please note that value comparison is depended on the underlying storage representation.
 			template <OwnershipSemantics OtherSemantics>
 			bool operator!=(const BasisSetImpl<OtherSemantics>& other) const noexcept
 			{
@@ -773,26 +775,11 @@ namespace SecChem::BasisSet::Gaussian
 
 				for (const auto& [_, angularMomentumBlocks] : Data())
 				{
-					if (angularMomentumBlocks.size() <= 1)
-					{
-						continue;
-					}
-
 					if (!std::is_sorted(
 					            angularMomentumBlocks.cbegin(), angularMomentumBlocks.cend(), IsInStandardStorageOrder))
 					{
 						return false;
 					}
-
-					// for (auto it0 = angularMomentumBlocks.cbegin(), it1 = std::next(angularMomentumBlocks.cbegin());
-					//      it1 != angularMomentumBlocks.cend();
-					//      ++it0, ++it1)
-					// {
-					// 	if (it0->AngularMomentum() == it1->AngularMomentum())
-					// 	{
-					// 		return false;
-					// 	}
-					// }
 				}
 
 				return true;
@@ -800,23 +787,9 @@ namespace SecChem::BasisSet::Gaussian
 
 			void StandardizeRepresentation()
 			{
-				for (const auto& [_, angularMomentumBlocks] : Data())
+				for (auto& [_, angularMomentumBlocks] : Data())
 				{
-					if (angularMomentumBlocks.size() <= 1)
-					{
-						continue;
-					}
-
 					std::sort(angularMomentumBlocks.begin(), angularMomentumBlocks.end(), IsInStandardStorageOrder);
-
-					const auto concatSets = AngularMomentumBlockConcatSets(angularMomentumBlocks);
-					if (concatSets.empty())
-					{
-						continue;
-					}
-
-					// const auto concatenatedExponents = std::reduce(angularMomentumBlocks.cbegin(),
-					// angularMomentumBlocks.cend(),)
 				}
 			}
 
