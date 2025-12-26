@@ -192,6 +192,12 @@ TEST_CASE("AngularMomentumBlock::Concat should work")
 		REQUIRE(amb.ContractedShellCount() == 3 + 2);
 		REQUIRE(amb.HasSemiLocalEcp());
 		REQUIRE(amb.SemiLocalEcp().Coefficients().size() == 3);
+
+		REQUIRE(amb.SegmentCount() == 2);
+		REQUIRE(amb.Segment(0).ExponentSet() == amb0.ExponentSet());
+		REQUIRE(amb.Segment(0).ContractionSets() == amb0.ContractionSets());
+		REQUIRE(amb.Segment(1).ExponentSet() == amb4.ExponentSet());
+		REQUIRE(amb.Segment(1).ContractionSets() == amb4.ContractionSets());
 	}
 
 	{
