@@ -86,7 +86,6 @@ TEST_CASE("SemiLocalEcp() returns reference when present", "[AngularMomentumBloc
 	AngularMomentumBlock block{l, crs, ecp};
 
 	REQUIRE(block.HasSemiLocalEcp());
-	REQUIRE(&block.SemiLocalEcp() != nullptr);
 }
 
 TEST_CASE("AllOrOverrideSemiLocalEcp adds ECP when missing", "[AngularMomentumBlock][ECP]")
