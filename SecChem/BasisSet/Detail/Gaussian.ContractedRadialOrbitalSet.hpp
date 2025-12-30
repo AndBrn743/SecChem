@@ -45,8 +45,8 @@ namespace SecChem::BasisSet::Gaussian
 			friend class ContractedRadialOrbitalSet;
 			friend std::allocator<ContractionSetView>;
 			ContractionSetView(const Eigen::Map<const Eigen::VectorX<Scalar>> exponents,     // NOLINT
-							   const Eigen::Map<const Eigen::VectorX<Scalar>> contractions)  // NOLINT
-				: m_Exponents(exponents), m_Contractions(contractions)
+			                   const Eigen::Map<const Eigen::VectorX<Scalar>> contractions)  // NOLINT
+			    : m_Exponents(exponents), m_Contractions(contractions)
 			{
 				assert(m_Exponents.size() == m_Contractions.size());
 			}
@@ -56,8 +56,8 @@ namespace SecChem::BasisSet::Gaussian
 		};
 
 		ContractedRadialOrbitalSet(Eigen::VectorXd exponentSet, Eigen::MatrixXd contractionSets)
-			: m_ExponentSet(std::move(exponentSet)), m_ContractionSets(std::move(contractionSets)),
-			  m_ContractionSetViewDescriptions(BuildContractionSetViewDescriptions(m_ExponentSet, m_ContractionSets))
+		    : m_ExponentSet(std::move(exponentSet)), m_ContractionSets(std::move(contractionSets)),
+		      m_ContractionSetViewDescriptions(BuildContractionSetViewDescriptions(m_ExponentSet, m_ContractionSets))
 		{
 			ValidateInput();
 		}
@@ -86,7 +86,7 @@ namespace SecChem::BasisSet::Gaussian
 		{
 			const auto [offset, size] = m_ContractionSetViewDescriptions[index];
 			return {Eigen::Map<const Eigen::VectorX<Scalar>>{ExponentSet().data() + offset, size},
-					Eigen::Map<const Eigen::VectorX<Scalar>>{ContractionSets().col(index).data() + offset, size}};
+			        Eigen::Map<const Eigen::VectorX<Scalar>>{ContractionSets().col(index).data() + offset, size}};
 		}
 
 		auto AccumulationCoefficientSet(const Eigen::Index index) const noexcept
@@ -109,14 +109,14 @@ namespace SecChem::BasisSet::Gaussian
 
 			using IndexPair = std::pair<Eigen::Index, Eigen::Index>;
 			const auto dimensions =
-					std::accumulate(begin,
-									end,
-									IndexPair{0, 0},
-									[get](const IndexPair& acc, const auto& block)
-									{
-										return IndexPair{acc.first + get(block).m_ContractionSets.rows(),
-														 acc.second + get(block).m_ContractionSets.cols()};
-									});
+			        std::accumulate(begin,
+			                        end,
+			                        IndexPair{0, 0},
+			                        [get](const IndexPair& acc, const auto& block)
+			                        {
+				                        return IndexPair{acc.first + get(block).m_ContractionSets.rows(),
+				                                         acc.second + get(block).m_ContractionSets.cols()};
+			                        });
 
 			Eigen::VectorX<Scalar> exponentSet = Eigen::VectorX<Scalar>::Zero(dimensions.first);
 			Eigen::MatrixX<Scalar> contractionSets = Eigen::MatrixX<Scalar>::Zero(dimensions.first, dimensions.second);
@@ -125,9 +125,9 @@ namespace SecChem::BasisSet::Gaussian
 			{
 				exponentSet.segment(offsets.first, get(*begin).m_ExponentSet.size()) = get(*begin).m_ExponentSet;
 				contractionSets.block(offsets.first,
-									  offsets.second,
-									  get(*begin).m_ContractionSets.rows(),
-									  get(*begin).m_ContractionSets.cols()) = get(*begin).m_ContractionSets;
+				                      offsets.second,
+				                      get(*begin).m_ContractionSets.rows(),
+				                      get(*begin).m_ContractionSets.cols()) = get(*begin).m_ContractionSets;
 
 				offsets.first += get(*begin).m_ContractionSets.rows();
 				offsets.second += get(*begin).m_ContractionSets.cols();
@@ -144,7 +144,7 @@ namespace SecChem::BasisSet::Gaussian
 
 	private:
 		static std::vector<ContractionSetViewDescription> BuildContractionSetViewDescriptions(
-				const Eigen::VectorXd& exponentSet, const Eigen::MatrixXd& contractionSets)
+		        const Eigen::VectorXd& exponentSet, const Eigen::MatrixXd& contractionSets)
 		{
 			std::vector<ContractionSetViewDescription> descriptions;
 			descriptions.reserve(exponentSet.size());
@@ -153,16 +153,16 @@ namespace SecChem::BasisSet::Gaussian
 			{
 				const auto contractionSet = contractionSets.col(i);
 				const auto head = std::find_if(contractionSet.begin(),
-											   contractionSet.end(),
-											   [](const Scalar c) { return std::abs(c) >= ZeroTolerance; });
+				                               contractionSet.end(),
+				                               [](const Scalar c) { return std::abs(c) >= ZeroTolerance; });
 				if (head == contractionSet.end())
 				{
 					throw std::runtime_error("Contraction coefficients from a contraction set is all zero");
 				}
 
 				const auto tail = std::find_if(std::reverse_iterator(contractionSet.end()),
-											   std::reverse_iterator{contractionSet.begin()},
-											   [](const Scalar c) { return std::abs(c) >= ZeroTolerance; });
+				                               std::reverse_iterator{contractionSet.begin()},
+				                               [](const Scalar c) { return std::abs(c) >= ZeroTolerance; });
 				descriptions.push_back({std::distance(contractionSet.begin(), head), std::distance(head, tail.base())});
 			}
 
@@ -193,13 +193,13 @@ namespace SecChem::BasisSet::Gaussian
 		std::vector<ContractionSetViewDescription> m_ContractionSetViewDescriptions;
 
 		bool EqualsTo_Impl(const ContractedRadialOrbitalSet& other,
-						   const Scalar tolerance = ZeroTolerance) const noexcept
+		                   const Scalar tolerance = ZeroTolerance) const noexcept
 		{
 			return m_ExponentSet.size() == other.m_ExponentSet.size()
-				   && m_ContractionSets.rows() == other.m_ContractionSets.rows()
-				   && m_ContractionSets.cols() == other.m_ContractionSets.cols()
-				   && (m_ExponentSet - other.m_ExponentSet).cwiseAbs().maxCoeff() <= tolerance
-				   && (m_ContractionSets - other.m_ContractionSets).cwiseAbs().maxCoeff() <= tolerance;
+			       && m_ContractionSets.rows() == other.m_ContractionSets.rows()
+			       && m_ContractionSets.cols() == other.m_ContractionSets.cols()
+			       && (m_ExponentSet - other.m_ExponentSet).cwiseAbs().maxCoeff() <= tolerance
+			       && (m_ContractionSets - other.m_ContractionSets).cwiseAbs().maxCoeff() <= tolerance;
 		}
 	};
-}
+}  // namespace SecChem::BasisSet::Gaussian
