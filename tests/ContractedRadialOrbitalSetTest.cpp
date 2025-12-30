@@ -421,8 +421,96 @@ TEST_CASE("ContractedRadialOrbitalSet::Concat should work on range of single set
 	REQUIRE(a.ContractionSets() == c0);
 }
 
-TEST_CASE("ContractedRadialOrbitalSet::Concat should should throw on empty input range")
+TEST_CASE("ContractedRadialOrbitalSet::Concat should throw on empty input range")
 {
 	std::vector<ContractedRadialOrbitalSet> sets;
 	REQUIRE_THROWS(ContractedRadialOrbitalSet::Concat(sets.begin(), sets.end()));
+}
+
+TEST_CASE("ContractedRadialOrbitalSet::ConcatNullable should work")
+{
+	Eigen::MatrixXd c0(3, 2);
+	c0 << 1.0, 0.0,
+		 0.5, 0.3,
+		 0.0, 0.7;
+	Eigen::MatrixXd c1(2, 1);
+	c1 << 1.0, 0.5;
+
+	SECTION("Not-null + not-null")
+	{
+		std::array sets = {std::optional(MakeSimpleSet({1.0, 2.0, 3.0}, c0)), std::optional(MakeSimpleSet({1.5, 2.5}, c1))};
+		auto na = ContractedRadialOrbitalSet::ConcatNullable(sets.begin(), sets.end());
+
+		REQUIRE(na.has_value());
+		const auto& a = na.value();
+		REQUIRE(a.ExponentSet().size() == 5);
+		REQUIRE(a.ContractionSets().rows() == 5);
+		REQUIRE(a.ContractedShellCount() == 3);
+
+		REQUIRE(a.ExponentSet().head(3) == Eigen::Vector3d{{1.0, 2.0, 3.0}});
+		REQUIRE(a.ExponentSet().tail(2) == Eigen::Vector2d{{1.5, 2.5}});
+		REQUIRE(a.ContractionSets().topLeftCorner(3, 2) == c0);
+		REQUIRE(a.ContractionSets().bottomRightCorner(2, 1) == c1);
+
+		REQUIRE(a.ContractionSets().topRightCorner(3, 1).norm() == 0);
+		REQUIRE(a.ContractionSets().bottomLeftCorner(2, 2).norm() == 0);
+	}
+	SECTION("null + not-null")
+	{
+		std::array<std::optional<ContractedRadialOrbitalSet>, 2> sets = {std::nullopt, std::optional(MakeSimpleSet({1.5, 2.5}, c1))};
+		auto na = ContractedRadialOrbitalSet::ConcatNullable(sets.begin(), sets.end());
+
+		REQUIRE(na.has_value());
+		const auto& a = na.value();
+		REQUIRE(a == MakeSimpleSet({1.5, 2.5}, c1));
+	}
+
+	SECTION("Not-null + null")
+	{
+		std::array<std::optional<ContractedRadialOrbitalSet>, 2> sets = {std::optional(MakeSimpleSet({1.0, 2.0, 3.0}, c0)), std::nullopt};
+		auto na = ContractedRadialOrbitalSet::ConcatNullable(sets.begin(), sets.end());
+
+		REQUIRE(na.has_value());
+		const auto& a = na.value();
+		REQUIRE(a == MakeSimpleSet({1.0, 2.0, 3.0}, c0));
+	}
+	SECTION("Null + null")
+	{
+		std::array<std::optional<ContractedRadialOrbitalSet>, 2> sets = {};
+		auto na = ContractedRadialOrbitalSet::ConcatNullable(sets.begin(), sets.end());
+
+		REQUIRE(!na.has_value());
+	}
+}
+
+TEST_CASE("ContractedRadialOrbitalSet::ConcatNullable should work on range of single set")
+{
+	Eigen::MatrixXd c0(3, 2);
+	c0 << 1.0, 0.0,
+		  0.5, 0.3,
+		  0.0, 0.7;
+
+	SECTION("Not-null")
+	{
+		std::array sets = {std::optional(MakeSimpleSet({1.0, 2.0, 3.0}, c0))};
+		auto na = ContractedRadialOrbitalSet::ConcatNullable(sets.begin(), sets.end());
+
+		REQUIRE(na.has_value());
+		const auto& a = na.value();
+		REQUIRE(a == MakeSimpleSet({1.0, 2.0, 3.0}, c0));
+	}
+	SECTION("Null")
+	{
+		std::array<std::optional<ContractedRadialOrbitalSet>, 2> sets = {std::nullopt};
+		auto na = ContractedRadialOrbitalSet::ConcatNullable(sets.begin(), sets.end());
+
+		REQUIRE(!na.has_value());
+	}
+}
+
+TEST_CASE("ContractedRadialOrbitalSet::ConcatNullable should not throw on empty input range")
+{
+	std::vector<std::optional<ContractedRadialOrbitalSet>> sets;
+	auto opt = ContractedRadialOrbitalSet::ConcatNullable(sets.begin(), sets.end());
+	REQUIRE(!opt.has_value());
 }

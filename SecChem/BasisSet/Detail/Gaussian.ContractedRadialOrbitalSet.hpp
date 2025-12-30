@@ -142,6 +142,72 @@ namespace SecChem::BasisSet::Gaussian
 			return Concat(begin, end, [](auto&& item) -> decltype(auto) { return std::forward<decltype(item)>(item); });
 		}
 
+		template <typename InputIterator, typename Getter>
+		static std::optional<ContractedRadialOrbitalSet> ConcatNullable(InputIterator begin,
+		                                                                const InputIterator end,
+		                                                                Getter get)
+		{
+			if (begin == end)
+			{
+				return std::nullopt;
+			}
+
+			if (std::distance(begin, end) == 1)
+			{
+				return get(*begin);
+			}
+
+			using IndexPair = std::pair<Eigen::Index, Eigen::Index>;
+			const auto dimensions =
+			        std::accumulate(begin,
+			                        end,
+			                        IndexPair{0, 0},
+			                        [get](const IndexPair& acc, const auto& block)
+			                        {
+				                        if (!get(block).has_value())
+				                        {
+					                        return acc;
+				                        }
+				                        return IndexPair{acc.first + get(block).value().m_ContractionSets.rows(),
+				                                         acc.second + get(block).value().m_ContractionSets.cols()};
+			                        });
+
+			if (dimensions.first == 0 || dimensions.second == 0)
+			{
+				return std::nullopt;
+			}
+
+			Eigen::VectorX<Scalar> exponentSet = Eigen::VectorX<Scalar>::Zero(dimensions.first);
+			Eigen::MatrixX<Scalar> contractionSets = Eigen::MatrixX<Scalar>::Zero(dimensions.first, dimensions.second);
+
+			for (IndexPair offsets = {0, 0}; begin != end; ++begin)
+			{
+				if (!get(*begin).has_value())
+				{
+					continue;
+				}
+
+				decltype(auto) crs = get(*begin).value();
+
+				exponentSet.segment(offsets.first, crs.ExponentSet().size()) = crs.ExponentSet();
+				contractionSets.block(
+				        offsets.first, offsets.second, crs.ContractionSets().rows(), crs.ContractionSets().cols()) =
+				        crs.ContractionSets();
+
+				offsets.first += crs.ContractionSets().rows();
+				offsets.second += crs.ContractionSets().cols();
+			}
+
+			return ContractedRadialOrbitalSet{std::move(exponentSet), std::move(contractionSets)};
+		}
+
+		template <typename InputIterator>
+		static std::optional<ContractedRadialOrbitalSet> ConcatNullable(InputIterator begin, const InputIterator end)
+		{
+			return ConcatNullable(
+			        begin, end, [](auto&& item) -> decltype(auto) { return std::forward<decltype(item)>(item); });
+		}
+
 	private:
 		static std::vector<ContractionSetViewDescription> BuildContractionSetViewDescriptions(
 		        const Eigen::VectorXd& exponentSet, const Eigen::MatrixXd& contractionSets)
