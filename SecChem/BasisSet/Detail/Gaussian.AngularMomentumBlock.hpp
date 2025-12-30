@@ -150,9 +150,25 @@ namespace SecChem::BasisSet::Gaussian
 			/* NO CODE */
 		}
 
+		AngularMomentumBlock(const AzimuthalQuantumNumber angularMomentum, std::nullopt_t, SemiLocalEcp ecp)
+		    : Base(angularMomentum), m_NullableSemiLocalEcp(std::move(ecp))
+		{
+			/* NO CODE */
+		}
+
 		AngularMomentumBlock& AddOrOverrideSemiLocalEcp(SemiLocalEcp ecp)
 		{
 			m_NullableSemiLocalEcp = std::move(ecp);
+			return *this;
+		}
+
+		AngularMomentumBlock& AddOrOverrideContractedRadialOrbitalSet(
+		        ContractedRadialOrbitalSet contractedRadialOrbitalSet)
+		{
+			m_NullableContractedRadialOrbitalSet = contractedRadialOrbitalSet;
+			m_SegmentationTable = {{0, 0},
+			                       {m_NullableContractedRadialOrbitalSet.value().PrimitiveShellCount(),
+			                        m_NullableContractedRadialOrbitalSet.value().ContractedShellCount()}};
 			return *this;
 		}
 
@@ -330,8 +346,8 @@ namespace SecChem::BasisSet::Gaussian
 			return result;
 		}
 
-		std::optional<Gaussian::ContractedRadialOrbitalSet> m_NullableContractedRadialOrbitalSet;
-		SegmentationTable m_SegmentationTable;
-		std::optional<Gaussian::SemiLocalEcp> m_NullableSemiLocalEcp;
+		std::optional<Gaussian::ContractedRadialOrbitalSet> m_NullableContractedRadialOrbitalSet = std::nullopt;
+		SegmentationTable m_SegmentationTable = {};
+		std::optional<Gaussian::SemiLocalEcp> m_NullableSemiLocalEcp = std::nullopt;
 	};
 }  // namespace SecChem::BasisSet::Gaussian
