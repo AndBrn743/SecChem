@@ -4,6 +4,7 @@
 
 #include "../SecChem/BasisSet/Gaussian.hpp"
 #include "../SecChem/Utility/Parser.hpp"
+#include <catch2/catch_test_macros.hpp>
 
 namespace Eigen
 {
@@ -114,7 +115,7 @@ SecChem::BasisSet::Gaussian::BasisSet ParseBasisSetExchangeJson(const nlohmann::
 	return result;
 }
 
-int main()
+TEST_CASE("Sample parser should able to parse sample BSE JSON")
 {
 	std::string sample = R"(
 {
@@ -186,4 +187,30 @@ int main()
 )";
 
 	const auto sampleBasisSet = ParseBasisSetExchangeJson(nlohmann::json::parse(sample));
+
+	REQUIRE(sampleBasisSet.Has(Element::H));
+	REQUIRE(sampleBasisSet.Has(Element::Ne));
+	REQUIRE(sampleBasisSet.IsInStandardRepresentation());
+
+	REQUIRE(!sampleBasisSet[Element::H][0].HasSemiLocalEcp());
+	REQUIRE(sampleBasisSet[Element::H][0].EqualsTo(AngularMomentumBlock{
+	        AzimuthalQuantumNumber::S,
+	        ContractedRadialOrbitalSet{
+	                Eigen::Vector3d{13.01, 1.962, 0.4446},
+	                Eigen::Matrix<double, 3, 2>{{0.019685, 0}, {0.137977, 0}, {0.000000, 1}}}}));
+
+	REQUIRE(!sampleBasisSet[Element::H][1].HasSemiLocalEcp());
+	REQUIRE(sampleBasisSet[Element::H][1].EqualsTo(AngularMomentumBlock{
+	        AzimuthalQuantumNumber::P,
+	        ContractedRadialOrbitalSet{
+	                Eigen::Vector2d{0.727, 0.141},
+	                Eigen::Matrix<double, 2, 2>{{0.430128, 0.5}, {0.678913, 0.5}}}}));
+
+	REQUIRE(sampleBasisSet[Element::Ne][0].HasSemiLocalEcp());
+	REQUIRE(sampleBasisSet[Element::Ne][0].EqualsTo(AngularMomentumBlock{
+	        AzimuthalQuantumNumber::S,
+	        ContractedRadialOrbitalSet{Eigen::Vector2d{38.36, 5.77},
+	                                   Eigen::Matrix<double, 2, 1>{{0.023809}, {0.154891}}},
+	        SecChem::BasisSet::Gaussian::SemiLocalEcp{
+	                28, Eigen::Vector<double, 1>{-6}, Eigen::Vector<double, 1>{2}, Eigen::Vector<double, 1>{4}}}));
 }
