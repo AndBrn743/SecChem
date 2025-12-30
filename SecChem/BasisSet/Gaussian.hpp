@@ -823,15 +823,15 @@ namespace SecChem::BasisSet::Gaussian
 			{
 				if (lhs.AngularMomentum() != rhs.AngularMomentum())
 				{
-					return lhs.AngularMomentum() <= rhs.AngularMomentum();
+					return lhs.AngularMomentum() < rhs.AngularMomentum();
 				}
 
 				if (lhs.ExponentSet().size() != rhs.ExponentSet().size())
 				{
-					return lhs.ExponentSet().size() <= rhs.ExponentSet().size();
+					return lhs.ExponentSet().size() < rhs.ExponentSet().size();
 				}
 
-				return lhs.ExponentSet()[0] <= rhs.ExponentSet()[0];
+				return lhs.ExponentSet()[0] < rhs.ExponentSet()[0];
 			};
 
 		public:
@@ -840,25 +840,26 @@ namespace SecChem::BasisSet::Gaussian
 				/* NO CODE */
 			}
 
+			/// remarks: This conversion constructor will always deep-copy the operand
 			explicit BasisSetImpl(const BasisSetImpl<AlternativeOf(Semantics)>& other)
 			{
 				if constexpr (Semantics == OwnershipSemantics::Value)
 				{
-					m_DataStorage = *other.m_DataStorage;
+					m_DataStorage = other.Data();
 				}
 				else
 				{
-					m_DataStorage = std::make_shared<DataType>(other.m_DataStorage);
+					m_DataStorage = std::make_shared<DataType>(other.Data());
 				}
 			}
 
 			explicit BasisSetImpl(BasisSetImpl<AlternativeOf(Semantics)>&& other)
 			{
 				static_assert(AlternativeOf(Semantics) == OwnershipSemantics::Value);
-				m_DataStorage = std::make_shared<DataType>(std::move(other.m_DataStorage));
+				m_DataStorage = std::make_shared<DataType>(std::move(other.Data()));
 			}
 
-			template <typename ..., OwnershipSemantics SemanticsToo = Semantics>  // poor man's `requires`
+			template <typename..., OwnershipSemantics SemanticsToo = Semantics>  // poor man's `requires`
 			std::enable_if_t<SemanticsToo == OwnershipSemantics::Reference, BasisSetImpl> Clone() const
 			{
 				return BasisSetImpl{std::make_shared<DataType>(*m_DataStorage)};
@@ -887,7 +888,7 @@ namespace SecChem::BasisSet::Gaussian
 					throw std::logic_error(
 					        "Duplicated entry from same element detected. This can be an indication of a bug in the "
 					        "input file or input parser. If you intend for an overwrite, please use "
-					        "OverwriteEntryOf(...), or rarely, AddOrOverwriteEntryOf(...) instead.");
+					        "OverwriteEntryOf(...) or AddOrOverwriteEntryOf(...) instead.");
 				}
 				return Data()[element];
 			}
@@ -895,7 +896,7 @@ namespace SecChem::BasisSet::Gaussian
 			std::vector<AngularMomentumBlock>& OverwriteEntryOf(const Element element)
 			{
 				Data().at(element) = {};
-				return Data().at(element);
+				return Data()[element];
 			}
 
 			bool Has(const Element element) const
@@ -907,16 +908,27 @@ namespace SecChem::BasisSet::Gaussian
 			/// To compare the value of SharedBasisSet, one should use <c>EqualsTo</c> method instead.
 			/// Please note that value comparison is depended on the underlying storage representation.
 			template <OwnershipSemantics OtherSemantics>
-			bool operator==(const BasisSetImpl<OtherSemantics>& other) const noexcept
+			constexpr bool operator==(const BasisSetImpl<OtherSemantics>& other) const noexcept
 			{
-				return this == &other || (Semantics == OtherSemantics && m_DataStorage == other.m_DataStorage);
+				if constexpr (Semantics != OtherSemantics)
+				{
+					return false;
+				}
+				else if constexpr (Semantics == OwnershipSemantics::Reference)
+				{
+					return m_DataStorage == other.m_DataStorage;
+				}
+				else
+				{
+					return EqualsTo(other, 0);
+				}
 			}
 
 			/// Value comparison will be done for BasisSet, reference comparison will be done for SharedBasisSet.
 			/// To compare the value of SharedBasisSet, one should use <c>NotEqualsTo</c> method instead
 			/// Please note that value comparison is depended on the underlying storage representation.
 			template <OwnershipSemantics OtherSemantics>
-			bool operator!=(const BasisSetImpl<OtherSemantics>& other) const noexcept
+			constexpr bool operator!=(const BasisSetImpl<OtherSemantics>& other) const noexcept
 			{
 				return !(*this == other);
 			}
@@ -924,9 +936,12 @@ namespace SecChem::BasisSet::Gaussian
 			template <OwnershipSemantics OtherSemantics>
 			bool EqualsTo(const BasisSetImpl<OtherSemantics>& other, const Scalar tolerance = 1e-15) const noexcept
 			{
-				if (this == &other)
+				if constexpr (OtherSemantics == Semantics)
 				{
-					return true;
+					if (this == &other)
+					{
+						return true;
+					}
 				}
 
 				if (Data().size() != other.Data().size())
@@ -977,41 +992,8 @@ namespace SecChem::BasisSet::Gaussian
 
 				for (const auto& [_, angularMomentumBlocks] : Data())
 				{
-					if (!std::is_sorted(
-					            angularMomentumBlocks.cbegin(), angularMomentumBlocks.cend(), IsInStandardStorageOrder))
-					{
-						return false;
-					}
-				}
-
-				return true;
-			}
-
-			void StandardizeRepresentation()
-			{
-				for (auto& [_, angularMomentumBlocks] : Data())
-				{
-					std::sort(angularMomentumBlocks.begin(), angularMomentumBlocks.end(), IsInStandardStorageOrder);
-				}
-			}
-
-			BasisSetImpl ToStandardizeRepresentation() const
-			{
-				BasisSetImpl result;
-				result.StandardizeRepresentation();
-				return result;
-			}
-
-			bool IsInStandardAndConcatenatedRepresentation() const noexcept
-			{
-				if (Data().empty())
-				{
-					return true;
-				}
-
-				for (const auto& [_, angularMomentumBlocks] : Data())
-				{
-					if (!std::is_sorted(
+					if (angularMomentumBlocks.empty()
+					    || !std::is_sorted(
 					            angularMomentumBlocks.cbegin(), angularMomentumBlocks.cend(), IsInStandardStorageOrder)
 					    || !AngularMomentumBlockConcatSets(angularMomentumBlocks).empty())
 					{
@@ -1022,10 +1004,17 @@ namespace SecChem::BasisSet::Gaussian
 				return true;
 			}
 
-			void StandardizeAndConcatenatedRepresentation()
+			void StandardizeRepresentation()
 			{
-				for (auto& [_, angularMomentumBlocks] : Data())
+				std::vector<Element> nullElements;
+
+				for (auto& [element, angularMomentumBlocks] : Data())
 				{
+					if (angularMomentumBlocks.empty())
+					{
+						nullElements.emplace_back(element);
+					}
+
 					if (angularMomentumBlocks.size() <= 1)
 					{
 						continue;
@@ -1071,19 +1060,32 @@ namespace SecChem::BasisSet::Gaussian
 
 					angularMomentumBlocks = concatenatedAngularMomentumBlocks;
 				}
+
+				for (const auto element : nullElements)
+				{
+					Data().erase(element);
+				}
 			}
 
-			BasisSetImpl ToStandardizeAndConcatenatedRepresentation() const
+			BasisSetImpl ToStandardizedRepresentation() const
 			{
-				BasisSetImpl result;
-				result.StandardizeAndConcatenatedRepresentation();
-				return result;
+				if constexpr (Semantics == OwnershipSemantics::Reference)
+				{
+					BasisSetImpl result = Clone();
+					result.StandardizeRepresentation();
+					return result;
+				}
+				else
+				{
+					BasisSetImpl result = *this;
+					result.StandardizeRepresentation();
+					return result;
+				}
 			}
 
 
 		private:
-			explicit BasisSetImpl(StorageType&& storage)
-				: m_DataStorage(std::move(storage))
+			explicit BasisSetImpl(StorageType&& storage) : m_DataStorage(std::move(storage))
 			{
 				/* NO CODE */
 			}
@@ -1135,7 +1137,7 @@ namespace SecChem::BasisSet::Gaussian
 					auto it1 = std::find_if_not(std::next(it0),
 					                            sortedAngularMomentumBlocks.end(),
 					                            [l0 = it0->AngularMomentum()](const AngularMomentumBlock& block)
-					                            { return block.AngularMomentum() != l0; });
+					                            { return block.AngularMomentum() == l0; });
 
 					if (it1 != std::next(it0))
 					{
