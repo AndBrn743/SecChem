@@ -222,7 +222,10 @@ namespace SecChem::BasisSet::Gaussian
 			return Concat(begin, end, [](auto&& item) -> decltype(auto) { return std::forward<decltype(item)>(item); });
 		}
 
-		constexpr Eigen::Index SegmentCount() const noexcept
+#if __cplusplus >= 202002L
+		constexpr
+#endif
+		Eigen::Index SegmentCount() const noexcept
 		{
 			return static_cast<Eigen::Index>(m_SegmentationTable.size() - 1);
 		}
