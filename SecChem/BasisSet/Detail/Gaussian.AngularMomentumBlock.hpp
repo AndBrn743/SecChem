@@ -287,7 +287,10 @@ namespace SecChem::BasisSet::Gaussian
 		bool EqualsTo_Impl(const AngularMomentumBlock& other, const SecChem::Scalar tolerance) const noexcept
 		{
 			return m_NullableSemiLocalEcp.has_value() == other.m_NullableSemiLocalEcp.has_value()
-			       && static_cast<const Base&>(*this).EqualsTo(other, tolerance)
+			       && m_NullableContractedRadialOrbitalSet.has_value()
+			                  == other.m_NullableContractedRadialOrbitalSet.has_value()
+			       && (!m_NullableContractedRadialOrbitalSet.has_value()
+			           || static_cast<const Base&>(*this).EqualsTo(other, tolerance))
 			       && (!m_NullableSemiLocalEcp.has_value() || SemiLocalEcp().EqualsTo(other.SemiLocalEcp(), tolerance));
 		}
 
