@@ -26,12 +26,41 @@ namespace SecChem::BasisSet::Gaussian
 					return lhs.AngularMomentum() < rhs.AngularMomentum();
 				}
 
-				if (lhs.ExponentSet().size() != rhs.ExponentSet().size())
+				//----------------------
+
+				if (lhs.HasOrbital() != rhs.HasOrbital())
 				{
-					return lhs.ExponentSet().size() > rhs.ExponentSet().size();
+					return lhs.HasOrbital();
 				}
 
-				return lhs.ExponentSet()[0] > rhs.ExponentSet()[0];
+				if (lhs.HasOrbital())
+				{
+					if (lhs.ExponentSet().size() != rhs.ExponentSet().size())
+					{
+						return lhs.ExponentSet().size() > rhs.ExponentSet().size();
+					}
+
+					return lhs.ExponentSet()[0] > rhs.ExponentSet()[0];
+				}
+
+				//----------------------
+
+				if (lhs.HasSemiLocalEcp() != rhs.HasSemiLocalEcp())
+				{
+					return lhs.HasSemiLocalEcp();
+				}
+
+				if (lhs.HasSemiLocalEcp())
+				{
+					if (lhs.SemiLocalEcp().TermCount() != rhs.SemiLocalEcp().TermCount())
+					{
+						return lhs.SemiLocalEcp().TermCount() > rhs.SemiLocalEcp().TermCount();
+					}
+
+					return lhs.SemiLocalEcp().GaussianExponent(0) > rhs.SemiLocalEcp().GaussianExponent(0);
+				}
+
+				return false;
 			};
 
 		public:
@@ -210,7 +239,11 @@ namespace SecChem::BasisSet::Gaussian
 
 				for (auto& [element, angularMomentumBlocks] : Data())
 				{
-					if (angularMomentumBlocks.empty())
+					if (angularMomentumBlocks.empty()
+					    || std::none_of(angularMomentumBlocks.cbegin(),
+					                    angularMomentumBlocks.cend(),
+					                    [](const AngularMomentumBlock& amb)
+					                    { return amb.HasOrbital() || amb.HasSemiLocalEcp(); }))
 					{
 						nullElements.emplace_back(element);
 					}
