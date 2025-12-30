@@ -10,6 +10,7 @@
 #include <cstring>
 #include <iostream>
 #include <string>
+#include <cmath>
 #include <string_view>
 
 
@@ -634,6 +635,12 @@ namespace SecChem
 			return AtomicMassTable[static_cast<int>(m_Id)];
 		}
 
+		// returns the nuclear radius of most abundant isotope
+		double NuclearRadius() const noexcept
+		{
+			return MostAbundantIsotopeNuclearRadiusOf(static_cast<int>(m_Id));
+		}
+
 		// 103Lr was located at f-block but have outermost shell of 7p.
 		constexpr ElectronicSubShell OuterMostShell() const
 		{
@@ -969,6 +976,142 @@ namespace SecChem
 		        247.07035,     247.07031,   251.07959, 252.083,    257.09511, 258.09843,  259.101,   266.12,
 		        267.122,       268.126,     269.128,   270.133,    269.1336,  277.154,    282.166,   282.169,
 		        286.179,       286.182,     290.192,   290.196,    293.205,   294.211,    295.216};
+
+		/// When atomic number was less than 110, radii are taken from Visscher-Dyall (in a.u.)
+		/// Visscher and Dyall, At. Data and Nucl. Data Tables 67, 207 (1997). And
+		/// `r = 0.57 + 0.836 * A^1/3` (in fm), where the isotope mass number A is determined by Z
+		/// according to the relationship `A(Z) = 0.004467 * Z^2 + 2.163 * Z - 1.168` for Z >= 110.
+		/// See Appendix A in D. Andrae, Phys. Rep. 336, 414 (2000). and D. Andrae, Nuclear charge
+		/// density distributions in quantum chemistry, in Relativistic Electronic Structure Theory,
+		/// Part 1: Fundamentals, P. Schwerdtfeger Ed., Theoretical and Computational Chemistry,
+		/// Vol. 11, Elsevier, 2002.
+		static double MostAbundantIsotopeNuclearRadiusOf(const int atomicNumber) noexcept
+		{
+			static std::array<double, 119> MostAbundantIsotopeNuclearRadii = []
+			{
+				std::array<double, 119> data{/*Neutron*/ 0,
+				                             /*H*/ 2.6569547399e-5,
+				                             /*He*/ 3.5849373401e-5,
+				                             /*Li*/ 4.0992133976e-5,
+				                             /*Be*/ 4.3632829651e-5,
+				                             /*B*/ 4.5906118608e-5,
+				                             /*C*/ 4.6940079496e-5,
+				                             /*N*/ 4.8847128967e-5,
+				                             /*O*/ 5.0580178957e-5,
+				                             /*F*/ 5.2927138943e-5,
+				                             /*Ne*/ 5.3654104231e-5,
+				                             /*Na*/ 5.5699159416e-5,
+				                             /*Mg*/ 5.6341070732e-5,
+				                             /*Al*/ 5.8165765928e-5,
+				                             /*Si*/ 5.8743802504e-5,
+				                             /*P*/ 6.0399312923e-5,
+				                             /*S*/ 6.0927308666e-5,
+				                             /*Cl*/ 6.2448101115e-5,
+				                             /*Ar*/ 6.4800211825e-5,
+				                             /*K*/ 6.4346167051e-5,
+				                             /*Ca*/ 6.4800211825e-5,
+				                             /*Sc*/ 6.6963627201e-5,
+				                             /*Ti*/ 6.8185577480e-5,
+				                             /*V*/ 6.9357616830e-5,
+				                             /*Cr*/ 6.9738057221e-5,
+				                             /*Mn*/ 7.0850896638e-5,
+				                             /*Fe*/ 7.1212829817e-5,
+				                             /*Co*/ 7.2273420879e-5,
+				                             /*Ni*/ 7.1923970253e-5,
+				                             /*Cu*/ 7.3633018675e-5,
+				                             /*Zn*/ 7.3963875193e-5,
+				                             /*Ga*/ 7.5568424848e-5,
+				                             /*Ge*/ 7.7097216161e-5,
+				                             /*As*/ 7.7394645153e-5,
+				                             /*Se*/ 7.8843427408e-5,
+				                             /*Br*/ 7.8558604038e-5,
+				                             /*Kr*/ 7.9959560033e-5,
+				                             /*Rb*/ 8.0233033713e-5,
+				                             /*Sr*/ 8.1040799081e-5,
+				                             /*Y*/ 8.1305968993e-5,
+				                             /*Zr*/ 8.1569159980e-5,
+				                             /*Nb*/ 8.2347219923e-5,
+				                             /*Mo*/ 8.3607614434e-5,
+				                             /*Tc*/ 8.3607614434e-5,
+				                             /*Ru*/ 8.4585397905e-5,
+				                             /*Rh*/ 8.4825835954e-5,
+				                             /*Pd*/ 8.5537941156e-5,
+				                             /*Ag*/ 8.5772320442e-5,
+				                             /*Cd*/ 8.7373430179e-5,
+				                             /*In*/ 8.7596760865e-5,
+				                             /*Sn*/ 8.8694413774e-5,
+				                             /*Sb*/ 8.8910267995e-5,
+				                             /*Te*/ 9.0801452955e-5,
+				                             /*I*/ 9.0181040290e-5,
+				                             /*Xe*/ 9.1209776425e-5,
+				                             /*Cs*/ 9.1412392742e-5,
+				                             /*Ba*/ 9.2410525664e-5,
+				                             /*La*/ 9.2607247118e-5,
+				                             /*Ce*/ 9.2803027311e-5,
+				                             /*Pr*/ 9.2997877424e-5,
+				                             /*Nd*/ 9.3576955934e-5,
+				                             /*Pm*/ 9.3768193375e-5,
+				                             /*Sm*/ 9.5082839751e-5,
+				                             /*Eu*/ 9.5267329183e-5,
+				                             /*Gd*/ 9.6177915369e-5,
+				                             /*Tb*/ 9.6357719009e-5,
+				                             /*Dy*/ 9.6892647152e-5,
+				                             /*Ho*/ 9.6892647152e-5,
+				                             /*Er*/ 9.7943009317e-5,
+				                             /*Tm*/ 9.8115626740e-5,
+				                             /*Yb*/ 9.8968651305e-5,
+				                             /*Lu*/ 9.9137288835e-5,
+				                             /*Hf*/ 9.9970978172e-5,
+				                             /*Ta*/ 1.0013585755e-4,
+				                             /*W*/ 1.0062688070e-4,
+				                             /*Re*/ 1.0111259523e-4,
+				                             /*Os*/ 1.0191070333e-4,
+				                             /*Ir*/ 1.0206865731e-4,
+				                             /*Pt*/ 1.0238293593e-4,
+				                             /*Au*/ 1.0269507292e-4,
+				                             /*Hg*/ 1.0346628039e-4,
+				                             /*Tl*/ 1.0392291259e-4,
+				                             /*Pb*/ 1.0437511130e-4,
+				                             /*Bi*/ 1.0452487744e-4,
+				                             /*Po*/ 1.0452487744e-4,
+				                             /*At*/ 1.0467416660e-4,
+				                             /*Rn*/ 1.0642976299e-4,
+				                             /*Fr*/ 1.0657317899e-4,
+				                             /*Ra*/ 1.0700087100e-4,
+				                             /*Ac*/ 1.0714259349e-4,
+				                             /*Th*/ 1.0784503195e-4,
+				                             /*Pa*/ 1.0770535752e-4,
+				                             /*U*/ 1.0867476102e-4,
+				                             /*Np*/ 1.0853744903e-4,
+				                             /*Pu*/ 1.0949065967e-4,
+				                             /*Am*/ 1.0935561268e-4,
+				                             /*Cm*/ 1.0989359973e-4,
+				                             /*Bk*/ 1.0989359973e-4,
+				                             /*Cf*/ 1.1042580946e-4,
+				                             /*Es*/ 1.1055797721e-4,
+				                             /*Fm*/ 1.1121362374e-4,
+				                             /*Md*/ 1.1134373034e-4,
+				                             /*No*/ 1.1147350119e-4,
+				                             /*Lr*/ 1.1186082063e-4,
+				                             /*Rf*/ 1.1173204420e-4,
+				                             /*Db*/ 1.1186082063e-4,
+				                             /*Sg*/ 1.1198926979e-4,
+				                             /*Bh*/ 1.1186082063e-4,
+				                             /*Hs*/ 1.1224519460e-4,
+				                             /*Mt*/ 1.1237267433e-4};
+
+				for (int z = 110; z < 119; z++)
+				{
+					const auto a = 4.467e-3 * z * z + 2.163 * z - 1.168;
+					const auto r = 0.57 + 0.836 * std::cbrt(a);
+					data[z] = r * 1e-5 / 0.52917721092;
+				}
+
+				return data;
+			}();
+
+			return MostAbundantIsotopeNuclearRadii[atomicNumber];
+		}
 
 
 		static constexpr int PeriodicTableGroupNumber(const int atomicNumber)
