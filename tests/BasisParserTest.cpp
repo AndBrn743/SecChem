@@ -104,7 +104,7 @@ SecChem::BasisSet::Gaussian::BasisSet ParseBasisSetExchangeJson(const nlohmann::
 				throw std::runtime_error("Pure ECP basis sets are not supported");
 			}
 
-			attachPointIterator->AllOrOverrideSemiLocalEcp({elementData.at("ecp_electrons").get<int>(),
+			attachPointIterator->AddOrOverrideSemiLocalEcp({elementData.at("ecp_electrons").get<int>(),
 			                                                ecpJson.at("coefficients").get<Eigen::VectorXd>(),
 			                                                ecpJson.at("r_exponents").get<Eigen::VectorXd>(),
 			                                                ecpJson.at("gaussian_exponents").get<Eigen::VectorXd>()});
