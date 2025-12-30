@@ -99,15 +99,24 @@ SecChem::BasisSet::Gaussian::BasisSet ParseBasisSetExchangeJson(const nlohmann::
 			                                              result[element].end(),
 			                                              [angularMomentum](const AngularMomentumBlock& amb)
 			                                              { return amb.AngularMomentum() == angularMomentum; });
-			if (attachPointIterator == result[element].end())
+			if (attachPointIterator != result[element].end())
 			{
-				throw std::runtime_error("Pure ECP basis sets are not supported");
+				attachPointIterator->AddOrOverrideSemiLocalEcp(
+				        {elementData.at("ecp_electrons").get<int>(),
+				         ecpJson.at("coefficients").get<Eigen::VectorXd>(),
+				         ecpJson.at("r_exponents").get<Eigen::VectorXd>(),
+				         ecpJson.at("gaussian_exponents").get<Eigen::VectorXd>()});
 			}
-
-			attachPointIterator->AddOrOverrideSemiLocalEcp({elementData.at("ecp_electrons").get<int>(),
-			                                                ecpJson.at("coefficients").get<Eigen::VectorXd>(),
-			                                                ecpJson.at("r_exponents").get<Eigen::VectorXd>(),
-			                                                ecpJson.at("gaussian_exponents").get<Eigen::VectorXd>()});
+			else
+			{
+				result[element].emplace_back(angularMomentum,
+				                             std::nullopt,
+				                             SecChem::BasisSet::Gaussian::SemiLocalEcp{
+				                                     elementData.at("ecp_electrons").get<int>(),
+				                                     ecpJson.at("coefficients").get<Eigen::VectorXd>(),
+				                                     ecpJson.at("r_exponents").get<Eigen::VectorXd>(),
+				                                     ecpJson.at("gaussian_exponents").get<Eigen::VectorXd>()});
+			}
 		}
 	}
 
@@ -178,6 +187,13 @@ TEST_CASE("Sample parser should able to parse sample BSE JSON")
           "r_exponents": ["2"],
           "gaussian_exponents": ["4.000000E+00"],
           "coefficients": ["-6.000000E+00"]
+        },
+        {
+          "ecp_type": "scalar_ecp",
+          "angular_momentum": [1],
+          "r_exponents": ["1.6"],
+          "gaussian_exponents": ["3.500000E+00"],
+          "coefficients": ["-4.000000E+00"]
         }
       ],
       "ecp_electrons": 28
@@ -192,25 +208,34 @@ TEST_CASE("Sample parser should able to parse sample BSE JSON")
 	REQUIRE(sampleBasisSet.Has(Element::Ne));
 	REQUIRE(sampleBasisSet.IsInStandardRepresentation());
 
+	REQUIRE(sampleBasisSet[Element::H][0].HasOrbital());
 	REQUIRE(!sampleBasisSet[Element::H][0].HasSemiLocalEcp());
 	REQUIRE(sampleBasisSet[Element::H][0].EqualsTo(AngularMomentumBlock{
 	        AzimuthalQuantumNumber::S,
-	        ContractedRadialOrbitalSet{
-	                Eigen::Vector3d{13.01, 1.962, 0.4446},
-	                Eigen::Matrix<double, 3, 2>{{0.019685, 0}, {0.137977, 0}, {0.000000, 1}}}}));
+	        ContractedRadialOrbitalSet{Eigen::Vector3d{13.01, 1.962, 0.4446},
+	                                   Eigen::Matrix<double, 3, 2>{{0.019685, 0}, {0.137977, 0}, {0.000000, 1}}}}));
 
+	REQUIRE(sampleBasisSet[Element::H][1].HasOrbital());
 	REQUIRE(!sampleBasisSet[Element::H][1].HasSemiLocalEcp());
 	REQUIRE(sampleBasisSet[Element::H][1].EqualsTo(AngularMomentumBlock{
 	        AzimuthalQuantumNumber::P,
-	        ContractedRadialOrbitalSet{
-	                Eigen::Vector2d{0.727, 0.141},
-	                Eigen::Matrix<double, 2, 2>{{0.430128, 0.5}, {0.678913, 0.5}}}}));
+	        ContractedRadialOrbitalSet{Eigen::Vector2d{0.727, 0.141},
+	                                   Eigen::Matrix<double, 2, 2>{{0.430128, 0.5}, {0.678913, 0.5}}}}));
 
+	REQUIRE(sampleBasisSet[Element::Ne][0].HasOrbital());
 	REQUIRE(sampleBasisSet[Element::Ne][0].HasSemiLocalEcp());
-	REQUIRE(sampleBasisSet[Element::Ne][0].EqualsTo(AngularMomentumBlock{
-	        AzimuthalQuantumNumber::S,
-	        ContractedRadialOrbitalSet{Eigen::Vector2d{38.36, 5.77},
-	                                   Eigen::Matrix<double, 2, 1>{{0.023809}, {0.154891}}},
-	        SecChem::BasisSet::Gaussian::SemiLocalEcp{
-	                28, Eigen::Vector<double, 1>{-6}, Eigen::Vector<double, 1>{2}, Eigen::Vector<double, 1>{4}}}));
+	const SecChem::BasisSet::Gaussian::SemiLocalEcp ecp0{
+	        28, Eigen::Vector<double, 1>{-6}, Eigen::Vector<double, 1>{2}, Eigen::Vector<double, 1>{4}};
+	REQUIRE(sampleBasisSet[Element::Ne][0].EqualsTo(
+	        AngularMomentumBlock{AzimuthalQuantumNumber::S,
+	                             ContractedRadialOrbitalSet{Eigen::Vector2d{38.36, 5.77},
+	                                                        Eigen::Matrix<double, 2, 1>{{0.023809}, {0.154891}}},
+	                             ecp0}));
+
+	REQUIRE(!sampleBasisSet[Element::Ne][1].HasOrbital());
+	REQUIRE(sampleBasisSet[Element::Ne][1].HasSemiLocalEcp());
+	const SecChem::BasisSet::Gaussian::SemiLocalEcp ecp1{
+	        28, Eigen::Vector<double, 1>{-4}, Eigen::Vector<double, 1>{1.6}, Eigen::Vector<double, 1>{3.5}};
+	REQUIRE(sampleBasisSet[Element::Ne][1].EqualsTo(
+	        AngularMomentumBlock{AzimuthalQuantumNumber::P, std::nullopt, ecp1}));
 }
