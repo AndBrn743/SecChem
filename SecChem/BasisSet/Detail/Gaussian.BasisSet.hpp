@@ -453,6 +453,14 @@ namespace SecChem::BasisSet::Gaussian
 				return m_Data.at(basisSetName);
 			}
 
+			bool Has(const std::string& basisSetName) const noexcept
+			{
+				// we need to support C++17
+				// ReSharper disable once CppUseAssociativeContains
+				return m_Data.find(basisSetName) != m_Data.end();
+			}
+
+
 		private:
 			DataStorage m_Data = {};
 		};
