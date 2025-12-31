@@ -109,7 +109,9 @@ namespace SecChem
 			return Atom{element, position, tag, mass, nuclearRadius};
 		}
 
-		constexpr Element Element() const noexcept
+		// GCC require it
+		// ReSharper disable once CppRedundantElaboratedTypeSpecifier
+		constexpr class Element Element() const noexcept
 		{
 			return m_Element;
 		}
