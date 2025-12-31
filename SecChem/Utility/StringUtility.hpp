@@ -7,6 +7,7 @@
 #include <cstring>
 #include <string>
 #include <string_view>
+#include <vector>
 
 #define CONSTEXPR23
 
@@ -25,8 +26,8 @@ namespace SecUtility
 
 	template <typename CharLowerer>
 	constexpr int CaseInsensitiveComparison(const std::string_view lhs,
-	                                                  const std::string_view rhs,
-	                                                  const CharLowerer lowerCaseOf) noexcept
+	                                        const std::string_view rhs,
+	                                        const CharLowerer lowerCaseOf) noexcept
 	{
 		const std::size_t minSize = lhs.size() < rhs.size() ? lhs.size() : rhs.size();
 
@@ -80,6 +81,41 @@ namespace SecUtility
 	constexpr bool IsCaseInsensitiveAsciiStringEqual(const StringLike& lhs, const StringLikeToo& rhs)
 	{
 		return CaseInsensitiveAsciiComparison(lhs, rhs) == 0;
+	}
+
+	inline std::vector<std::string> SplitRespectingQuotes(const std::string& line)
+	{
+		std::vector<std::string> tokens;
+		std::string current;
+		bool isInQuotes = false;
+
+		for (const char c : line)
+		{
+			if (c == '"')
+			{
+				isInQuotes = !isInQuotes;
+				current.push_back(c);
+			}
+			else if (std::isspace(c) && !isInQuotes)
+			{
+				if (!current.empty())
+				{
+					tokens.push_back(current);
+					current.clear();
+				}
+			}
+			else
+			{
+				current.push_back(c);
+			}
+		}
+
+		if (!current.empty())
+		{
+			tokens.push_back(current);
+		}
+
+		return tokens;
 	}
 }  // namespace SecUtility
 #endif
