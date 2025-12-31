@@ -14,7 +14,10 @@ namespace SecChem::Gaussian
 	class MolecularBasisSet
 	{
 		friend Builder<MolecularBasisSet>;
-		using BasisAssignment = std::pair<std::size_t, const std::vector<BasisSet::Gaussian::AngularMomentumBlock>*>;
+
+		// The raw pointer must points to the data member of SharedBasisSetLibrary. SharedBasisSetLibrary will
+		// provide stable iterator, pointer, and reference and prevent dangling
+		using ElementaryBasisPtr = const std::vector<BasisSet::Gaussian::AngularMomentumBlock>*;
 
 	public:
 		const BasisSet::Gaussian::SharedBasisSetLibrary& SharedBasisSetLibrary() const noexcept
@@ -31,7 +34,7 @@ namespace SecChem::Gaussian
 	private:
 		MolecularBasisSet(const BasisSet::Gaussian::SharedBasisSetLibrary& library,
 		                  const SharedMolecule& molecule,
-		                  std::vector<BasisAssignment> basisAssignments)
+		                  std::vector<ElementaryBasisPtr> basisAssignments)
 		    : m_Library(library), m_Molecule(molecule), m_BasisAssignments(std::move(basisAssignments))
 		{
 			assert(molecule.AtomCount() == m_BasisAssignments.size());
@@ -39,7 +42,7 @@ namespace SecChem::Gaussian
 
 		BasisSet::Gaussian::SharedBasisSetLibrary m_Library;
 		SharedMolecule m_Molecule;
-		std::vector<BasisAssignment> m_BasisAssignments;
+		std::vector<ElementaryBasisPtr> m_BasisAssignments;
 	};
 }  // namespace SecChem::Gaussian
 
@@ -53,7 +56,7 @@ public:
 		/* NO CODE */
 	}
 
-	Builder& SetGlobalDefaultBasisSetTo(const std::string& globalDefaultBasisSetName)
+	Builder& SetOrOverwriteGlobalDefaultBasisSetTo(const std::string& globalDefaultBasisSetName)
 	{
 		if (!m_Library.Has(globalDefaultBasisSetName))
 		{
@@ -71,7 +74,7 @@ public:
 		return *this;
 	}
 
-	Builder& SetElementaryDefaultBasisSetTo(const std::string& defaultBasisSetName, const Element element)
+	Builder& SetOrOverwriteElementaryDefaultBasisSetTo(const std::string& defaultBasisSetName, const Element element)
 	{
 		if (!m_WasGlobalDefaultBasisSetSet)
 		{
@@ -100,14 +103,15 @@ public:
 	Gaussian::MolecularBasisSet BuildWith(Parser parser, std::istream& input)
 	{
 		std::vector<Atom> atoms{};
-		std::vector<Gaussian::MolecularBasisSet::BasisAssignment> assignments{};
+		std::vector<Gaussian::MolecularBasisSet::ElementaryBasisPtr> assignments{};
 
 		for (std::string line; std::getline(input, line); /* NO CODE */)
 		{
 			const auto [atom, basisPtr] = parser.ParseLine(
 			        line, std::as_const(atoms), std::as_const(m_Library), std::as_const(m_DefaultBasisSet));
 			assert(basisPtr != nullptr);
-			assignments.emplace_back(atoms.size(), basisPtr);
+
+			assignments.emplace_back(basisPtr);
 			atoms.push_back(std::move(atom));
 		}
 
