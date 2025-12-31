@@ -47,6 +47,11 @@ else ()
     message(STATUS "Found nlohmann/json version ${nlohmann_json_VERSION}")
 endif ()
 
+
+add_library(BseJsonParser BasisSetExchangeJsonParserExample.cpp)
+target_link_libraries(BseJsonParser PRIVATE SecChem nlohmann_json::nlohmann_json)
+
+
 include(CTest)
 include(Catch)
 
@@ -83,5 +88,5 @@ target_link_libraries(BasisSetTest PRIVATE Catch2::Catch2WithMain SecChem)
 add_test(NAME BasisSetTest COMMAND BasisSetTest)
 
 add_executable(BasisParserTest BasisParserTest.cpp)
-target_link_libraries(BasisParserTest PRIVATE Catch2::Catch2WithMain SecChem nlohmann_json::nlohmann_json)
+target_link_libraries(BasisParserTest PRIVATE Catch2::Catch2WithMain SecChem BseJsonParser)
 add_test(NAME BasisParserTest COMMAND BasisParserTest)
