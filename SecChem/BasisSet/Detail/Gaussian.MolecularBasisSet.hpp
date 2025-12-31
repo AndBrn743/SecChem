@@ -14,7 +14,7 @@ namespace SecChem::Gaussian
 	class MolecularBasisSet
 	{
 		friend Builder<MolecularBasisSet>;
-		using BasisAssignment = std::pair<std::size_t, std::vector<BasisSet::Gaussian::AngularMomentumBlock>*>;
+		using BasisAssignment = std::pair<std::size_t, const std::vector<BasisSet::Gaussian::AngularMomentumBlock>*>;
 
 	public:
 		const BasisSet::Gaussian::SharedBasisSetLibrary& SharedBasisSetLibrary() const noexcept
@@ -97,7 +97,7 @@ public:
 	}
 
 	template <typename Parser>
-	Gaussian::MolecularBasisSet BuildWith(Parser parser, std::istream input)
+	Gaussian::MolecularBasisSet BuildWith(Parser parser, std::istream& input)
 	{
 		std::vector<Atom> atoms{};
 		std::vector<Gaussian::MolecularBasisSet::BasisAssignment> assignments{};
@@ -106,6 +106,7 @@ public:
 		{
 			const auto [atom, basisPtr] = parser.ParseLine(
 			        line, std::as_const(atoms), std::as_const(m_Library), std::as_const(m_DefaultBasisSet));
+			assert(basisPtr != nullptr);
 			assignments.emplace_back(atoms.size(), basisPtr);
 			atoms.push_back(std::move(atom));
 		}
@@ -116,7 +117,14 @@ public:
 	template <typename Parser>
 	Gaussian::MolecularBasisSet BuildWith(Parser parser, const std::string& input)
 	{
-		return BuildWith(parser, std::istringstream{input});
+		std::istringstream stream{input};
+		return BuildWith(parser, stream);
+	}
+
+	template <typename Parser>
+	Gaussian::MolecularBasisSet BuildWith(Parser parser, const char* input)
+	{
+		return BuildWith(parser, std::string{input});
 	}
 
 
