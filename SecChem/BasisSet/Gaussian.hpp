@@ -80,4 +80,5 @@ struct SecUtility::Traits<SecChem::BasisSet::Gaussian::AngularMomentumBlock>
 #include "Detail/Gaussian.SemiLocalEcp.hpp"
 #include "Detail/Gaussian.AngularMomentumBlock.hpp"
 #include "Detail/Gaussian.BasisSet.hpp"
+#include "Detail/Gaussian.MolecularBasisSet.hpp"
 #undef SECCHEM_GAUSSIAN_BASIS_SET_INTERNAL
