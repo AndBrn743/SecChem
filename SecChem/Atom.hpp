@@ -9,7 +9,6 @@
 
 #include "Utility/IEquatableWithTolerance.hpp"
 
-#include "BasisSet/Gaussian.hpp"
 #include "Element.hpp"
 
 namespace SecChem
