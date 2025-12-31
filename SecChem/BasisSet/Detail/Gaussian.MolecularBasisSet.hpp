@@ -15,9 +15,11 @@ namespace SecChem::Gaussian
 	{
 		friend Builder<MolecularBasisSet>;
 
+		using ElementaryBasis = const std::vector<BasisSet::Gaussian::AngularMomentumBlock>;
+
 		// The raw pointer must points to the data member of SharedBasisSetLibrary. SharedBasisSetLibrary will
 		// provide stable iterator, pointer, and reference and prevent dangling
-		using ElementaryBasisPtr = const std::vector<BasisSet::Gaussian::AngularMomentumBlock>*;
+		using ElementaryBasisPtr = const ElementaryBasis*;
 
 	public:
 		const BasisSet::Gaussian::SharedBasisSetLibrary& SharedBasisSetLibrary() const noexcept
@@ -28,6 +30,21 @@ namespace SecChem::Gaussian
 		const SharedMolecule& Molecule() const noexcept
 		{
 			return m_Molecule;
+		}
+
+		const ElementaryBasis& ElementaryBasisAt(const std::size_t index) const
+		{
+			if (index >= m_BasisAssignments.size())
+			{
+				throw std::out_of_range("Basis assignment index out of range");
+			}
+
+			return *m_BasisAssignments[index];
+		}
+
+		const ElementaryBasis& ElementaryBasisOf(const Atom& atom) const
+		{
+			return *m_BasisAssignments[m_Molecule.IndexOf(atom)];
 		}
 
 
