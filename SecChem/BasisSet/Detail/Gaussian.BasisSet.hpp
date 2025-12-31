@@ -453,9 +453,12 @@ namespace SecChem::BasisSet::Gaussian
 				return m_Data.at(basisSetName);
 			}
 
-			// One cannot mutate basis sets inside an already built library.
+			// One cannot mutate basis sets inside an already built library, even if the library was mutable.
 			// This is to ensure stable iterators and references into each basis sets of the library
-			BasisSetImpl<Semantics>& operator[](const std::string& basisSetName) = delete;
+			const BasisSetImpl<Semantics>& operator[](const std::string& basisSetName)
+			{
+				return m_Data.at(basisSetName);
+			}
 
 			bool Has(const std::string& basisSetName) const noexcept
 			{
