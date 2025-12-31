@@ -63,7 +63,7 @@ public:
 
 		m_WasGlobalDefaultBasisSetSet = true;
 
-		for (const auto& [element, basis] : Library()[globalDefaultBasisSetName])
+		for (const auto& [element, basis] : m_Library[globalDefaultBasisSetName])
 		{
 			m_DefaultBasisSet.emplace(element, &basis);
 		}
@@ -79,19 +79,19 @@ public:
 			        "The elementary default basis set can only be set after the global default was set");
 		}
 
-		if (!Library().Has(defaultBasisSetName))
+		if (!m_Library.Has(defaultBasisSetName))
 		{
 			throw std::runtime_error("Given basis set library does not contain basis set named \"" + defaultBasisSetName
 			                         + '"');
 		}
 
-		if (!Library()[defaultBasisSetName].Has(element))
+		if (!m_Library[defaultBasisSetName].Has(element))
 		{
 			throw std::runtime_error("Basis set named \"" + defaultBasisSetName + "\" does not contain "
 			                         + element.ToString());
 		}
 
-		m_DefaultBasisSet[element] = &Library()[defaultBasisSetName][element];
+		m_DefaultBasisSet[element] = &m_Library[defaultBasisSetName][element];
 
 		return *this;
 	}
@@ -123,15 +123,10 @@ public:
 private:
 	void SetDefaultBasisSet(const std::string& defaultBasisSetName)
 	{
-		for (const auto& [element, basis] : Library()[defaultBasisSetName])
+		for (const auto& [element, basis] : m_Library[defaultBasisSetName])
 		{
 			m_DefaultBasisSet.emplace(element, &basis);
 		}
-	}
-
-	const BasisSet::Gaussian::SharedBasisSetLibrary& Library() const noexcept
-	{
-		return m_Library;
 	}
 
 	BasisSet::Gaussian::SharedBasisSetLibrary m_Library;
