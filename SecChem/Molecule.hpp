@@ -72,9 +72,9 @@ namespace SecChem
 
 		std::size_t IndexOf(const Atom& atom) const
 		{
-			if (&atom >= cbegin() && atom < cend())
+			if (&atom >= cbegin() && &atom < cend())
 			{
-				return std::distance(cbegin(), atom);
+				return std::distance(static_cast<const Atom*>(cbegin()), &atom);
 			}
 
 			if (const auto it = std::find(cbegin(), cend(), atom); it != cend())
@@ -162,22 +162,22 @@ namespace SecChem
 	private:
 		/* CRTP OVERRIDE */ auto begin_Impl() noexcept
 		{
-			return m_Atoms.begin();
+			return m_Atoms.data();
 		}
 
 		/* CRTP OVERRIDE */ auto end_Impl() noexcept
 		{
-			return m_Atoms.end();
+			return m_Atoms.data() + m_Atoms.size();
 		}
 
 		/* CRTP OVERRIDE */ auto cbegin_Impl() const noexcept
 		{
-			return m_Atoms.cbegin();
+			return m_Atoms.data();
 		}
 
 		/* CRTP OVERRIDE */ auto cend_Impl() const noexcept
 		{
-			return m_Atoms.cend();
+			return m_Atoms.data() + m_Atoms.size();
 		}
 
 		std::vector<Atom> m_Atoms;
@@ -223,23 +223,23 @@ namespace SecChem
 		// ReSharper disable once CppMemberFunctionMayBeConst
 		/* CRTP OVERRIDE */ auto begin_Impl() noexcept
 		{
-			return m_AtomsPtr->begin();
+			return m_AtomsPtr->data();
 		}
 
 		// ReSharper disable once CppMemberFunctionMayBeConst
 		/* CRTP OVERRIDE */ auto end_Impl() noexcept
 		{
-			return m_AtomsPtr->end();
+			return m_AtomsPtr->data() + m_AtomsPtr->size();
 		}
 
 		/* CRTP OVERRIDE */ auto cbegin_Impl() const noexcept
 		{
-			return m_AtomsPtr->cbegin();
+			return static_cast<const Atom*>(m_AtomsPtr->data());
 		}
 
 		/* CRTP OVERRIDE */ auto cend_Impl() const noexcept
 		{
-			return m_AtomsPtr->cend();
+			return static_cast<const Atom*>(m_AtomsPtr->data() + m_AtomsPtr->size());
 		}
 
 		std::shared_ptr<std::vector<Atom>> m_AtomsPtr;
