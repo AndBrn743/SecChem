@@ -4,7 +4,7 @@
 
 // #include <catch2/catch_test_macros.hpp>
 
-#include "../cmake-build-release-wsl-gnu/_deps/catch2-src/src/catch2/catch_test_macros.hpp"
+#include <catch2/catch_test_macros.hpp>
 #include "BasisSetExchangeJsonParserExample.hpp"
 
 class MolecularInputInterpreter
