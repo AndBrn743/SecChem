@@ -94,3 +94,7 @@ add_test(NAME BasisSetTest COMMAND BasisSetTest)
 add_executable(BasisParserTest BasisParserTest.cpp)
 target_link_libraries(BasisParserTest PRIVATE Catch2::Catch2WithMain SecChem BseJsonParser)
 add_test(NAME BasisParserTest COMMAND BasisParserTest)
+
+add_executable(MolecularBasisSetTest MolecularBasisSetTest.cpp)
+target_link_libraries(MolecularBasisSetTest PRIVATE Catch2::Catch2WithMain SecChem BseJsonParser)
+add_test(NAME MolecularBasisSetTest COMMAND MolecularBasisSetTest)
