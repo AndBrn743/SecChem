@@ -71,6 +71,10 @@ add_executable(ElementTest ElementTest.cpp)
 target_link_libraries(ElementTest PRIVATE Catch2::Catch2WithMain SecChem)
 add_test(NAME ElementTest COMMAND ElementTest)
 
+add_executable(AtomTest AtomTest.cpp)
+target_link_libraries(AtomTest PRIVATE Catch2::Catch2WithMain SecChem)
+add_test(NAME AtomTest COMMAND AtomTest)
+
 add_executable(ContractedRadialOrbitalSetTest ContractedRadialOrbitalSetTest.cpp)
 target_link_libraries(ContractedRadialOrbitalSetTest PRIVATE Catch2::Catch2WithMain SecChem)
 add_test(NAME ContractedRadialOrbitalSetTest COMMAND ContractedRadialOrbitalSetTest)

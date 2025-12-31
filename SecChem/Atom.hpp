@@ -23,11 +23,6 @@ namespace SecChem
 		Buffer = 1 << 4,
 	};
 
-	constexpr AtomTag operator~(const AtomTag tag) noexcept
-	{
-		return static_cast<AtomTag>(~static_cast<std::uint16_t>(tag));
-	}
-
 	constexpr AtomTag operator|(const AtomTag lhs, const AtomTag rhs) noexcept
 	{
 		return static_cast<AtomTag>(static_cast<std::uint16_t>(lhs) | static_cast<std::uint16_t>(rhs));
@@ -36,6 +31,30 @@ namespace SecChem
 	constexpr AtomTag operator&(const AtomTag lhs, const AtomTag rhs) noexcept
 	{
 		return static_cast<AtomTag>(static_cast<std::uint16_t>(lhs) & static_cast<std::uint16_t>(rhs));
+	}
+
+	constexpr AtomTag AllAtomTags = AtomTag::GaussianFiniteNuclear | AtomTag::ThomasFermiFiniteNuclear | AtomTag::Frozen
+	                                | AtomTag::Link | AtomTag::Buffer;
+
+	constexpr AtomTag operator~(AtomTag tag) noexcept
+	{
+		return static_cast<AtomTag>(static_cast<std::uint16_t>(AllAtomTags) ^ static_cast<std::uint16_t>(tag));
+	}
+
+	constexpr bool IsValid(const AtomTag tag) noexcept
+	{
+		if ((tag & ~AllAtomTags) != AtomTag::None)
+		{
+			return false;
+		}
+
+		if (static_cast<bool>(tag & AtomTag::GaussianFiniteNuclear)
+		    && static_cast<bool>(tag & AtomTag::ThomasFermiFiniteNuclear))
+		{
+			return false;
+		}
+
+		return true;
 	}
 
 	class Atom;
@@ -54,9 +73,8 @@ namespace SecChem
 		friend IEquatableWithTolerance;
 
 	public:
-		Atom(const Element element, const Eigen::Vector3d& position, const AtomTag tag = {}) noexcept
-		    : m_Element(element), m_Position(position), m_Tags(tag), m_Mass(element.Mass()),
-		      m_NuclearRadius(element.NuclearRadius())
+		Atom(const Element element, const Eigen::Vector3d& position, const AtomTag tags = {})
+		    : Atom(element, position, tags, element.Mass(), element.NuclearRadius())
 		{
 			/* NO CODE */
 		}
@@ -64,15 +82,15 @@ namespace SecChem
 		static Atom AtomWithMass(const Element element,
 		                         const Eigen::Vector3d& position,
 		                         const double mass,
-		                         const AtomTag tag = {}) noexcept
+		                         const AtomTag tags = {})
 		{
-			return Atom{element, position, tag, mass, element.NuclearRadius()};
+			return Atom{element, position, tags, mass, element.NuclearRadius()};
 		}
 
 		static Atom AtomWithNuclearRadius(const Element element,
 		                                  const Eigen::Vector3d& position,
 		                                  const double nuclearRadius,
-		                                  const AtomTag tag = {}) noexcept
+		                                  const AtomTag tag = {})
 		{
 			return Atom{element, position, tag, element.Mass(), nuclearRadius};
 		}
@@ -81,7 +99,7 @@ namespace SecChem
 		                                         const Eigen::Vector3d& position,
 		                                         const double mass,
 		                                         const double nuclearRadius,
-		                                         const AtomTag tag = {}) noexcept
+		                                         const AtomTag tag = {})
 		{
 			return Atom{element, position, tag, mass, nuclearRadius};
 		}
@@ -99,6 +117,16 @@ namespace SecChem
 		constexpr const Eigen::Vector3d& Position() const noexcept
 		{
 			return m_Position;
+		}
+
+		void SetPosition(const Eigen::Vector3d& newPosition) noexcept
+		{
+			m_Position = newPosition;
+		}
+
+		void Translate(const Eigen::Vector3d& delta) noexcept
+		{
+			m_Position += delta;
 		}
 
 		constexpr double Mass() const noexcept
@@ -128,28 +156,54 @@ namespace SecChem
 
 		constexpr bool IsFrozen() const noexcept
 		{
-			return static_cast<int>(m_Tags) & static_cast<int>(AtomTag::Frozen);
+			return static_cast<bool>(m_Tags & AtomTag::Frozen);
 		}
 
-		bool DistanceTo(const Atom other) const noexcept
+		double DistanceTo(const Atom other) const noexcept
 		{
 			return (m_Position - other.m_Position).norm();
+		}
+
+		void RemoveTags(const AtomTag tags) noexcept
+		{
+			m_Tags = m_Tags & ~tags;
+		}
+
+		void AddTags(const AtomTag tags)
+		{
+			if (!IsValid(tags))
+			{
+				throw std::invalid_argument("Atom tag " + std::to_string(static_cast<int>(m_Tags)) + " is invalid");
+			}
+
+			if (IsWithThomasFermiFiniteNuclear() && static_cast<bool>(tags & AtomTag::GaussianFiniteNuclear))
+			{
+				RemoveTags(AtomTag::ThomasFermiFiniteNuclear);
+			}
+			else if (IsWithGaussianFiniteNuclear() && static_cast<bool>(tags & AtomTag::ThomasFermiFiniteNuclear))
+			{
+				RemoveTags(AtomTag::GaussianFiniteNuclear);
+			}
+
+			m_Tags = m_Tags | tags;
 		}
 
 
 	private:
 		Atom(const class Element element,
 		     const Eigen::Vector3d& position,
-		     const AtomTag tag,
+		     const AtomTag tags,
 		     const double mass,
-		     const double nuclearRadius) noexcept
-		    : m_Element(element), m_Position(position), m_Tags(tag), m_Mass(mass), m_NuclearRadius(nuclearRadius)
+		     const double nuclearRadius)
+		    : m_Element(element), m_Tags(tags), m_Position(position), m_Mass(mass), m_NuclearRadius(nuclearRadius)
 		{
-			assert(!(static_cast<bool>(tag & AtomTag::GaussianFiniteNuclear)
-			         && static_cast<bool>(tag & AtomTag::ThomasFermiFiniteNuclear)));
+			if (!IsValid(tags))
+			{
+				throw std::invalid_argument("Atom tag " + std::to_string(static_cast<int>(tags)) + " is invalid");
+			}
 		}
 
-		bool EqualsTo_Impl(const Atom other, const double tolerance) const noexcept
+		bool EqualsTo_Impl(const Atom& other, const double tolerance) const noexcept
 		{
 			return m_Element == other.m_Element && m_Tags == other.m_Tags
 			       && std::abs(m_Mass - other.Mass()) <= tolerance
