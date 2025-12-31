@@ -28,6 +28,11 @@ namespace SecChem
 		return static_cast<AtomTag>(static_cast<std::uint16_t>(lhs) | static_cast<std::uint16_t>(rhs));
 	}
 
+	constexpr void operator|=(AtomTag& lhs, const AtomTag rhs) noexcept
+	{
+		lhs = static_cast<AtomTag>(static_cast<std::uint16_t>(lhs) | static_cast<std::uint16_t>(rhs));
+	}
+
 	constexpr AtomTag operator&(const AtomTag lhs, const AtomTag rhs) noexcept
 	{
 		return static_cast<AtomTag>(static_cast<std::uint16_t>(lhs) & static_cast<std::uint16_t>(rhs));
