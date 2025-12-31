@@ -95,6 +95,16 @@ namespace SecChem
 			return AsDerived().end_Impl();
 		}
 
+		auto begin() const noexcept
+		{
+			return AsDerived().cbegin_Impl();
+		}
+
+		auto end() const noexcept
+		{
+			return AsDerived().cend_Impl();
+		}
+
 		auto cbegin() const noexcept
 		{
 			return AsDerived().cbegin_Impl();
