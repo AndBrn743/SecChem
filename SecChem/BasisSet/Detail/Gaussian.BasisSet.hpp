@@ -316,6 +316,36 @@ namespace SecChem::BasisSet::Gaussian
 				}
 			}
 
+			auto begin() noexcept
+			{
+				return Data().begin();
+			}
+
+			auto end() noexcept
+			{
+				return Data().end();
+			}
+
+			auto begin() const noexcept
+			{
+				return Data().begin();
+			}
+
+			auto end() const noexcept
+			{
+				return Data().end();
+			}
+
+			auto cbegin() const noexcept
+			{
+				return Data().cbegin();
+			}
+
+			auto cend() const noexcept
+			{
+				return Data().cend();
+			}
+
 
 		private:
 			explicit BasisSetImpl(StorageType&& storage) : m_DataStorage(std::move(storage))
