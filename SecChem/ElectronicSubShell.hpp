@@ -54,7 +54,6 @@ namespace SecChem
 
 		constexpr bool IsValid() const
 		{
-			// return m_Id >= 0;
 			return m_Id >= 0
 			       && this->PrincipalQuantumNumber() >= this->AzimuthalQuantumNumber().MinPrincipalQuantumNumber();
 		}
@@ -145,7 +144,6 @@ namespace SecChem
 			do
 			{
 				m_Id++;
-			// } while (this->PrincipalQuantumNumber() < this->AzimuthalQuantumNumber().MinPrincipalQuantumNumber());
 			} while (!this->IsValid());
 			return *this;
 		}
@@ -163,8 +161,7 @@ namespace SecChem
 			do
 			{
 				m_Id--;
-			} while (m_Id >= 0 && !this->IsValid() /*this->PrincipalQuantumNumber() < this->AzimuthalQuantumNumber().MinPrincipalQuantumNumber()
-			         && this->IsValid()*/);
+			} while (m_Id >= 0 && !this->IsValid());
 			return *this;
 		}
 
