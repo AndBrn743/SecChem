@@ -4,8 +4,13 @@
 
 // #include <catch2/catch_test_macros.hpp>
 
-#include <catch2/catch_test_macros.hpp>
 #include "BasisSetExchangeJsonParserExample.hpp"
+#include <catch2/catch_approx.hpp>
+#include <catch2/catch_test_macros.hpp>
+
+#include "../SecChem/Geometry.Input.hpp"
+
+using namespace SecChem::Geometry::Input;
 
 class MolecularInputInterpreter
 {
@@ -14,6 +19,14 @@ class MolecularInputInterpreter
 		Unknown,
 		CartesianCoordinate,
 		InternalCoordinate
+	};
+
+	struct AtomicAttributes
+	{
+		SecChem::AtomTag Tags = SecChem::AtomTag::None;
+		double Mass = -1;
+		double NuclearRadius = -1;
+		std::string Basis{};
 	};
 
 	using LineParsingReturnType =
@@ -28,95 +41,65 @@ public:
 	                                 const std::vector<SecChem::BasisSet::Gaussian::AngularMomentumBlock>*>&
 	                defaultBasisSet)
 	{
+		const auto tokens = SecUtility::SplitRespectingQuotes(line);
+
+		if (tokens.empty())
+		{
+			throw std::runtime_error("Not enough tokens in line \"" + line + '"');
+		}
+
+		const auto geomTokenCount =
+		        std::distance(tokens.begin() + 1,
+		                      std::find_if(tokens.begin() + 1,
+		                                   tokens.end(),
+		                                   [](const std::string& token)
+		                                   {
+			                                   return !token.empty()
+			                                          && (token[0] == '_' || (token[0] >= 'A' && token[0] <= 'Z')
+			                                              || (token[0] >= 'a' && token[0] <= 'z'));
+		                                   }));
+
 		if (atoms.empty())
 		{
-			m_GeometryFormat = GeometryFormat::CartesianCoordinate;
+			if (geomTokenCount == 3)
+			{
+				m_GeometryFormat = GeometryFormat::CartesianCoordinate;
+			}
+			else if (geomTokenCount == 0)
+			{
+				m_GeometryFormat = GeometryFormat::InternalCoordinate;
+			}
+			else
+			{
+				throw std::runtime_error("Unexpected number of geometry tokens for the zeroth atom. In the cause of "
+				                         "the zeroth atom, 3 geometry tokens was expected for Cartesian coordinate "
+				                         "input, and no geometry token was expected for internal coordinate. Line \""
+				                         + line + "\" have " + std::to_string(geomTokenCount) + " geometry token(s).");
+			}
 		}
 		else if (m_GeometryFormat == GeometryFormat::Unknown)
 		{
 			throw std::runtime_error(std::string{__PRETTY_FUNCTION__} + ":" + std::to_string(__LINE__));
 		}
 
-		return ParseXyzLine(line, library, defaultBasisSet);
-	}
-
-	static LineParsingReturnType ParseXyzLine(
-	        const std::string& line,
-	        const SecChem::BasisSet::Gaussian::SharedBasisSetLibrary& library,
-	        const std::unordered_map<SecChem::Element,
-	                                 const std::vector<SecChem::BasisSet::Gaussian::AngularMomentumBlock>*>&
-	                defaultBasisSet)
-	{
-		using namespace SecChem;
-		const auto tokens = SecUtility::SplitRespectingQuotes(line);
-
-		if (tokens.size() < 4)
+		if (m_GeometryFormat == GeometryFormat::CartesianCoordinate && geomTokenCount != 3)
 		{
-			throw std::runtime_error("Atom line must contain at least 4 fields");
+			throw std::runtime_error("A Cartesian coordinate input line must contain exactly 3 geometry fields");
 		}
 
-		// ---- Fixed part ----
-		const auto element = Element::Symbol2Element(tokens[0]);
-		const auto position = Eigen::Vector3d{std::stod(tokens[1]), std::stod(tokens[2]), std::stod(tokens[3])};
+		const auto [element, position] =
+		        m_GeometryFormat == GeometryFormat::CartesianCoordinate
+		                ? ParseBasicCartesianCoordinateLine(tokens.begin(),
+		                                                    SecUtility::UnitOfMeasurement::Angstrom2BohrRadius)
+		                : ParseInternalCoordinateLine<1>(tokens.begin(),
+		                                                 tokens.begin() + 1 + geomTokenCount,
+		                                                 atoms,
+		                                                 SecUtility::UnitOfMeasurement::Angstrom2BohrRadius,
+		                                                 SecUtility::UnitOfMeasurement::Degree2Radian);
+		const auto [tags, mass, nuclearRadius, basis] = ParseAttributes(tokens.begin() + 4, tokens.end(), element);
 
-		auto tags = AtomTag::None;
-		std::optional<double> mass;
-		std::optional<double> nuclearRadius;
-		std::string basis{};
+		SecChem::Atom atom = SecChem::Atom::AtomWithMassAndNuclearRadius(element, position, mass, nuclearRadius, tags);
 
-		// ---- Free-form attributes ----
-		for (std::size_t i = 4; i < tokens.size(); ++i)
-		{
-			const auto& token = tokens[i];
-			const auto eqPos = token.find('=');
-
-			if (eqPos == std::string::npos)
-			{
-				throw std::invalid_argument("Invalid attribute: " + token);
-			}
-
-			const std::string key = token.substr(0, eqPos);
-			std::string value = token.substr(eqPos + 1);
-
-			// Strip quotes
-			if (!value.empty() && value.front() == '"' && value.back() == '"')
-			{
-				value = value.substr(1, value.size() - 2);
-			}
-
-			if (key == "tag")
-			{
-				tags = ParseTags(value);
-			}
-			else if (key == "mass")
-			{
-				mass = std::stod(value);
-			}
-			else if (key == "nuclear_radius")
-			{
-				nuclearRadius = std::stod(value);
-			}
-			else if (key == "basis")
-			{
-				basis = value;
-			}
-			else
-			{
-				throw std::invalid_argument("Unknown atom attribute: " + key);
-			}
-		}
-
-		if (!mass.has_value())
-		{
-			mass = element.Mass();
-		}
-		if (!nuclearRadius.has_value())
-		{
-			nuclearRadius = element.NuclearRadius();
-		}
-
-		// ---- Atom construction ----
-		Atom atom = Atom::AtomWithMassAndNuclearRadius(element, position, mass.value(), nuclearRadius.value(), tags);
 
 		if (basis.empty())
 		{
@@ -186,6 +169,67 @@ private:
 		}
 
 		return tags;
+	}
+
+	template <typename TokenIterator>
+	static AtomicAttributes ParseAttributes(TokenIterator begin,
+	                                        const TokenIterator end,
+	                                        const SecChem::Element element)
+	{
+		AtomicAttributes attr{};
+		auto& [tags, mass, nuclearRadius, basis] = attr;
+
+		for (/* NO CODE */; begin != end; ++begin)
+		{
+			const auto& token = *begin;
+			const auto eqPos = token.find('=');
+
+			if (eqPos == std::string::npos)
+			{
+				throw std::invalid_argument("Invalid attribute: " + token);
+			}
+
+			const std::string key = token.substr(0, eqPos);
+			std::string value = token.substr(eqPos + 1);
+
+			// Strip quotes
+			if (!value.empty() && value.front() == '"' && value.back() == '"')
+			{
+				value = value.substr(1, value.size() - 2);
+			}
+
+			if (key == "tag")
+			{
+				tags = ParseTags(value);
+			}
+			else if (key == "mass")
+			{
+				mass = std::stod(value);
+			}
+			else if (key == "nuclear_radius")
+			{
+				nuclearRadius = std::stod(value);
+			}
+			else if (key == "basis")
+			{
+				basis = value;
+			}
+			else
+			{
+				throw std::invalid_argument("Unknown atom attribute: " + key);
+			}
+		}
+
+		if (mass == -1)
+		{
+			mass = element.Mass();
+		}
+		if (nuclearRadius == -1)
+		{
+			nuclearRadius = element.NuclearRadius();
+		}
+
+		return attr;
 	}
 
 	GeometryFormat m_GeometryFormat = GeometryFormat::Unknown;
