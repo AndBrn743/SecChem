@@ -1,6 +1,5 @@
-//
-// Created by Andy on 11/22/2025.
-//
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2025-2026 Andy Brown
 
 #pragma once
 

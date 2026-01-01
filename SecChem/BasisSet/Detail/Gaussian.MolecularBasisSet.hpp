@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2025-2026 Andy Brown
+
 #pragma once
 #if !defined(SECCHEM_GAUSSIAN_BASIS_SET_INTERNAL)
 #error Do not include internal header files directly
