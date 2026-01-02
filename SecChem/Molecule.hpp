@@ -84,6 +84,16 @@ namespace SecChem
 			throw std::out_of_range("Atom not found");
 		}
 
+		bool Contains(const Atom& atom) const noexcept
+		{
+			if (&atom >= cbegin() && &atom < cend())
+			{
+				return true;
+			}
+
+			return std::find(cbegin(), cend(), atom) != cend();
+		}
+
 		auto begin() noexcept
 		{
 			return AsDerived().begin_Impl();
