@@ -57,6 +57,25 @@ namespace SecChem
 			        cbegin(), cend(), double{0}, [](const double acc, const Atom& atom) { return acc + atom.Mass(); });
 		}
 
+		double NuclearRepulsionEnergy() const noexcept
+		{
+			double e = 0;
+
+			for (auto it1 = cbegin(); it1 != cend(); ++it1)
+			{
+				const auto& atom1 = *it1;
+
+				for (auto it2 = cbegin(); it2 != it1; ++it2)
+				{
+					const auto& atom2 = *it2;
+
+					e += atom1.Element.AtomicNumber() * atom2.Element.AtomicNumber() / atom1.DistanceTo(atom2);
+				}
+			}
+
+			return e;
+		}
+
 		const Atom& operator[](const std::size_t i) const noexcept
 		{
 			assert(i < AtomCount());
