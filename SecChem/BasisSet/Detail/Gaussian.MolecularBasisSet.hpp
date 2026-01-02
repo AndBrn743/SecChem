@@ -50,19 +50,162 @@ namespace SecChem::Gaussian
 			return *m_BasisAssignments[m_Molecule.IndexOf(atom)];
 		}
 
+		// this method DOES cache
+		Eigen::Index PrimitiveSphericalOrbitalCountOf(const Atom& atom) const
+		{
+			const auto index = Molecule().IndexOf(atom);
+			return m_SegmentationTableOfPrimitiveSphericalOrbitals[index + 1]
+			       - m_SegmentationTableOfPrimitiveSphericalOrbitals[index];
+		}
+
+		// this method does NOT cache
+		Eigen::Index PrimitiveCartesianOrbitalCountOf(const Atom& atom) const
+		{
+			return CountOfSomeKindOfOrbitalOf(atom,
+			                                  [](const BasisSet::Gaussian::AngularMomentumBlock& amb)
+			                                  { return amb.PrimitiveCartesianOrbitalCount(); });
+		}
+
+		// this method DOES cache
+		Eigen::Index ContractedSphericalOrbitalCountOf(const Atom& atom) const
+		{
+			const auto index = Molecule().IndexOf(atom);
+			return m_SegmentationTableOfContractedSphericalOrbitals[index + 1]
+			       - m_SegmentationTableOfContractedSphericalOrbitals[index];
+		}
+
+		// this method does NOT cache
+		Eigen::Index ContractedCartesianOrbitalCountOf(const Atom& atom) const
+		{
+			return CountOfSomeKindOfOrbitalOf(atom,
+			                                  [](const BasisSet::Gaussian::AngularMomentumBlock& amb)
+			                                  { return amb.ContractedCartesianOrbitalCount(); });
+		}
+
+		// this method DOES cache
+		Eigen::Index PrimitiveSphericalOrbitalCount() const noexcept
+		{
+			return m_SegmentationTableOfPrimitiveSphericalOrbitals.back();
+		}
+
+		// this method does NOT cache
+		Eigen::Index PrimitiveCartesianOrbitalCountOf() const noexcept
+		{
+			return CountOfSomeKindOfOrbital([](const BasisSet::Gaussian::AngularMomentumBlock& amb)
+			                                { return amb.PrimitiveCartesianOrbitalCount(); });
+		}
+
+		// this method DOES cache
+		Eigen::Index ContractedSphericalOrbitalCount() const noexcept
+		{
+			return m_SegmentationTableOfContractedSphericalOrbitals.back();
+		}
+
+		// this method does NOT cache
+		Eigen::Index ContractedCartesianOrbitalCountOf() const noexcept
+		{
+			return CountOfSomeKindOfOrbital([](const BasisSet::Gaussian::AngularMomentumBlock& amb)
+			                                { return amb.ContractedCartesianOrbitalCount(); });
+		}
+
+		// this method does NOT cache
+		Eigen::Index PrimitiveSubShellCountOf(const Atom& atom) const
+		{
+			const auto& basis = ElementaryBasisOf(atom);
+			return std::accumulate(basis.cbegin(),
+			                       basis.cend(),
+			                       Eigen::Index{0},
+			                       [](const Eigen::Index acc, const BasisSet::Gaussian::AngularMomentumBlock& amb)
+			                       { return acc + amb.PrimitiveShellCount(); });
+		}
+
+		// this method does NOT cache
+		Eigen::Index ContractedSubShellCountOf(const Atom& atom) const
+		{
+			const auto& basis = ElementaryBasisOf(atom);
+			return std::accumulate(basis.cbegin(),
+			                       basis.cend(),
+			                       Eigen::Index{0},
+			                       [](const Eigen::Index acc, const BasisSet::Gaussian::AngularMomentumBlock& amb)
+			                       { return acc + amb.ContractedShellCount(); });
+		}
+
 
 	private:
 		MolecularBasisSet(const BasisSet::Gaussian::SharedBasisSetLibrary& library,
 		                  const SharedMolecule& molecule,
 		                  std::vector<ElementaryBasisPtr> basisAssignments)
-		    : m_Library(library), m_Molecule(molecule), m_BasisAssignments(std::move(basisAssignments))
+		    : m_Library(library), m_Molecule(molecule), m_BasisAssignments(std::move(basisAssignments)),
+		      m_SegmentationTableOfPrimitiveSphericalOrbitals(CreateSegmentationTableOfSomeKindOfOrbitals(
+		              [](const BasisSet::Gaussian::AngularMomentumBlock& amb)
+		              { return amb.HasOrbital() ? amb.PrimitiveSphericalOrbitalCount() : 0; })),
+		      m_SegmentationTableOfContractedSphericalOrbitals(CreateSegmentationTableOfSomeKindOfOrbitals(
+		              [](const BasisSet::Gaussian::AngularMomentumBlock& amb)
+		              { return amb.HasOrbital() ? amb.ContractedSphericalOrbitalCount() : 0; }))
 		{
 			assert(molecule.AtomCount() == m_BasisAssignments.size());
+		}
+
+		template <typename OrbitalKindSelector>
+		std::vector<Eigen::Index> CreateSegmentationTableOfSomeKindOfOrbitals(OrbitalKindSelector select) const noexcept
+		{
+			std::vector<Eigen::Index> segTable(m_BasisAssignments.size() + 1, 0);
+
+			Eigen::Index offset = 0;
+			std::transform(m_BasisAssignments.cbegin(),
+			               m_BasisAssignments.cend(),
+			               std::next(segTable.begin()),
+			               [&offset, select](const ElementaryBasisPtr basisPtr)
+			               {
+				               const auto& basis = *basisPtr;
+				               offset += std::accumulate(basis.cbegin(),
+				                                         basis.cend(),
+				                                         Eigen::Index{0},
+				                                         [select](const Eigen::Index acc,
+				                                                  const BasisSet::Gaussian::AngularMomentumBlock& amb)
+				                                         { return acc + select(amb); });
+				               return offset;
+			               });
+
+			return segTable;
+		}
+
+		template <typename OrbitalKindSelector>
+		Eigen::Index CountOfSomeKindOfOrbitalOf(const Atom& atom, OrbitalKindSelector select) const
+		{
+			const auto& basis = ElementaryBasisOf(atom);
+			return std::accumulate(basis.cbegin(),
+			                       basis.cend(),
+			                       Eigen::Index{0},
+			                       [select](const Eigen::Index acc, const BasisSet::Gaussian::AngularMomentumBlock& amb)
+			                       { return acc + select(amb); });
+		}
+
+		template <typename OrbitalKindSelector>
+		Eigen::Index CountOfSomeKindOfOrbital(OrbitalKindSelector select) const noexcept
+		{
+			return std::accumulate(m_BasisAssignments.cbegin(),
+			                       m_BasisAssignments.cend(),
+			                       Eigen::Index{0},
+			                       [select](const Eigen::Index acc, const ElementaryBasisPtr basisPtr)
+			                       {
+				                       const auto& basis = *basisPtr;
+				                       return acc
+				                              + std::accumulate(
+				                                      basis.cbegin(),
+				                                      basis.cend(),
+				                                      Eigen::Index{0},
+				                                      [select](const Eigen::Index innerAcc,
+				                                               const BasisSet::Gaussian::AngularMomentumBlock& amb)
+				                                      { return innerAcc + select(amb); });
+			                       });
 		}
 
 		BasisSet::Gaussian::SharedBasisSetLibrary m_Library;
 		SharedMolecule m_Molecule;
 		std::vector<ElementaryBasisPtr> m_BasisAssignments;
+		std::vector<Eigen::Index> m_SegmentationTableOfPrimitiveSphericalOrbitals;
+		std::vector<Eigen::Index> m_SegmentationTableOfContractedSphericalOrbitals;
 	};
 }  // namespace SecChem::Gaussian
 
