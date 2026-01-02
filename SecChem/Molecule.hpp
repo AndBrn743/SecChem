@@ -15,7 +15,7 @@
 namespace SecChem
 {
 	template <typename Derived>
-	class IMolecule;
+	class AbstractMolecule;
 
 	class Molecule;
 
@@ -34,7 +34,7 @@ struct SecUtility::Traits<SecChem::Molecule>
 namespace SecChem
 {
 	template <typename Derived>
-	class IMolecule
+	class AbstractMolecule
 	{
 	public:
 		std::size_t AtomCount() const noexcept
@@ -103,6 +103,28 @@ namespace SecChem
 			throw std::out_of_range("Atom not found");
 		}
 
+		template <typename CountingFunction>
+		double CoordinationNumberOfAtomAtIndex(const std::size_t atomIndex, CountingFunction countingFunction)
+		{
+			double cn = 0;
+
+			for (std::size_t i = 0; i < AtomCount(); i++)
+			{
+				if (i != atomIndex)
+				{
+					cn += countingFunction((*this)[i], (*this)[atomIndex]);
+				}
+			}
+
+			return cn;
+		}
+
+		template <typename CountingFunction>
+		double CoordinationNumberOf(const Atom& atom, CountingFunction countingFunction)
+		{
+			return CoordinationNumberOf(IndexOf(atom), countingFunction);
+		}
+
 		bool Contains(const Atom& atom) const noexcept
 		{
 			if (&atom >= cbegin() && &atom < cend())
@@ -160,9 +182,9 @@ namespace SecChem
 		/* CRTP PURE VIRTUAL */ auto cend_Impl() const noexcept = delete;
 	};
 
-	class Molecule : public IMolecule<Molecule>
+	class Molecule : public AbstractMolecule<Molecule>
 	{
-		friend IMolecule;
+		friend AbstractMolecule;
 		friend SharedMolecule;
 
 	public:
@@ -211,9 +233,9 @@ namespace SecChem
 		std::vector<Atom> m_Atoms;
 	};
 
-	class SharedMolecule : public IMolecule<SharedMolecule>
+	class SharedMolecule : public AbstractMolecule<SharedMolecule>
 	{
-		friend IMolecule;
+		friend AbstractMolecule;
 		friend Molecule;
 
 	public:
