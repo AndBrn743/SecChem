@@ -263,23 +263,83 @@ TEST_CASE("MolecularBasisSet build succeeds", "[basis][builder]")
 {
 	using namespace SecChem;
 
-	const auto molecularBasisSet = SecChem::Builder<Gaussian::MolecularBasisSet>{Library()}
-	                                       .SetOrOverwriteGlobalDefaultBasisSetTo("def2-SVP")
-	                                       .SetOrOverwriteElementaryDefaultBasisSetTo("ANO-R0", Element::C)
-	                                       .BuildWith(MolecularInputInterpreter{},
-	                                                  R"(C 0 0 0 tag=frozen,gaussian_finite_nuclear
+	const auto basis = SecChem::Builder<Gaussian::MolecularBasisSet>{Library()}
+	                           .SetOrOverwriteGlobalDefaultBasisSetTo("def2-SVP")
+	                           .SetOrOverwriteElementaryDefaultBasisSetTo("ANO-R0", Element::C)
+	                           .BuildWith(MolecularInputInterpreter{},
+	                                      R"(C 0 0 0 tag=frozen,gaussian_finite_nuclear
 H 1.1 0 0
 O 0 0.1e+1 0
-Ne 1 1 1 basis="example-basis")");
+Ne 1 1 1 basis="example-basis"
+H 1.1 0 0
+)");
 
-	const auto& molecule = molecularBasisSet.Molecule();
+	const auto& molecule = basis.Molecule();
 
-	REQUIRE(molecule.AtomCount() == 4);
+	REQUIRE(molecule.AtomCount() == 5);
 
 	REQUIRE(molecule[0].Element() == Element::C);
 	REQUIRE(molecule[1].Element() == Element::H);
 	REQUIRE(molecule[2].Element() == Element::O);
 	REQUIRE(molecule[3].Element() == Element::Ne);
+	REQUIRE(molecule[4].Element() == Element::H);
+
+	REQUIRE(basis.UniqueElementaryBasisCount() == 4);
+	REQUIRE(basis.AtomIndexFromContractedSphericalOrbital(0) == 0);
+	REQUIRE(basis.AtomIndexFromContractedSphericalOrbital(1) == 0);
+	REQUIRE(basis.AtomIndexFromContractedSphericalOrbital(2) == 0);
+	REQUIRE(basis.AtomIndexFromContractedSphericalOrbital(3) == 0);
+	REQUIRE(basis.AtomIndexFromContractedSphericalOrbital(4) == 0);
+
+	REQUIRE(basis.AtomIndexFromContractedSphericalOrbital(5) == 1);
+	REQUIRE(basis.AtomIndexFromContractedSphericalOrbital(6) == 1);
+	REQUIRE(basis.AtomIndexFromContractedSphericalOrbital(7) == 1);
+	REQUIRE(basis.AtomIndexFromContractedSphericalOrbital(8) == 1);
+	REQUIRE(basis.AtomIndexFromContractedSphericalOrbital(9) == 1);
+
+	REQUIRE(basis.AtomIndexFromContractedSphericalOrbital(10) == 2);  // 1s
+	REQUIRE(basis.AtomIndexFromContractedSphericalOrbital(11) == 2);  // 2s
+	REQUIRE(basis.AtomIndexFromContractedSphericalOrbital(12) == 2);  // 3s
+	REQUIRE(basis.AtomIndexFromContractedSphericalOrbital(13) == 2);  // 2p(-1)
+	REQUIRE(basis.AtomIndexFromContractedSphericalOrbital(14) == 2);  // 2p(0)
+	REQUIRE(basis.AtomIndexFromContractedSphericalOrbital(15) == 2);  // 2p(+1)
+	REQUIRE(basis.AtomIndexFromContractedSphericalOrbital(16) == 2);  // 3p(-1)
+	REQUIRE(basis.AtomIndexFromContractedSphericalOrbital(17) == 2);  // 3p(0)
+	REQUIRE(basis.AtomIndexFromContractedSphericalOrbital(18) == 2);  // 3p(+1)
+	REQUIRE(basis.AtomIndexFromContractedSphericalOrbital(19) == 2);  // 3d(-2)
+	REQUIRE(basis.AtomIndexFromContractedSphericalOrbital(20) == 2);  // 3d(-1)
+	REQUIRE(basis.AtomIndexFromContractedSphericalOrbital(21) == 2);  // 3d(0)
+	REQUIRE(basis.AtomIndexFromContractedSphericalOrbital(22) == 2);  // 3d(+1)
+	REQUIRE(basis.AtomIndexFromContractedSphericalOrbital(23) == 2);  // 3d(+2)
+
+	REQUIRE(basis.AtomIndexFromContractedSphericalOrbital(24) == 3);
+
+	REQUIRE(basis.AtomIndexAndSubShellFromContractedSphericalOrbital(0) == std::pair{Eigen::Index{0}, 1_Sharp});
+	REQUIRE(basis.AtomIndexAndSubShellFromContractedSphericalOrbital(1) == std::pair{Eigen::Index{0}, 2_Sharp});
+	REQUIRE(basis.AtomIndexAndSubShellFromContractedSphericalOrbital(2) == std::pair{Eigen::Index{0}, 2_Principal});
+	REQUIRE(basis.AtomIndexAndSubShellFromContractedSphericalOrbital(3) == std::pair{Eigen::Index{0}, 2_Principal});
+	REQUIRE(basis.AtomIndexAndSubShellFromContractedSphericalOrbital(4) == std::pair{Eigen::Index{0}, 2_Principal});
+
+	REQUIRE(basis.AtomIndexAndSubShellFromContractedSphericalOrbital(5) == std::pair{Eigen::Index{1}, 1_Sharp});
+	REQUIRE(basis.AtomIndexAndSubShellFromContractedSphericalOrbital(6) == std::pair{Eigen::Index{1}, 2_Sharp});
+	REQUIRE(basis.AtomIndexAndSubShellFromContractedSphericalOrbital(7) == std::pair{Eigen::Index{1}, 2_Principal});
+	REQUIRE(basis.AtomIndexAndSubShellFromContractedSphericalOrbital(8) == std::pair{Eigen::Index{1}, 2_Principal});
+	REQUIRE(basis.AtomIndexAndSubShellFromContractedSphericalOrbital(9) == std::pair{Eigen::Index{1}, 2_Principal});
+
+	REQUIRE(basis.AtomIndexAndSubShellFromContractedSphericalOrbital(10) == std::pair{Eigen::Index{2}, 1_Sharp});
+	REQUIRE(basis.AtomIndexAndSubShellFromContractedSphericalOrbital(11) == std::pair{Eigen::Index{2}, 2_Sharp});
+	REQUIRE(basis.AtomIndexAndSubShellFromContractedSphericalOrbital(12) == std::pair{Eigen::Index{2}, 3_Sharp});
+	REQUIRE(basis.AtomIndexAndSubShellFromContractedSphericalOrbital(13) == std::pair{Eigen::Index{2}, 2_Principal});
+	REQUIRE(basis.AtomIndexAndSubShellFromContractedSphericalOrbital(14) == std::pair{Eigen::Index{2}, 2_Principal});
+	REQUIRE(basis.AtomIndexAndSubShellFromContractedSphericalOrbital(15) == std::pair{Eigen::Index{2}, 2_Principal});
+	REQUIRE(basis.AtomIndexAndSubShellFromContractedSphericalOrbital(16) == std::pair{Eigen::Index{2}, 3_Principal});
+	REQUIRE(basis.AtomIndexAndSubShellFromContractedSphericalOrbital(17) == std::pair{Eigen::Index{2}, 3_Principal});
+	REQUIRE(basis.AtomIndexAndSubShellFromContractedSphericalOrbital(18) == std::pair{Eigen::Index{2}, 3_Principal});
+	REQUIRE(basis.AtomIndexAndSubShellFromContractedSphericalOrbital(19) == std::pair{Eigen::Index{2}, 3_Diffuse});
+	REQUIRE(basis.AtomIndexAndSubShellFromContractedSphericalOrbital(20) == std::pair{Eigen::Index{2}, 3_Diffuse});
+	REQUIRE(basis.AtomIndexAndSubShellFromContractedSphericalOrbital(21) == std::pair{Eigen::Index{2}, 3_Diffuse});
+	REQUIRE(basis.AtomIndexAndSubShellFromContractedSphericalOrbital(22) == std::pair{Eigen::Index{2}, 3_Diffuse});
+	REQUIRE(basis.AtomIndexAndSubShellFromContractedSphericalOrbital(23) == std::pair{Eigen::Index{2}, 3_Diffuse});
 }
 
 TEST_CASE("Atom tags are preserved", "[basis][parser]")

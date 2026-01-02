@@ -50,6 +50,11 @@ namespace SecChem::Gaussian
 			return *m_BasisAssignments[m_Molecule.IndexOf(atom)];
 		}
 
+		std::size_t UniqueElementaryBasisCount() const noexcept
+		{
+			return m_SubShellSegmentationTableOfEachElementaryBasis.size();
+		}
+
 		// this method DOES cache
 		Eigen::Index PrimitiveSphericalOrbitalCountOf(const Atom& atom) const
 		{
@@ -130,6 +135,58 @@ namespace SecChem::Gaussian
 			                       { return acc + amb.ContractedShellCount(); });
 		}
 
+		Eigen::Index AtomIndexFromContractedSphericalOrbital(const Eigen::Index orbitalIndex) const noexcept
+		{
+			assert(orbitalIndex >= 0 && orbitalIndex <= m_SegmentationTableOfContractedSphericalOrbitals.back());
+
+			return std::distance(m_SegmentationTableOfContractedSphericalOrbitals.cbegin(),
+			                     std::upper_bound(m_SegmentationTableOfContractedSphericalOrbitals.cbegin(),
+			                                      m_SegmentationTableOfContractedSphericalOrbitals.cend(),
+			                                      orbitalIndex))
+			       - 1;
+		}
+
+		const Atom& AtomOfContractedSphericalOrbital(const Eigen::Index orbitalIndex) const noexcept
+		{
+			return Molecule()[AtomIndexFromContractedSphericalOrbital(orbitalIndex)];
+		}
+
+		Eigen::Index IndexOfAtomOfPrimitiveSphericalOrbital(const Eigen::Index orbitalIndex) const noexcept
+		{
+			assert(orbitalIndex >= 0 && orbitalIndex <= m_SegmentationTableOfPrimitiveSphericalOrbitals.back());
+
+			return std::distance(m_SegmentationTableOfPrimitiveSphericalOrbitals.cbegin(),
+			                     std::upper_bound(m_SegmentationTableOfPrimitiveSphericalOrbitals.cbegin(),
+			                                      m_SegmentationTableOfPrimitiveSphericalOrbitals.cend(),
+			                                      orbitalIndex));
+		}
+
+		const Atom& AtomOfPrimitiveSphericalOrbital(const Eigen::Index orbitalIndex) const noexcept
+		{
+			return Molecule()[IndexOfAtomOfPrimitiveSphericalOrbital(orbitalIndex)];
+		}
+
+		ElectronicSubShell AtomicSubShellFromContractedSphericalOrbital(const Eigen::Index orbitalIndex) const noexcept
+		{
+			const auto atomIndex = AtomIndexFromContractedSphericalOrbital(orbitalIndex);
+			return AtomicSubShellFromContractedSphericalOrbital(orbitalIndex, atomIndex);
+		}
+
+		std::pair<const Atom&, ElectronicSubShell> AtomAndSubShellFromContractedSphericalOrbital(
+		        const Eigen::Index orbitalIndex) const noexcept
+		{
+			const auto atomIndex = AtomIndexFromContractedSphericalOrbital(orbitalIndex);
+			return std::pair<const Atom&, ElectronicSubShell>{
+			        Molecule()[atomIndex], AtomicSubShellFromContractedSphericalOrbital(orbitalIndex, atomIndex)};
+		}
+
+		std::pair<Eigen::Index, ElectronicSubShell> AtomIndexAndSubShellFromContractedSphericalOrbital(
+		        const Eigen::Index orbitalIndex) const noexcept
+		{
+			const auto atomIndex = AtomIndexFromContractedSphericalOrbital(orbitalIndex);
+			return std::pair{atomIndex, AtomicSubShellFromContractedSphericalOrbital(orbitalIndex, atomIndex)};
+		}
+
 
 	private:
 		MolecularBasisSet(const BasisSet::Gaussian::SharedBasisSetLibrary& library,
@@ -138,10 +195,11 @@ namespace SecChem::Gaussian
 		    : m_Library(library), m_Molecule(molecule), m_BasisAssignments(std::move(basisAssignments)),
 		      m_SegmentationTableOfPrimitiveSphericalOrbitals(CreateSegmentationTableOfSomeKindOfOrbitals(
 		              [](const BasisSet::Gaussian::AngularMomentumBlock& amb)
-		              { return amb.HasOrbital() ? amb.PrimitiveSphericalOrbitalCount() : 0; })),
+		              { return amb.PrimitiveSphericalOrbitalCount(); })),
 		      m_SegmentationTableOfContractedSphericalOrbitals(CreateSegmentationTableOfSomeKindOfOrbitals(
 		              [](const BasisSet::Gaussian::AngularMomentumBlock& amb)
-		              { return amb.HasOrbital() ? amb.ContractedSphericalOrbitalCount() : 0; }))
+		              { return amb.ContractedSphericalOrbitalCount(); })),
+		      m_SubShellSegmentationTableOfEachElementaryBasis(CreateSubShellSegmentationTableForEachElementaryBasis())
 		{
 			assert(molecule.AtomCount() == m_BasisAssignments.size());
 		}
@@ -168,6 +226,43 @@ namespace SecChem::Gaussian
 			               });
 
 			return segTable;
+		}
+
+		using SubShellSegmentationTableOfEachElementaryBasis =
+		        std::vector<std::pair<ElementaryBasisPtr, std::vector<Eigen::Index>>>;
+
+		SubShellSegmentationTableOfEachElementaryBasis CreateSubShellSegmentationTableForEachElementaryBasis() const
+		{
+			std::vector<ElementaryBasisPtr> assignments = m_BasisAssignments;
+			std::sort(assignments.begin(), assignments.end());
+			const auto uniqueElementaryBasisCount =
+			        std::distance(assignments.begin(), std::unique(assignments.begin(), assignments.end()));
+
+			SubShellSegmentationTableOfEachElementaryBasis segmentationTable(uniqueElementaryBasisCount);
+			std::transform(assignments.cbegin(),
+			               assignments.cbegin() + uniqueElementaryBasisCount,
+			               segmentationTable.begin(),
+			               [](const ElementaryBasisPtr basisPtr)
+			               {
+				               const auto& basis = *basisPtr;
+				               const auto segCount = basis.back().AngularMomentum().Value() + 1;
+
+				               std::vector<Eigen::Index> segTable(segCount + 1, 0);
+				               Eigen::Index offset = 0;
+				               for (const auto& amb : basis)
+				               {
+					               // offset += amb.HasOrbital() ? amb.ContractedShellCount() : 0;
+					               offset += amb.HasOrbital() ? amb.ContractedSphericalOrbitalCount() : 0;
+					               segTable[amb.AngularMomentum().Value() + 1] = offset;
+				               }
+				               for (std::size_t i = 2; i < segTable.size(); ++i)  // `i` starts from 2, not 1, not 0
+				               {
+					               segTable[i] = std::max(segTable[i - 1], segTable[i]);
+				               }
+
+				               return std::pair{basisPtr, segTable};
+			               });
+			return segmentationTable;
 		}
 
 		template <typename OrbitalKindSelector>
@@ -201,11 +296,40 @@ namespace SecChem::Gaussian
 			                       });
 		}
 
+		/// <c>atomIndex</c> must be resolved by IndexOfAtomOfContractedSphericalOrbital(orbitalIndex).
+		/// the behavior is undefined otherwise.
+		/// do not make this method public
+		ElectronicSubShell AtomicSubShellFromContractedSphericalOrbital(const Eigen::Index orbitalIndex,
+		                                                                const Eigen::Index atomIndex) const noexcept
+		{
+			const auto atomicOffset = m_SegmentationTableOfContractedSphericalOrbitals[atomIndex];
+			const auto* basisPtr = m_BasisAssignments[atomIndex];
+
+			const auto subshellSegTable =
+			        std::lower_bound(m_SubShellSegmentationTableOfEachElementaryBasis.cbegin(),
+			                         m_SubShellSegmentationTableOfEachElementaryBasis.cend(),
+			                         basisPtr,
+			                         [](const std::pair<ElementaryBasisPtr, std::vector<Eigen::Index>>& lhs,
+			                            const ElementaryBasisPtr rhs) { return lhs.first < rhs; })
+			                ->second;
+			assert(subshellSegTable.size() >= 2);
+			const auto segIterator = std::prev(std::upper_bound(
+			        std::next(subshellSegTable.cbegin()), subshellSegTable.cend(), orbitalIndex - atomicOffset));
+			const AzimuthalQuantumNumber angularMomentum{
+			        static_cast<int>(std::distance(subshellSegTable.cbegin(), segIterator))};
+			const auto principalQuantumNumber = static_cast<int>(orbitalIndex - *segIterator - atomicOffset)
+			                                            / angularMomentum.MagneticQuantumNumberCount()
+			                                    + 1 + angularMomentum.Value();
+
+			return ElectronicSubShell{principalQuantumNumber, angularMomentum};
+		}
+
 		BasisSet::Gaussian::SharedBasisSetLibrary m_Library;
 		SharedMolecule m_Molecule;
 		std::vector<ElementaryBasisPtr> m_BasisAssignments;
 		std::vector<Eigen::Index> m_SegmentationTableOfPrimitiveSphericalOrbitals;
 		std::vector<Eigen::Index> m_SegmentationTableOfContractedSphericalOrbitals;
+		SubShellSegmentationTableOfEachElementaryBasis m_SubShellSegmentationTableOfEachElementaryBasis;
 	};
 }  // namespace SecChem::Gaussian
 
