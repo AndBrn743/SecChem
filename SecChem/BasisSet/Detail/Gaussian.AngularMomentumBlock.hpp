@@ -28,12 +28,12 @@ namespace SecChem::BasisSet::Gaussian
 
 		Eigen::Index PrimitiveShellCount() const noexcept
 		{
-			return ExponentSet().size();
+			return static_cast<const Derived&>(*this).PrimitiveShellCount_Impl();
 		}
 
 		Eigen::Index ContractedShellCount() const noexcept
 		{
-			return ContractionSets().cols();
+			return static_cast<const Derived&>(*this).ContractedShellCount_Impl();
 		}
 
 		Eigen::Index PrimitiveCartesianOrbitalCount() const noexcept
@@ -62,9 +62,9 @@ namespace SecChem::BasisSet::Gaussian
 		}
 
 	private:
-		const auto& ExponentSet_Impl() const noexcept = delete;
+		/* CRTP PURE VIRTUAL */ const auto& ExponentSet_Impl() const noexcept = delete;
 
-		const auto& ContractionSets_Impl() const noexcept = delete;
+		/* CRTP PURE VIRTUAL */ const auto& ContractionSets_Impl() const noexcept = delete;
 
 		bool EqualsTo_Impl(const AbstractAngularMomentumBlock& other, const Scalar tolerance) const noexcept
 		{
@@ -72,6 +72,16 @@ namespace SecChem::BasisSet::Gaussian
 			       && ContractedShellCount() == other.ContractedShellCount()
 			       && (ExponentSet() - other.ExponentSet()).cwiseAbs().maxCoeff() <= tolerance
 			       && (ContractionSets() - other.ContractionSets()).cwiseAbs().maxCoeff() <= tolerance;
+		}
+
+		/* CRTP VIRTUAL */ Eigen::Index PrimitiveShellCount_Impl() const noexcept
+		{
+			return ExponentSet().size();
+		}
+
+		/* CRTP VIRTUAL */ Eigen::Index ContractedShellCount_Impl() const noexcept
+		{
+			return ContractionSets().cols();
 		}
 
 		explicit constexpr AbstractAngularMomentumBlock(const AzimuthalQuantumNumber l) noexcept
@@ -297,14 +307,24 @@ namespace SecChem::BasisSet::Gaussian
 			       && (!m_NullableSemiLocalEcp.has_value() || SemiLocalEcp().EqualsTo(other.SemiLocalEcp(), tolerance));
 		}
 
-		const Eigen::VectorXd& ExponentSet_Impl() const noexcept
+		/* CRTP OVERRIDE */ const Eigen::VectorXd& ExponentSet_Impl() const noexcept
 		{
 			return ContractedRadialOrbitalSet().ExponentSet();
 		}
 
-		const Eigen::MatrixXd& ContractionSets_Impl() const noexcept
+		/* CRTP OVERRIDE */ const Eigen::MatrixXd& ContractionSets_Impl() const noexcept
 		{
 			return ContractedRadialOrbitalSet().ContractionSets();
+		}
+
+		/* CRTP OVERRIDE */ Eigen::Index PrimitiveShellCount_Impl() const noexcept
+		{
+			return HasOrbital() ? ExponentSet_Impl().size() : 0;
+		}
+
+		/* CRTP OVERRIDE */ Eigen::Index ContractedShellCount_Impl() const noexcept
+		{
+			return HasOrbital() ? ContractionSets_Impl().cols() : 0;
 		}
 
 		template <typename InputIterator, typename Getter>
