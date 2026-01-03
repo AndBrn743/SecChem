@@ -39,6 +39,13 @@ namespace SecChem::BasisSet::Gaussian
 			return m_Molecule;
 		}
 
+		auto ElementaryBasisSet() const noexcept
+		{
+			return m_BasisAssignments
+			       | ranges::views::transform([](const ElementaryBasisPtr ptr) -> const ElementaryBasis&
+			                                  { return *ptr; });
+		}
+
 		const ElementaryBasis& ElementaryBasisAt(const std::size_t index) const
 		{
 			if (index >= m_BasisAssignments.size())
@@ -59,6 +66,13 @@ namespace SecChem::BasisSet::Gaussian
 			return m_ContractedSphericalSubShellSegmentationTableOfEachElementaryBasis.size();
 		}
 
+		auto UniqueElementaryBasis() const noexcept
+		{
+			return m_ContractedSphericalSubShellSegmentationTableOfEachElementaryBasis
+			       | ranges::views::transform([](const std::pair<ElementaryBasisPtr, std::vector<Eigen::Index>>& item)
+			                                          -> const ElementaryBasis& { return *item.first; });
+		}
+
 		// this method DOES cache
 		Eigen::Index PrimitiveSphericalOrbitalCountOf(const Atom& atom) const
 		{
@@ -70,8 +84,7 @@ namespace SecChem::BasisSet::Gaussian
 		// this method does NOT cache
 		Eigen::Index PrimitiveCartesianOrbitalCountOf(const Atom& atom) const
 		{
-			return CountOfSomeKindOfOrbitalOf(
-			        atom, [](const AngularMomentumBlock& amb) { return amb.PrimitiveCartesianOrbitalCount(); });
+			return CountOfSomeKindOfOrbitalOf(atom, &AngularMomentumBlock::PrimitiveCartesianOrbitalCount);
 		}
 
 		// this method DOES cache
@@ -85,8 +98,7 @@ namespace SecChem::BasisSet::Gaussian
 		// this method does NOT cache
 		Eigen::Index ContractedCartesianOrbitalCountOf(const Atom& atom) const
 		{
-			return CountOfSomeKindOfOrbitalOf(
-			        atom, [](const AngularMomentumBlock& amb) { return amb.ContractedCartesianOrbitalCount(); });
+			return CountOfSomeKindOfOrbitalOf(atom, &AngularMomentumBlock::ContractedCartesianOrbitalCount);
 		}
 
 		// this method DOES cache
@@ -98,8 +110,7 @@ namespace SecChem::BasisSet::Gaussian
 		// this method does NOT cache
 		Eigen::Index PrimitiveCartesianOrbitalCount() const noexcept
 		{
-			return CountOfSomeKindOfOrbital([](const AngularMomentumBlock& amb)
-			                                { return amb.PrimitiveCartesianOrbitalCount(); });
+			return CountOfSomeKindOfOrbital(&AngularMomentumBlock::PrimitiveCartesianOrbitalCount);
 		}
 
 		// this method DOES cache
@@ -111,41 +122,34 @@ namespace SecChem::BasisSet::Gaussian
 		// this method does NOT cache
 		Eigen::Index ContractedCartesianOrbitalCount() const noexcept
 		{
-			return CountOfSomeKindOfOrbital([](const AngularMomentumBlock& amb)
-			                                { return amb.ContractedCartesianOrbitalCount(); });
+			return CountOfSomeKindOfOrbital(&AngularMomentumBlock::ContractedCartesianOrbitalCount);
 		}
 
 		// this method does NOT cache
 		Eigen::Index PrimitiveSubShellCountOf(const Atom& atom) const
 		{
-			const auto& basis = ElementaryBasisOf(atom);
-			return std::accumulate(basis.cbegin(),
-			                       basis.cend(),
-			                       Eigen::Index{0},
-			                       [](const Eigen::Index acc, const AngularMomentumBlock& amb)
-			                       { return acc + amb.PrimitiveShellCount(); });
+			return ranges::accumulate(ElementaryBasisOf(atom),
+			                          Eigen::Index{0},
+			                          std::plus<>{},
+			                          &AngularMomentumBlock::PrimitiveShellCount);
 		}
 
 		// this method does NOT cache
 		Eigen::Index ContractedSubShellCountOf(const Atom& atom) const
 		{
-			const auto& basis = ElementaryBasisOf(atom);
-			return std::accumulate(basis.cbegin(),
-			                       basis.cend(),
-			                       Eigen::Index{0},
-			                       [](const Eigen::Index acc, const AngularMomentumBlock& amb)
-			                       { return acc + amb.ContractedShellCount(); });
+			return ranges::accumulate(ElementaryBasisOf(atom),
+			                          Eigen::Index{0},
+			                          std::plus<>{},
+			                          &AngularMomentumBlock::ContractedShellCount);
 		}
 
 		Eigen::Index AtomIndexFromContractedSphericalOrbital(const Eigen::Index orbitalIndex) const noexcept
 		{
 			assert(orbitalIndex >= 0 && orbitalIndex <= m_ContractedSphericalOrbitalSegmentationTable.back());
 
-			return std::distance(m_ContractedSphericalOrbitalSegmentationTable.cbegin(),
-			                     std::upper_bound(m_ContractedSphericalOrbitalSegmentationTable.cbegin(),
-			                                      m_ContractedSphericalOrbitalSegmentationTable.cend(),
-			                                      orbitalIndex))
-			       - 1;
+			return std::distance(
+			        m_ContractedSphericalOrbitalSegmentationTable.cbegin(),
+			        std::prev(ranges::upper_bound(m_ContractedSphericalOrbitalSegmentationTable, orbitalIndex)));
 		}
 
 		const Atom& AtomFromContractedSphericalOrbital(const Eigen::Index orbitalIndex) const noexcept
@@ -169,8 +173,8 @@ namespace SecChem::BasisSet::Gaussian
 
 		ElectronicSubShell AtomicSubShellFromContractedSphericalOrbital(const Eigen::Index orbitalIndex) const noexcept
 		{
-			const auto atomIndex = AtomIndexFromContractedSphericalOrbital(orbitalIndex);
-			return AtomicSubShellFromContractedSphericalOrbital(orbitalIndex, atomIndex);
+			return AtomicSubShellFromContractedSphericalOrbital(orbitalIndex,
+			                                                    AtomIndexFromContractedSphericalOrbital(orbitalIndex));
 		}
 
 		std::pair<const Atom&, ElectronicSubShell> AtomAndSubShellFromContractedSphericalOrbital(
@@ -212,23 +216,25 @@ namespace SecChem::BasisSet::Gaussian
 			std::vector<Eigen::Index> segTable(m_BasisAssignments.size() + 1, 0);
 
 			Eigen::Index offset = 0;
-			std::transform(m_BasisAssignments.cbegin(),
-			               m_BasisAssignments.cend(),
-			               std::next(segTable.begin()),
-			               [&offset, orbitalCountOf](const ElementaryBasisPtr basisPtr)
-			               {
-				               const auto& basis = *basisPtr;
-				               offset += std::accumulate(
-				                       basis.cbegin(),
-				                       basis.cend(),
-				                       Eigen::Index{0},
-				                       [orbitalCountOf](const Eigen::Index acc, const AngularMomentumBlock& amb)
-				                       { return acc + orbitalCountOf(amb); });
-				               return offset;
-			               });
+			ranges::transform(m_BasisAssignments,
+			                  std::next(segTable.begin()),
+			                  [&offset, orbitalCountOf](const ElementaryBasisPtr basisPtr)
+			                  {
+				                  offset +=
+				                          ranges::accumulate(*basisPtr, Eigen::Index{0}, std::plus<>{}, orbitalCountOf);
+				                  return offset;
+			                  });
 
 			return segTable;
 		}
+
+		struct UniqueElementaryBasisInfo
+		{
+			ElementaryBasisPtr BasisPtr;
+			Eigen::Index ReferenceCount;
+			std::vector<Eigen::Index> ContractedSphericalSubShellSegmentationTable;
+			std::vector<Eigen::Index> ContractedSphericalOrbital;
+		};
 
 		using SubShellSegmentationTableOfEachElementaryBasis =
 		        std::vector<std::pair<ElementaryBasisPtr, std::vector<Eigen::Index>>>;
@@ -238,65 +244,48 @@ namespace SecChem::BasisSet::Gaussian
 		SubShellSegmentationTableOfEachElementaryBasis CreateSubShellSegmentationTableForEachElementaryBasis(
 		        OrbitalCounter orbitalCountOf) const
 		{
-			std::vector<ElementaryBasisPtr> assignments = m_BasisAssignments;
-			std::sort(assignments.begin(), assignments.end());
-			const auto uniqueElementaryBasisCount =
-			        std::distance(assignments.begin(), std::unique(assignments.begin(), assignments.end()));
+			const auto uniqueElementaryBasisPtrs =
+			        std::vector{m_BasisAssignments} | ranges::actions::sort | ranges::actions::unique;
 
-			SubShellSegmentationTableOfEachElementaryBasis segmentationTable(uniqueElementaryBasisCount);
-			std::transform(assignments.cbegin(),
-			               assignments.cbegin() + uniqueElementaryBasisCount,
-			               segmentationTable.begin(),
-			               [orbitalCountOf](const ElementaryBasisPtr basisPtr)
-			               {
-				               const auto& basis = *basisPtr;
-				               const auto segCount = basis.back().AngularMomentum().Value() + 1;
+			SubShellSegmentationTableOfEachElementaryBasis segmentationTable(uniqueElementaryBasisPtrs.size());
+			ranges::transform(uniqueElementaryBasisPtrs,
+			                  segmentationTable.begin(),
+			                  [orbitalCountOf](const ElementaryBasisPtr basisPtr)
+			                  {
+				                  const auto& basis = *basisPtr;
+				                  const auto segCount = basis.back().AngularMomentum().Value() + 1;
 
-				               std::vector<Eigen::Index> segTable(segCount + 1, 0);
-				               Eigen::Index offset = 0;
-				               for (const auto& amb : basis)
-				               {
-					               offset += orbitalCountOf(amb);
-					               segTable[amb.AngularMomentum().Value() + 1] = offset;
-				               }
-				               for (std::size_t i = 2; i < segTable.size(); ++i)  // `i` starts from 2, not 1, not 0
-				               {
-					               segTable[i] = std::max(segTable[i - 1], segTable[i]);
-				               }
+				                  std::vector<Eigen::Index> segTable(segCount + 1, 0);
+				                  Eigen::Index offset = 0;
+				                  for (const auto& amb : basis)
+				                  {
+					                  offset += orbitalCountOf(amb);
+					                  segTable[amb.AngularMomentum().Value() + 1] = offset;
+				                  }
+				                  for (std::size_t i = 2; i < segTable.size(); ++i)  // `i` starts from 2, not 1, not 0
+				                  {
+					                  segTable[i] = std::max(segTable[i - 1], segTable[i]);
+				                  }
 
-				               return std::pair{basisPtr, segTable};
-			               });
+				                  return std::pair{basisPtr, segTable};
+			                  });
 			return segmentationTable;
 		}
 
 		template <typename OrbitalCounter>
 		Eigen::Index CountOfSomeKindOfOrbitalOf(const Atom& atom, OrbitalCounter orbitalCountOf) const
 		{
-			const auto& basis = ElementaryBasisOf(atom);
-			return std::accumulate(basis.cbegin(),
-			                       basis.cend(),
-			                       Eigen::Index{0},
-			                       [orbitalCountOf](const Eigen::Index acc, const AngularMomentumBlock& amb)
-			                       { return acc + orbitalCountOf(amb); });
+			return ranges::accumulate(ElementaryBasisOf(atom), Eigen::Index{0}, std::plus<>{}, orbitalCountOf);
 		}
 
 		template <typename OrbitalCounter>
 		Eigen::Index CountOfSomeKindOfOrbital(OrbitalCounter orbitalCountOf) const noexcept
 		{
-			return std::accumulate(m_BasisAssignments.cbegin(),
-			                       m_BasisAssignments.cend(),
-			                       Eigen::Index{0},
-			                       [orbitalCountOf](const Eigen::Index acc, const ElementaryBasisPtr basisPtr)
-			                       {
-				                       const auto& basis = *basisPtr;
-				                       return acc
-				                              + std::accumulate(basis.cbegin(),
-				                                                basis.cend(),
-				                                                Eigen::Index{0},
-				                                                [orbitalCountOf](const Eigen::Index innerAcc,
-				                                                                 const AngularMomentumBlock& amb)
-				                                                { return innerAcc + orbitalCountOf(amb); });
-			                       });
+			return ranges::accumulate(
+			        m_BasisAssignments,
+			        Eigen::Index{0},
+			        [orbitalCountOf](const Eigen::Index acc, const ElementaryBasisPtr basisPtr)
+			        { return acc + ranges::accumulate(*basisPtr, Eigen::Index{0}, std::plus<>{}, orbitalCountOf); });
 		}
 
 		/// <c>atomIndex</c> must be resolved by IndexOfAtomOfContractedSphericalOrbital(orbitalIndex).
@@ -309,11 +298,10 @@ namespace SecChem::BasisSet::Gaussian
 			const auto* basisPtr = m_BasisAssignments[atomIndex];
 
 			const auto subshellSegTable =
-			        std::lower_bound(m_ContractedSphericalSubShellSegmentationTableOfEachElementaryBasis.cbegin(),
-			                         m_ContractedSphericalSubShellSegmentationTableOfEachElementaryBasis.cend(),
-			                         basisPtr,
-			                         [](const std::pair<ElementaryBasisPtr, std::vector<Eigen::Index>>& lhs,
-			                            const ElementaryBasisPtr rhs) { return lhs.first < rhs; })
+			        ranges::lower_bound(m_ContractedSphericalSubShellSegmentationTableOfEachElementaryBasis,
+			                            basisPtr,
+			                            std::less<>{},
+			                            &std::pair<ElementaryBasisPtr, std::vector<Eigen::Index>>::first)
 			                ->second;
 			assert(subshellSegTable.size() >= 2);
 			const auto segIterator = std::prev(std::upper_bound(
