@@ -8,6 +8,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_library(SecChem INTERFACE)
+add_library(SecChem::SecChem ALIAS SecChem)
+include(GNUInstallDirs)
+target_include_directories(SecChem INTERFACE
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
+
+#-----------------------------------------------------------------------------------
 
 if (TARGET Eigen3::Eigen)
     message(STATUS "SecChem will use the Eigen3 target defined by ancestor project")
@@ -48,3 +55,12 @@ endif ()
 target_link_libraries(SecChem INTERFACE Eigen3::Eigen)
 
 add_subdirectory(tests)
+
+#-----------------------------------------------------------------------------------
+
+set_target_properties(SecChem PROPERTIES EXPORT_NAME SecChem)
+install(TARGETS SecChem EXPORT SecChemTargets)
+export(TARGETS SecChem NAMESPACE SecChem:: FILE SecChemTargets.cmake)
+export(PACKAGE SecChem)
+install(EXPORT SecChemTargets NAMESPACE SecChem:: DESTINATION "${CMAKE_INSTALL_DATADIR}/SecChem/cmake")
+install(DIRECTORY "SecChem" DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
