@@ -54,6 +54,33 @@ else ()
 endif ()
 target_link_libraries(SecChem INTERFACE Eigen3::Eigen)
 
+if (TARGET range-v3::range-v3)
+    message(STATUS "SecChem will use the Eigen3 target defined by ancestor project")
+else ()
+    if (NOT RANGE_V3_SOURCE AND NOT RANGE_V3_REPO AND NOT RANGE_V3_TAG)
+        find_package(range-v3)
+    endif ()
+
+    if (NOT range-v3_FOUND)
+        if (NOT RANGE_V3_SOURCE AND NOT RANGE_V3_REPO AND NOT RANGE_V3_TAG)
+             set(RANGE_V3_SOURCE https://github.com/ericniebler/range-v3/archive/refs/tags/0.12.0.tar.gz)
+            # set(RANGE_V3_REPO https://github.com/ericniebler/range-v3.git)
+            # set(RANGE_V3_TAG 0.12.0)
+        endif ()
+
+        include(FetchContent)
+        FetchContent_Declare(
+                range-v3
+                URL ${RANGE_V3_SOURCE}
+                GIT_REPOSITORY ${RANGE_V3_REPO}
+                GIT_TAG ${RANGE_V3_TAG}
+                UPDATE_DISCONNECTED ON
+        )
+        FetchContent_MakeAvailable(range-v3)
+    endif ()
+endif ()
+target_link_libraries(SecChem INTERFACE range-v3::range-v3)
+
 add_subdirectory(tests)
 
 #-----------------------------------------------------------------------------------

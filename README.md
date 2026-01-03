@@ -91,10 +91,11 @@ If others find it useful, that’s a bonus.
 - **Build system**: CMake
 - **Required dependency**:
     - A fully C++17 compliant STL (sadly, some people do use ancient STL)
-    - Eigen 3 v5 (fetched by CMake if not found)
+    - [Eigen3](https://gitlab.com/libeigen/eigen/) v5 (fetched by CMake if not found)
+    - [range-v3](https://github.com/ericniebler/range-v3) v0.12.0 (fetched by CMake if not found)
 - **Test-only dependencies** (fetched by CMake if needed):
-    - Catch2 v3
-    - nlohmann/json
+    - [Catch2](https://github.com/catchorg/Catch2) v3
+    - [nlohmann/json](https://github.com/nlohmann/json) v3.12.0
 
 The Basis Set Exchange (BSE) JSON parser currently included should be considered an **example**, not a stable
 or mandatory part of the core library.
