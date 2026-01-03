@@ -3,7 +3,7 @@
 //
 
 #include "BasisSetExchangeJsonParserExample.hpp"
-#include "../SecChem/Utility/Parser.hpp"
+#include <SecChem/Utility/Parser.hpp>
 
 namespace Eigen
 {

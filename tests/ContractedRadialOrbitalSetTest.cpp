@@ -11,7 +11,7 @@
 using Catch::Matchers::WithinRel;
 using Catch::Approx;
 
-#include "../SecChem/BasisSet/Gaussian.hpp"
+#include <SecChem/BasisSet/Gaussian.hpp>
 using namespace SecChem::BasisSet::Gaussian;
 
 TEST_CASE("ContractedRadialOrbitalSet: basic construction", "[ContractedRadialOrbitalSet]")

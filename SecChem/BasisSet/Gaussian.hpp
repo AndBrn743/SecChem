@@ -13,11 +13,11 @@
 #include <utility>
 #include <vector>
 
-#include "../Utility/IEquatableWithTolerance.hpp"
+#include <SecChem/Utility/IEquatableWithTolerance.hpp>
 
-#include "../AzimuthalQuantumNumber.hpp"
-#include "../Element.hpp"
-#include "../System.hpp"
+#include <SecChem/AzimuthalQuantumNumber.hpp>
+#include <SecChem/Element.hpp>
+#include <SecChem/System.hpp>
 
 namespace SecChem::BasisSet::Gaussian
 {

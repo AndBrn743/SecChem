@@ -2,7 +2,7 @@
 // Created by Andy on 11/23/2025.
 //
 
-#include "../SecChem/Element.hpp"
+#include <SecChem/Element.hpp>
 #include <catch2/catch_test_macros.hpp>
 
 using namespace SecChem;

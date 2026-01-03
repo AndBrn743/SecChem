@@ -4,7 +4,7 @@
 
 #include <sstream>
 #include <catch2/catch_test_macros.hpp>
-#include "../SecChem/AtomicElectronConfiguration.hpp" // Your header
+#include <SecChem/AtomicElectronConfiguration.hpp>
 
 using namespace SecChem;
 

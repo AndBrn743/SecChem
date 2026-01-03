@@ -2,8 +2,8 @@
 // Created by Andy on 12/26/2025.
 //
 
-#include "../SecChem/BasisSet/Gaussian.hpp"
-#include "../SecChem/Utility/Parser.hpp"
+#include <SecChem/BasisSet/Gaussian.hpp>
+#include <SecChem/Utility/Parser.hpp>
 #include <catch2/catch_test_macros.hpp>
 
 #include "BasisSetExchangeJsonParserExample.hpp"

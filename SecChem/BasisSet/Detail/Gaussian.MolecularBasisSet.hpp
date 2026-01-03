@@ -10,7 +10,7 @@
 #include <string>
 #include <utility>
 
-#include "../../Molecule.hpp"
+#include <SecChem/Molecule.hpp>
 
 
 namespace SecChem::BasisSet::Gaussian

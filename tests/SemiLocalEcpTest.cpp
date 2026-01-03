@@ -15,7 +15,7 @@ using Catch::Approx;
 using Catch::Matchers::ContainsSubstring;
 using Catch::Matchers::WithinRel;
 
-#include "../SecChem/BasisSet/Gaussian.hpp"
+#include <SecChem/BasisSet/Gaussian.hpp>
 using namespace SecChem::BasisSet::Gaussian;
 
 TEST_CASE("SemiLocalEcp constructs correctly from column vectors", "[SemiLocalEcp]")

@@ -2,7 +2,7 @@
 // Created by Andy on 11/22/2025.
 //
 
-#include "../SecChem/ElectronicSubShell.hpp"
+#include <SecChem/ElectronicSubShell.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <sstream>
 

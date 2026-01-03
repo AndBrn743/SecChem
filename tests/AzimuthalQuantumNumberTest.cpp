@@ -4,7 +4,7 @@
 
 // test_azimuthal_quantum_number.cpp
 #define CATCH_CONFIG_MAIN
-#include "../SecChem/AzimuthalQuantumNumber.hpp"  // your class header
+#include <SecChem/AzimuthalQuantumNumber.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <sstream>
 
