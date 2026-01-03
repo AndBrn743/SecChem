@@ -7,7 +7,6 @@ software.
 This repository was split out of the author’s HF/DFT codebase (**SecScf**) to allow focused refactoring,
 testing, and experimentation with cleaner abstractions and better software structure.
 
----
 
 ## Project goals
 
@@ -29,7 +28,6 @@ The primary goals are:
 This library is intended to be used as **infrastructure** by electronic-structure codes, not as an end-user
 program.
 
----
 
 ## Design philosophy
 
@@ -46,7 +44,6 @@ More specifically:
 
 Performance matters, but *only after the model is correct*.
 
----
 
 ## Non-goals
 
@@ -62,7 +59,6 @@ SecChem deliberately does **not** implement:
 
 Those responsibilities belong to downstream libraries or applications.
 
----
 
 ## Status
 
@@ -73,7 +69,6 @@ Those responsibilities belong to downstream libraries or applications.
 
 The API is expected to evolve as the design is refined.
 
----
 
 ## Relationship to SecScf
 
@@ -89,14 +84,14 @@ This repository exists to:
 
 If others find it useful, that’s a bonus.
 
----
 
 ## Build requirements
 
 - **C++ standard**: C++17 (minimum)
 - **Build system**: CMake
 - **Required dependency**:
-    - Eigen 3
+    - A fully C++17 compliant STL (sadly, some people do use ancient STL)
+    - Eigen 3 v5 (fetched by CMake if not found)
 - **Test-only dependencies** (fetched by CMake if needed):
     - Catch2 v3
     - nlohmann/json
@@ -104,7 +99,6 @@ If others find it useful, that’s a bonus.
 The Basis Set Exchange (BSE) JSON parser currently included should be considered an **example**, not a stable
 or mandatory part of the core library.
 
----
 
 ## Examples and documentation
 
@@ -116,13 +110,11 @@ This project intentionally does **not** provide user-facing examples in the READ
 
 If you want to understand how the library is meant to be used, start with the tests.
 
----
 
 ## License & copyright notice
 
 This library is licensed under MIT license.
 
----
 
 ## Data and attribution
 
@@ -203,7 +195,6 @@ https://www.basissetexchange.org
 Users who rely on the original, unmodified basis set data in scientific work should cite the appropriate original 
 publications, as indicated by the Basis Set Exchange.
 
----
 
 ## Final note
 
