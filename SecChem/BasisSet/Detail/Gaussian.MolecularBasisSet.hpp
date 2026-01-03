@@ -12,6 +12,7 @@
 #include <utility>
 
 #include <SecChem/Molecule.hpp>
+#include <SecChem/Polyfill/flat_map.hpp>
 
 
 namespace SecChem::BasisSet::Gaussian
@@ -63,14 +64,17 @@ namespace SecChem::BasisSet::Gaussian
 
 		std::size_t UniqueElementaryBasisCount() const noexcept
 		{
-			return m_ContractedSphericalSubShellSegmentationTableOfEachElementaryBasis.size();
+			return m_ComputedElementaryBasisInfoTable.size();
 		}
 
 		auto UniqueElementaryBasis() const noexcept
 		{
-			return m_ContractedSphericalSubShellSegmentationTableOfEachElementaryBasis
-			       | ranges::views::transform([](const std::pair<ElementaryBasisPtr, std::vector<Eigen::Index>>& item)
-			                                          -> const ElementaryBasis& { return *item.first; });
+			// due to the limitation of range-v3 0.12.0 and std::range of C++20 (C++23's std::range is fine) we can only
+			// use non-const flat_map. this should be fine, we just have to be *VERY* careful
+			return const_cast<polyfill::flat_map<ElementaryBasisPtr, ComputedElementaryBasisInfo>&>(
+			               m_ComputedElementaryBasisInfoTable)
+			       | ranges::views::transform([](const auto& kv) -> const ElementaryBasis&
+			                                  { return *std::get<0>(kv); });
 		}
 
 		// this method DOES cache
@@ -202,9 +206,7 @@ namespace SecChem::BasisSet::Gaussian
 		              [](const AngularMomentumBlock& amb) { return amb.PrimitiveSphericalOrbitalCount(); })),
 		      m_ContractedSphericalOrbitalSegmentationTable(CreateSegmentationTableOfSomeKindOfOrbitals(
 		              [](const AngularMomentumBlock& amb) { return amb.ContractedSphericalOrbitalCount(); })),
-		      m_ContractedSphericalSubShellSegmentationTableOfEachElementaryBasis(
-		              CreateSubShellSegmentationTableForEachElementaryBasis(
-		                      [](const AngularMomentumBlock& amb) { return amb.ContractedSphericalOrbitalCount(); }))
+		      m_ComputedElementaryBasisInfoTable(ComputedElementaryBasisInfo::CreateStatisticsFor(m_BasisAssignments))
 		{
 			assert(molecule.AtomCount() == m_BasisAssignments.size());
 		}
@@ -228,33 +230,54 @@ namespace SecChem::BasisSet::Gaussian
 			return segTable;
 		}
 
-		struct UniqueElementaryBasisInfo
+		struct ComputedElementaryBasisInfo
 		{
-			ElementaryBasisPtr BasisPtr;
+			static polyfill::flat_map<ElementaryBasisPtr, ComputedElementaryBasisInfo> CreateStatisticsFor(
+			        const std::vector<ElementaryBasisPtr>& basisAssignments)
+			{
+				polyfill::flat_map<ElementaryBasisPtr, ComputedElementaryBasisInfo> statistics;
+
+				for (const ElementaryBasisPtr basisPtr : basisAssignments)
+				{
+					auto& [referenceCount, primitiveSphericalSubShellSegTable, contractedSphericalSubShellSegTable] =
+					        statistics[basisPtr];
+
+					referenceCount++;
+
+					if (referenceCount == 1)
+					{
+						primitiveSphericalSubShellSegTable = CreateSubShellSegmentationTableFor(
+						        *basisPtr,
+						        [](const AngularMomentumBlock& amb) { return amb.PrimitiveSphericalOrbitalCount(); });
+
+						contractedSphericalSubShellSegTable = CreateSubShellSegmentationTableFor(
+						        *basisPtr,
+						        [](const AngularMomentumBlock& amb) { return amb.ContractedSphericalOrbitalCount(); });
+					}
+				}
+
+				return statistics;
+			}
+
 			Eigen::Index ReferenceCount;
+			std::vector<Eigen::Index> PrimitiveSphericalSubShellSegmentationTable;
 			std::vector<Eigen::Index> ContractedSphericalSubShellSegmentationTable;
-			std::vector<Eigen::Index> ContractedSphericalOrbital;
+
+			Eigen::Index PrimitiveSphericalSubShellCount() const noexcept
+			{
+				assert(!PrimitiveSphericalSubShellSegmentationTable.empty());
+				return static_cast<Eigen::Index>(PrimitiveSphericalSubShellSegmentationTable.size() - 1);
+			}
+
+			Eigen::Index ContractedSphericalSubShellCount() const noexcept
+			{
+				assert(!ContractedSphericalSubShellSegmentationTable.empty());
+				return static_cast<Eigen::Index>(ContractedSphericalSubShellSegmentationTable.size() - 1);
+			}
 		};
 
 		using SubShellSegmentationTableOfEachElementaryBasis =
 		        std::vector<std::pair<ElementaryBasisPtr, std::vector<Eigen::Index>>>;
-
-		// segmentation table will be sorted according to the elementary basis ptr
-		template <typename OrbitalCounter>
-		SubShellSegmentationTableOfEachElementaryBasis CreateSubShellSegmentationTableForEachElementaryBasis(
-		        OrbitalCounter orbitalCountOf) const
-		{
-			const auto uniqueElementaryBasisPtrs =
-			        std::vector{m_BasisAssignments} | ranges::actions::sort | ranges::actions::unique;
-
-			SubShellSegmentationTableOfEachElementaryBasis segmentationTable(uniqueElementaryBasisPtrs.size());
-			ranges::transform(
-			        uniqueElementaryBasisPtrs,
-			        segmentationTable.begin(),
-			        [orbitalCountOf](const ElementaryBasisPtr basisPtr)
-			        { return std::pair{basisPtr, CreateSubShellSegmentationTableFor(*basisPtr, orbitalCountOf)}; });
-			return segmentationTable;
-		}
 
 		template <typename OrbitalCounter>
 		static std::vector<Eigen::Index> CreateSubShellSegmentationTableFor(ElementaryBasis& basis,
@@ -302,14 +325,10 @@ namespace SecChem::BasisSet::Gaussian
 		                                                                const Eigen::Index atomIndex) const noexcept
 		{
 			const auto atomicOffset = m_ContractedSphericalOrbitalSegmentationTable[atomIndex];
-			const auto* basisPtr = m_BasisAssignments[atomIndex];
+			const ElementaryBasisPtr basisPtr = m_BasisAssignments[atomIndex];
 
-			const auto subshellSegTable =
-			        ranges::lower_bound(m_ContractedSphericalSubShellSegmentationTableOfEachElementaryBasis,
-			                            basisPtr,
-			                            std::less<>{},
-			                            &std::pair<ElementaryBasisPtr, std::vector<Eigen::Index>>::first)
-			                ->second;
+			const auto& subshellSegTable =
+			        m_ComputedElementaryBasisInfoTable.at(basisPtr).ContractedSphericalSubShellSegmentationTable;
 			assert(subshellSegTable.size() >= 2);
 			const auto segIterator = std::prev(std::upper_bound(
 			        std::next(subshellSegTable.cbegin()), subshellSegTable.cend(), orbitalIndex - atomicOffset));
@@ -324,11 +343,10 @@ namespace SecChem::BasisSet::Gaussian
 
 		Gaussian::SharedBasisSetLibrary m_Library;
 		SharedMolecule m_Molecule;
-		std::vector<ElementaryBasisPtr> m_BasisAssignments;
-		std::vector<Eigen::Index> m_PrimitiveSphericalOrbitalSegmentationTable;
-		std::vector<Eigen::Index> m_ContractedSphericalOrbitalSegmentationTable;
-		SubShellSegmentationTableOfEachElementaryBasis
-		        m_ContractedSphericalSubShellSegmentationTableOfEachElementaryBasis;
+		std::vector<ElementaryBasisPtr> m_BasisAssignments{};
+		std::vector<Eigen::Index> m_PrimitiveSphericalOrbitalSegmentationTable{};
+		std::vector<Eigen::Index> m_ContractedSphericalOrbitalSegmentationTable{};
+		polyfill::flat_map<ElementaryBasisPtr, ComputedElementaryBasisInfo> m_ComputedElementaryBasisInfoTable{};
 	};
 }  // namespace SecChem::BasisSet::Gaussian
 
