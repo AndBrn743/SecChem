@@ -248,28 +248,35 @@ namespace SecChem::BasisSet::Gaussian
 			        std::vector{m_BasisAssignments} | ranges::actions::sort | ranges::actions::unique;
 
 			SubShellSegmentationTableOfEachElementaryBasis segmentationTable(uniqueElementaryBasisPtrs.size());
-			ranges::transform(uniqueElementaryBasisPtrs,
-			                  segmentationTable.begin(),
-			                  [orbitalCountOf](const ElementaryBasisPtr basisPtr)
-			                  {
-				                  const auto& basis = *basisPtr;
-				                  const auto segCount = basis.back().AngularMomentum().Value() + 1;
-
-				                  std::vector<Eigen::Index> segTable(segCount + 1, 0);
-				                  Eigen::Index offset = 0;
-				                  for (const auto& amb : basis)
-				                  {
-					                  offset += orbitalCountOf(amb);
-					                  segTable[amb.AngularMomentum().Value() + 1] = offset;
-				                  }
-				                  for (std::size_t i = 2; i < segTable.size(); ++i)  // `i` starts from 2, not 1, not 0
-				                  {
-					                  segTable[i] = std::max(segTable[i - 1], segTable[i]);
-				                  }
-
-				                  return std::pair{basisPtr, segTable};
-			                  });
+			ranges::transform(
+			        uniqueElementaryBasisPtrs,
+			        segmentationTable.begin(),
+			        [orbitalCountOf](const ElementaryBasisPtr basisPtr)
+			        { return std::pair{basisPtr, CreateSubShellSegmentationTableFor(*basisPtr, orbitalCountOf)}; });
 			return segmentationTable;
+		}
+
+		template <typename OrbitalCounter>
+		static std::vector<Eigen::Index> CreateSubShellSegmentationTableFor(ElementaryBasis& basis,
+		                                                                    OrbitalCounter orbitalCountOf)
+		{
+			const auto segCount = basis.back().AngularMomentum().Value() + 1;
+
+			std::vector<Eigen::Index> segTable(segCount + 1, 0);
+			Eigen::Index offset = 0;
+
+			for (const auto& amb : basis)
+			{
+				offset += orbitalCountOf(amb);
+				segTable[amb.AngularMomentum().Value() + 1] = offset;
+			}
+
+			for (std::size_t i = 2; i < segTable.size(); ++i)  // `i` starts from 2, not 1, not 0
+			{
+				segTable[i] = std::max(segTable[i - 1], segTable[i]);
+			}
+
+			return segTable;
 		}
 
 		template <typename OrbitalCounter>
