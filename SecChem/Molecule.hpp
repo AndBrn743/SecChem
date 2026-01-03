@@ -125,6 +125,24 @@ namespace SecChem
 			return CoordinationNumberOf(IndexOf(atom), countingFunction);
 		}
 
+		template <typename CountingFunction>
+		std::vector<double> GenerateCoordinationNumbers(CountingFunction& countingFunction) const
+		{
+			std::vector<double> coordinationNumbers(AtomCount());
+
+			for (std::size_t i = 0; i < AtomCount(); i++)
+			{
+				for (std::size_t j = 0; j < i; j++)
+				{
+					const auto cn = countingFunction((*this)[i], (*this)[j]);
+					coordinationNumbers[i] += cn;
+					coordinationNumbers[j] += cn;
+				}
+			}
+
+			return coordinationNumbers;
+		}
+
 		bool Contains(const Atom& atom) const noexcept
 		{
 			if (&atom >= cbegin() && &atom < cend())
