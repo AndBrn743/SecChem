@@ -32,12 +32,12 @@ namespace SecUtility
 
 		constexpr bool operator==(const Derived& other) const noexcept
 		{
-			return static_cast<const Derived*>(this)->EqualsTo_Impl(other, static_cast<Scalar>(0));
+			return OperatorEquals_Impl(other);
 		}
 
 		constexpr bool operator!=(const Derived& other) const noexcept
 		{
-			return !static_cast<const Derived*>(this)->EqualsTo_Impl(other, static_cast<Scalar>(0));
+			return !OperatorEquals_Impl(other);
 		}
 
 	private:
@@ -54,5 +54,10 @@ namespace SecUtility
 				~IEquatableWithTolerance() noexcept = default;
 
 		bool EqualsTo_Impl(const Derived& other, Scalar tolerance) = delete;
+
+		bool OperatorEquals_Impl(const Derived& other) const noexcept
+		{
+			return static_cast<const Derived*>(this)->EqualsTo_Impl(other, Scalar{0});
+		}
 	};
 }  // namespace SecUtility
