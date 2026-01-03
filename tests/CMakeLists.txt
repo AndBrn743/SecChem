@@ -55,6 +55,10 @@ target_link_libraries(BseJsonParser PRIVATE SecChem nlohmann_json::nlohmann_json
 include(CTest)
 include(Catch)
 
+add_executable(PolyfillFlatMapTest PolyfillFlatMapTest.cpp)
+target_link_libraries(PolyfillFlatMapTest PRIVATE Catch2::Catch2WithMain SecChem)
+add_test(NAME PolyfillFlatMapTest COMMAND PolyfillFlatMapTest)
+
 add_executable(AzimuthalQuantumNumberTest AzimuthalQuantumNumberTest.cpp)
 target_link_libraries(AzimuthalQuantumNumberTest PRIVATE Catch2::Catch2WithMain SecChem)
 add_test(NAME AzimuthalQuantumNumberTest COMMAND AzimuthalQuantumNumberTest)
