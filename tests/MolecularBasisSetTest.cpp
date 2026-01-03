@@ -285,6 +285,14 @@ H 1.1 0 0
 	REQUIRE(molecule[4].Element() == Element::H);
 
 	REQUIRE(basis.UniqueElementaryBasisCount() == 4);
+
+	REQUIRE(basis.AtomIndexFromPrimitiveSphericalOrbital(0) == 0);
+	REQUIRE(basis.AtomIndexFromPrimitiveSphericalOrbital(1) == 0);
+	REQUIRE(basis.AtomIndexFromPrimitiveSphericalOrbital(20) == 0);
+	REQUIRE(basis.AtomIndexFromPrimitiveSphericalOrbital(30) == 0);
+	REQUIRE(basis.AtomIndexFromPrimitiveSphericalOrbital(32) == 0);
+	REQUIRE(basis.AtomIndexFromPrimitiveSphericalOrbital(33) == 1);
+
 	REQUIRE(basis.AtomIndexFromContractedSphericalOrbital(0) == 0);
 	REQUIRE(basis.AtomIndexFromContractedSphericalOrbital(1) == 0);
 	REQUIRE(basis.AtomIndexFromContractedSphericalOrbital(2) == 0);

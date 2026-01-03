@@ -6,6 +6,7 @@
 #error Do not include internal header files directly
 #endif
 
+#include <range/v3/all.hpp>
 #include <sstream>
 #include <string>
 #include <utility>
@@ -152,19 +153,18 @@ namespace SecChem::BasisSet::Gaussian
 			return Molecule()[AtomIndexFromContractedSphericalOrbital(orbitalIndex)];
 		}
 
-		Eigen::Index IndexOfAtomOfPrimitiveSphericalOrbital(const Eigen::Index orbitalIndex) const noexcept
+		Eigen::Index AtomIndexFromPrimitiveSphericalOrbital(const Eigen::Index orbitalIndex) const noexcept
 		{
 			assert(orbitalIndex >= 0 && orbitalIndex <= m_PrimitiveSphericalOrbitalSegmentationTable.back());
 
-			return std::distance(m_PrimitiveSphericalOrbitalSegmentationTable.cbegin(),
-			                     std::upper_bound(m_PrimitiveSphericalOrbitalSegmentationTable.cbegin(),
-			                                      m_PrimitiveSphericalOrbitalSegmentationTable.cend(),
-			                                      orbitalIndex));
+			return std::distance(
+			        m_PrimitiveSphericalOrbitalSegmentationTable.cbegin(),
+			        std::prev(ranges::upper_bound(m_PrimitiveSphericalOrbitalSegmentationTable, orbitalIndex)));
 		}
 
-		const Atom& AtomOfPrimitiveSphericalOrbital(const Eigen::Index orbitalIndex) const noexcept
+		const Atom& AtomFromPrimitiveSphericalOrbital(const Eigen::Index orbitalIndex) const noexcept
 		{
-			return Molecule()[IndexOfAtomOfPrimitiveSphericalOrbital(orbitalIndex)];
+			return Molecule()[AtomIndexFromPrimitiveSphericalOrbital(orbitalIndex)];
 		}
 
 		ElectronicSubShell AtomicSubShellFromContractedSphericalOrbital(const Eigen::Index orbitalIndex) const noexcept
