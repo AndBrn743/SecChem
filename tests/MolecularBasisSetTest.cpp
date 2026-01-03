@@ -263,7 +263,7 @@ TEST_CASE("MolecularBasisSet build succeeds", "[basis][builder]")
 {
 	using namespace SecChem;
 
-	const auto basis = SecChem::Builder<Gaussian::MolecularBasisSet>{Library()}
+	const auto basis = SecChem::Builder<BasisSet::Gaussian::MolecularBasisSet>{Library()}
 	                           .SetOrOverwriteGlobalDefaultBasisSetTo("def2-SVP")
 	                           .SetOrOverwriteElementaryDefaultBasisSetTo("ANO-R0", Element::C)
 	                           .BuildWith(MolecularInputInterpreter{},
@@ -346,7 +346,7 @@ TEST_CASE("Atom tags are preserved", "[basis][parser]")
 {
 	using namespace SecChem;
 
-	const auto mbs = SecChem::Builder<Gaussian::MolecularBasisSet>{Library()}
+	const auto mbs = SecChem::Builder<BasisSet::Gaussian::MolecularBasisSet>{Library()}
 	                         .SetOrOverwriteGlobalDefaultBasisSetTo("def2-SVP")
 	                         .SetOrOverwriteElementaryDefaultBasisSetTo("ANO-R0", Element::C)
 	                         .BuildWith(MolecularInputInterpreter{},
@@ -364,7 +364,7 @@ Ne 1 1 1 basis="example-basis")");
 TEST_CASE("Basis assignment precedence is respected", "[basis][assignment]")
 {
 	using namespace SecChem;
-	const auto mbs = SecChem::Builder<Gaussian::MolecularBasisSet>{Library()}
+	const auto mbs = SecChem::Builder<BasisSet::Gaussian::MolecularBasisSet>{Library()}
 	                         .SetOrOverwriteGlobalDefaultBasisSetTo("def2-SVP")
 	                         .SetOrOverwriteElementaryDefaultBasisSetTo("ANO-R0", Element::C)
 	                         .BuildWith(MolecularInputInterpreter{},
@@ -394,7 +394,7 @@ Ne 1 1 1 basis="example-basis")");
 
 TEST_CASE("ECP-only angular momentum blocks are preserved", "[basis][ecp]")
 {
-	const auto mbs = SecChem::Builder<SecChem::Gaussian::MolecularBasisSet>{Library()}
+	const auto mbs = SecChem::Builder<SecChem::BasisSet::Gaussian::MolecularBasisSet>{Library()}
 	                         .SetOrOverwriteGlobalDefaultBasisSetTo("def2-SVP")
 	                         .BuildWith(MolecularInputInterpreter{}, R"(Ne 0 0 0 basis="example-basis")");
 
@@ -407,7 +407,7 @@ TEST_CASE("ECP-only angular momentum blocks are preserved", "[basis][ecp]")
 
 TEST_CASE("Elementary default basis cannot be set before global default", "[basis][builder][negative]")
 {
-	auto builder = SecChem::Builder<SecChem::Gaussian::MolecularBasisSet>{Library()};
+	auto builder = SecChem::Builder<SecChem::BasisSet::Gaussian::MolecularBasisSet>{Library()};
 	builder.SetOrOverwriteGlobalDefaultBasisSetTo("def2-SVP");
 
 	REQUIRE_THROWS_AS(builder.SetOrOverwriteElementaryDefaultBasisSetTo("ANO-R0", SecChem::Element::Na),
@@ -416,14 +416,14 @@ TEST_CASE("Elementary default basis cannot be set before global default", "[basi
 
 TEST_CASE("Setting non-existent global default basis throws", "[basis][builder][negative]")
 {
-	auto builder = SecChem::Builder<SecChem::Gaussian::MolecularBasisSet>{Library()};
+	auto builder = SecChem::Builder<SecChem::BasisSet::Gaussian::MolecularBasisSet>{Library()};
 
 	REQUIRE_THROWS_AS(builder.SetOrOverwriteGlobalDefaultBasisSetTo("3-21G"), std::runtime_error);
 }
 
 TEST_CASE("Setting non-existent elementary default basis throws", "[basis][builder][negative]")
 {
-	auto builder = SecChem::Builder<SecChem::Gaussian::MolecularBasisSet>{Library()};
+	auto builder = SecChem::Builder<SecChem::BasisSet::Gaussian::MolecularBasisSet>{Library()};
 	builder.SetOrOverwriteGlobalDefaultBasisSetTo("def2-SVP");
 
 	REQUIRE_THROWS_AS(builder.SetOrOverwriteElementaryDefaultBasisSetTo("3-21G", SecChem::Element::C),
@@ -432,7 +432,7 @@ TEST_CASE("Setting non-existent elementary default basis throws", "[basis][build
 
 TEST_CASE("Elementary default basis lacking element throws", "[basis][builder][negative]")
 {
-	auto builder = SecChem::Builder<SecChem::Gaussian::MolecularBasisSet>{Library()};
+	auto builder = SecChem::Builder<SecChem::BasisSet::Gaussian::MolecularBasisSet>{Library()};
 
 	builder.SetOrOverwriteGlobalDefaultBasisSetTo("def2-SVP");
 
@@ -443,18 +443,16 @@ TEST_CASE("Elementary default basis lacking element throws", "[basis][builder][n
 
 TEST_CASE("Per-atom basis override with unknown basis throws", "[basis][parser][negative]")
 {
-	auto builder =
-	        SecChem::Builder<SecChem::Gaussian::MolecularBasisSet>{Library()}.SetOrOverwriteGlobalDefaultBasisSetTo(
-	                "def2-SVP");
+	auto builder = SecChem::Builder<SecChem::BasisSet::Gaussian::MolecularBasisSet>{Library()}
+	                       .SetOrOverwriteGlobalDefaultBasisSetTo("def2-SVP");
 
 	REQUIRE_THROWS_AS(builder.BuildWith(MolecularInputInterpreter{}, R"(H 0 0 0 basis="3-21G")"), std::runtime_error);
 }
 
 TEST_CASE("Per-atom basis override lacking element throws", "[basis][parser][negative]")
 {
-	auto builder =
-	        SecChem::Builder<SecChem::Gaussian::MolecularBasisSet>{Library()}.SetOrOverwriteGlobalDefaultBasisSetTo(
-	                "def2-SVP");
+	auto builder = SecChem::Builder<SecChem::BasisSet::Gaussian::MolecularBasisSet>{Library()}
+	                       .SetOrOverwriteGlobalDefaultBasisSetTo("def2-SVP");
 
 	// example-basis does not contain oxygen
 	REQUIRE_THROWS_AS(builder.BuildWith(MolecularInputInterpreter{}, R"(O 0 0 0 basis="example-basis")"),
@@ -463,16 +461,15 @@ TEST_CASE("Per-atom basis override lacking element throws", "[basis][parser][neg
 
 TEST_CASE("Missing basis assignment throws when no default is set", "[basis][negative]")
 {
-	auto builder = SecChem::Builder<SecChem::Gaussian::MolecularBasisSet>{Library()};
+	auto builder = SecChem::Builder<SecChem::BasisSet::Gaussian::MolecularBasisSet>{Library()};
 
 	REQUIRE_THROWS_AS(builder.BuildWith(MolecularInputInterpreter{}, R"(H 0 0 0)"), std::runtime_error);
 }
 
 TEST_CASE("Invalid atom line format throws", "[parser][negative]")
 {
-	auto builder =
-	        SecChem::Builder<SecChem::Gaussian::MolecularBasisSet>{Library()}.SetOrOverwriteGlobalDefaultBasisSetTo(
-	                "def2-SVP");
+	auto builder = SecChem::Builder<SecChem::BasisSet::Gaussian::MolecularBasisSet>{Library()}
+	                       .SetOrOverwriteGlobalDefaultBasisSetTo("def2-SVP");
 
 	REQUIRE_THROWS_AS(builder.BuildWith(MolecularInputInterpreter{},
 	                                    R"(C 0 0)"),  // missing coordinate
@@ -481,9 +478,8 @@ TEST_CASE("Invalid atom line format throws", "[parser][negative]")
 
 TEST_CASE("Unknown element symbol throws", "[parser][negative]")
 {
-	auto builder =
-	        SecChem::Builder<SecChem::Gaussian::MolecularBasisSet>{Library()}.SetOrOverwriteGlobalDefaultBasisSetTo(
-	                "def2-SVP");
+	auto builder = SecChem::Builder<SecChem::BasisSet::Gaussian::MolecularBasisSet>{Library()}
+	                       .SetOrOverwriteGlobalDefaultBasisSetTo("def2-SVP");
 
 	REQUIRE_THROWS_AS(builder.BuildWith(MolecularInputInterpreter{}, R"(Xx 0 0 0)"), std::runtime_error);
 }
