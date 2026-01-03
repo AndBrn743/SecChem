@@ -1,6 +1,12 @@
 cmake_minimum_required(VERSION 3.15)
 project(SecChem LANGUAGES CXX)
 
+if (NOT DEFINED CMAKE_CXX_STANDARD OR CMAKE_CXX_STANDARD LESS 17)
+    set(CMAKE_CXX_STANDARD 17)
+endif ()
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
 add_library(SecChem INTERFACE)
 
 if (TARGET Eigen3::Eigen)
