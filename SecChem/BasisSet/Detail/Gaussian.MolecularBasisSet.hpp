@@ -8,6 +8,7 @@
 
 #include <sstream>
 #include <string>
+#include <utility>
 
 #include "../../Molecule.hpp"
 
@@ -25,6 +26,8 @@ namespace SecChem::BasisSet::Gaussian
 		using ElementaryBasisPtr = const ElementaryBasis*;
 
 	public:
+		// GCC require it
+		// ReSharper disable once CppRedundantQualifier
 		const Gaussian::SharedBasisSetLibrary& SharedBasisSetLibrary() const noexcept
 		{
 			return m_Library;
@@ -187,16 +190,17 @@ namespace SecChem::BasisSet::Gaussian
 
 
 	private:
-		MolecularBasisSet(const Gaussian::SharedBasisSetLibrary& library,
+		MolecularBasisSet(Gaussian::SharedBasisSetLibrary library,
 		                  const SharedMolecule& molecule,
 		                  std::vector<ElementaryBasisPtr> basisAssignments)
-		    : m_Library(library), m_Molecule(molecule), m_BasisAssignments(std::move(basisAssignments)),
+		    : m_Library(std::move(library)), m_Molecule(molecule), m_BasisAssignments(std::move(basisAssignments)),
 		      m_PrimitiveSphericalOrbitalSegmentationTable(CreateSegmentationTableOfSomeKindOfOrbitals(
 		              [](const AngularMomentumBlock& amb) { return amb.PrimitiveSphericalOrbitalCount(); })),
 		      m_ContractedSphericalOrbitalSegmentationTable(CreateSegmentationTableOfSomeKindOfOrbitals(
 		              [](const AngularMomentumBlock& amb) { return amb.ContractedSphericalOrbitalCount(); })),
 		      m_ContractedSphericalSubShellSegmentationTableOfEachElementaryBasis(
-		              CreateSubShellSegmentationTableForEachElementaryBasis())
+		              CreateSubShellSegmentationTableForEachElementaryBasis(
+		                      [](const AngularMomentumBlock& amb) { return amb.ContractedSphericalOrbitalCount(); }))
 		{
 			assert(molecule.AtomCount() == m_BasisAssignments.size());
 		}
@@ -229,7 +233,10 @@ namespace SecChem::BasisSet::Gaussian
 		using SubShellSegmentationTableOfEachElementaryBasis =
 		        std::vector<std::pair<ElementaryBasisPtr, std::vector<Eigen::Index>>>;
 
-		SubShellSegmentationTableOfEachElementaryBasis CreateSubShellSegmentationTableForEachElementaryBasis() const
+		// segmentation table will be sorted according to the elementary basis ptr
+		template <typename OrbitalCounter>
+		SubShellSegmentationTableOfEachElementaryBasis CreateSubShellSegmentationTableForEachElementaryBasis(
+		        OrbitalCounter orbitalCountOf) const
 		{
 			std::vector<ElementaryBasisPtr> assignments = m_BasisAssignments;
 			std::sort(assignments.begin(), assignments.end());
@@ -240,7 +247,7 @@ namespace SecChem::BasisSet::Gaussian
 			std::transform(assignments.cbegin(),
 			               assignments.cbegin() + uniqueElementaryBasisCount,
 			               segmentationTable.begin(),
-			               [](const ElementaryBasisPtr basisPtr)
+			               [orbitalCountOf](const ElementaryBasisPtr basisPtr)
 			               {
 				               const auto& basis = *basisPtr;
 				               const auto segCount = basis.back().AngularMomentum().Value() + 1;
@@ -249,7 +256,7 @@ namespace SecChem::BasisSet::Gaussian
 				               Eigen::Index offset = 0;
 				               for (const auto& amb : basis)
 				               {
-					               offset += amb.ContractedSphericalOrbitalCount();
+					               offset += orbitalCountOf(amb);
 					               segTable[amb.AngularMomentum().Value() + 1] = offset;
 				               }
 				               for (std::size_t i = 2; i < segTable.size(); ++i)  // `i` starts from 2, not 1, not 0
@@ -335,7 +342,7 @@ template <>
 class SecChem::Builder<SecChem::BasisSet::Gaussian::MolecularBasisSet>
 {
 public:
-	explicit Builder(const BasisSet::Gaussian::SharedBasisSetLibrary& library) : m_Library(library)
+	explicit Builder(BasisSet::Gaussian::SharedBasisSetLibrary library) : m_Library(std::move(library))
 	{
 		/* NO CODE */
 	}
