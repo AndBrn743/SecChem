@@ -399,6 +399,9 @@ Ne 1 1 1 basis="example-basis")");
 	// Ne → example-basis (per-atom override)
 	REQUIRE(&mbs.ElementaryBasisAt(3) == &Library()["example-basis"][Element::Ne]);
 	REQUIRE(&mbs.ElementaryBasisOf(mol[3]) == &Library()["example-basis"][Element::Ne]);
+
+	REQUIRE_THROWS_AS(mbs.ElementaryBasisAt(4), std::out_of_range);
+	REQUIRE_THROWS_AS(mbs.ElementaryBasisAt(-1), std::out_of_range);
 }
 
 TEST_CASE("ECP-only angular momentum blocks are preserved", "[basis][ecp]")
