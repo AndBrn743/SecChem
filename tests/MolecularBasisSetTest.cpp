@@ -7,6 +7,7 @@
 #include "BasisSetExchangeJsonParserExample.hpp"
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
+#include <range/v3/range/conversion.hpp>
 
 #include <SecChem/Geometry.Input.hpp>
 
@@ -351,7 +352,71 @@ H 1.1 0 0
 	REQUIRE(basis.AtomIndexAndSubShellFromContractedSphericalOrbital(23) == std::pair{Eigen::Index{2}, 3_Diffuse});
 
 	REQUIRE(basis.ContractedSubShellCount() == 3 + 3 + 6 + 1 + 3);
+	{
+		const std::vector reference = {1_Sharp, 2_Sharp, 2_Principal};
+		const auto actual = basis.ContractedSubShellsOf(molecule[0]) | ranges::to_vector;
+		REQUIRE(actual == reference);
+	}
+	{
+		const std::vector reference = {1_Sharp, 2_Sharp, 3_Sharp, 2_Principal, 3_Principal, 3_Diffuse};
+		const auto actual = basis.ContractedSubShellsOf(molecule[2]) | ranges::to_vector;
+		REQUIRE(actual == reference);
+	}
+
 	REQUIRE(basis.PrimitiveSubShellCount() == 19 + 5 + 12 + 2 + 5);
+	{
+		const std::vector reference = {1_Sharp,
+		                               2_Sharp,
+		                               3_Sharp,
+		                               4_Sharp,
+		                               5_Sharp,
+		                               6_Sharp,
+		                               7_Sharp,
+		                               8_Sharp,
+		                               9_Sharp,
+		                               10_Sharp,
+		                               11_Sharp,
+		                               12_Sharp,
+		                               2_Principal,
+		                               3_Principal,
+		                               4_Principal,
+		                               5_Principal,
+		                               6_Principal,
+		                               7_Principal,
+		                               8_Principal};
+		const auto actual = basis.PrimitiveSubShellsOf(molecule[0]) | ranges::to_vector;
+		REQUIRE(actual == reference);
+	}
+	{
+		const std::vector reference = {1_Sharp,
+		                               2_Sharp,
+		                               3_Sharp,
+		                               4_Sharp,
+		                               5_Sharp,
+		                               6_Sharp,
+		                               7_Sharp,
+		                               2_Principal,
+		                               3_Principal,
+		                               4_Principal,
+		                               5_Principal,
+		                               3_Diffuse};
+		const auto actual = basis.PrimitiveSubShellsOf(molecule[2]) | ranges::to_vector;
+		REQUIRE(actual == reference);
+	}
+
+	{
+		Eigen::VectorXd charges = Eigen::VectorXd::Zero(basis.ContractedSubShellCount());
+		auto chargeIterator = charges.begin();
+
+		for (const Atom& atom : molecule)
+		{
+			for (const ElectronicSubShell shell : basis.ContractedSubShellsOf(atom))
+			{
+				*chargeIterator = 0.5 * atom.Element().ElectronConfiguration()[shell];
+				++chargeIterator;
+			}
+		}
+	}
 }
 
 TEST_CASE("Atom tags are preserved", "[basis][parser]")

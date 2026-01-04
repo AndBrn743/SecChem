@@ -6,7 +6,10 @@
 #error Do not include internal header files directly
 #endif
 
-#include <range/v3/all.hpp>
+#include <range/v3/algorithm.hpp>
+#include <range/v3/numeric.hpp>
+#include <range/v3/view/transform.hpp>
+#include <range/v3/view/join.hpp>
 #include <sstream>
 #include <string>
 #include <utility>
@@ -170,6 +173,30 @@ namespace SecChem::BasisSet::Gaussian
 			                          Eigen::Index{0},
 			                          std::plus<>{},
 			                          &AngularMomentumBlock::ContractedShellCount);
+		}
+
+		auto PrimitiveSubShellsOfAtomAt(const std::size_t index) const
+		{
+			return ElementaryBasisAt(index)
+				   | ranges::views::transform(&AngularMomentumBlock::PrimitiveShells)
+				   | ranges::views::join;
+		}
+
+		auto ContractedSubShellsOfAtomAt(const std::size_t index) const
+		{
+			return ElementaryBasisAt(index)
+				   | ranges::views::transform(&AngularMomentumBlock::ContractedShells)
+				   | ranges::views::join;
+		}
+
+		auto PrimitiveSubShellsOf(const Atom& atom) const
+		{
+			return PrimitiveSubShellsOfAtomAt(m_Molecule.IndexOf(atom));
+		}
+
+		auto ContractedSubShellsOf(const Atom& atom) const
+		{
+			return ContractedSubShellsOfAtomAt(m_Molecule.IndexOf(atom));
 		}
 
 		Eigen::Index AtomIndexFromContractedSphericalOrbital(const Eigen::Index orbitalIndex) const noexcept
