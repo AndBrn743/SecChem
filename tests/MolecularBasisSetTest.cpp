@@ -349,6 +349,9 @@ H 1.1 0 0
 	REQUIRE(basis.AtomIndexAndSubShellFromContractedSphericalOrbital(21) == std::pair{Eigen::Index{2}, 3_Diffuse});
 	REQUIRE(basis.AtomIndexAndSubShellFromContractedSphericalOrbital(22) == std::pair{Eigen::Index{2}, 3_Diffuse});
 	REQUIRE(basis.AtomIndexAndSubShellFromContractedSphericalOrbital(23) == std::pair{Eigen::Index{2}, 3_Diffuse});
+
+	REQUIRE(basis.ContractedSubShellCount() == 3 + 3 + 6 + 1 + 3);
+	REQUIRE(basis.PrimitiveSubShellCount() == 19 + 5 + 12 + 2 + 5);
 }
 
 TEST_CASE("Atom tags are preserved", "[basis][parser]")

@@ -77,6 +77,31 @@ namespace SecChem::BasisSet::Gaussian
 			                                  { return *std::get<0>(kv); });
 		}
 
+		Eigen::Index ContractedSubShellCount() const noexcept
+		{
+			return std::accumulate(m_ComputedElementaryBasisInfoTable.cbegin(),
+			                       m_ComputedElementaryBasisInfoTable.cend(),
+			                       Eigen::Index{0},
+			                       [](const Eigen::Index acc, const auto& kv)
+			                       {
+				                       const ComputedElementaryBasisInfo& info = std::get<1>(kv);
+				                       return acc + info.ReferenceCount * info.ContractedSubShellCount;
+			                       });
+		}
+
+
+		Eigen::Index PrimitiveSubShellCount() const noexcept
+		{
+			return std::accumulate(m_ComputedElementaryBasisInfoTable.cbegin(),
+			                       m_ComputedElementaryBasisInfoTable.cend(),
+			                       Eigen::Index{0},
+			                       [](const Eigen::Index acc, const auto& kv)
+			                       {
+				                       const ComputedElementaryBasisInfo& info = std::get<1>(kv);
+				                       return acc + info.ReferenceCount * info.PrimitiveSubShellCount;
+			                       });
+		}
+
 		// this method DOES cache
 		Eigen::Index PrimitiveSphericalOrbitalCountOf(const Atom& atom) const
 		{
@@ -239,8 +264,11 @@ namespace SecChem::BasisSet::Gaussian
 
 				for (const ElementaryBasisPtr basisPtr : basisAssignments)
 				{
-					auto& [referenceCount, primitiveSphericalSubShellSegTable, contractedSphericalSubShellSegTable] =
-					        statistics[basisPtr];
+					auto& [referenceCount,
+					       primitiveSphericalSubShellSegTable,
+					       contractedSphericalSubShellSegTable,
+					       primitiveSubShellCount,
+					       contractedSubShellCount] = statistics[basisPtr];
 
 					referenceCount++;
 
@@ -253,6 +281,12 @@ namespace SecChem::BasisSet::Gaussian
 						contractedSphericalSubShellSegTable = CreateSubShellSegmentationTableFor(
 						        *basisPtr,
 						        [](const AngularMomentumBlock& amb) { return amb.ContractedSphericalOrbitalCount(); });
+
+						primitiveSubShellCount = ranges::accumulate(
+						        *basisPtr, Eigen::Index{0}, std::plus<>{}, &AngularMomentumBlock::PrimitiveShellCount);
+
+						contractedSubShellCount = ranges::accumulate(
+						        *basisPtr, Eigen::Index{0}, std::plus<>{}, &AngularMomentumBlock::ContractedShellCount);
 					}
 				}
 
@@ -262,18 +296,8 @@ namespace SecChem::BasisSet::Gaussian
 			Eigen::Index ReferenceCount;
 			std::vector<Eigen::Index> PrimitiveSphericalSubShellSegmentationTable;
 			std::vector<Eigen::Index> ContractedSphericalSubShellSegmentationTable;
-
-			Eigen::Index PrimitiveSphericalSubShellCount() const noexcept
-			{
-				assert(!PrimitiveSphericalSubShellSegmentationTable.empty());
-				return static_cast<Eigen::Index>(PrimitiveSphericalSubShellSegmentationTable.size() - 1);
-			}
-
-			Eigen::Index ContractedSphericalSubShellCount() const noexcept
-			{
-				assert(!ContractedSphericalSubShellSegmentationTable.empty());
-				return static_cast<Eigen::Index>(ContractedSphericalSubShellSegmentationTable.size() - 1);
-			}
+			Eigen::Index PrimitiveSubShellCount;
+			Eigen::Index ContractedSubShellCount;
 		};
 
 		using SubShellSegmentationTableOfEachElementaryBasis =
