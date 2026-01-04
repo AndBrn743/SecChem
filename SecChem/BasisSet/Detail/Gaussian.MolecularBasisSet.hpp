@@ -8,8 +8,8 @@
 
 #include <range/v3/algorithm.hpp>
 #include <range/v3/numeric.hpp>
-#include <range/v3/view/transform.hpp>
 #include <range/v3/view/join.hpp>
+#include <range/v3/view/transform.hpp>
 #include <sstream>
 #include <string>
 #include <utility>
@@ -177,16 +177,14 @@ namespace SecChem::BasisSet::Gaussian
 
 		auto PrimitiveSubShellsOfAtomAt(const std::size_t index) const
 		{
-			return ElementaryBasisAt(index)
-				   | ranges::views::transform(&AngularMomentumBlock::PrimitiveShells)
-				   | ranges::views::join;
+			return ElementaryBasisAt(index) | ranges::views::transform(&AngularMomentumBlock::PrimitiveShells)
+			       | ranges::views::join;
 		}
 
 		auto ContractedSubShellsOfAtomAt(const std::size_t index) const
 		{
-			return ElementaryBasisAt(index)
-				   | ranges::views::transform(&AngularMomentumBlock::ContractedShells)
-				   | ranges::views::join;
+			return ElementaryBasisAt(index) | ranges::views::transform(&AngularMomentumBlock::ContractedShells)
+			       | ranges::views::join;
 		}
 
 		auto PrimitiveSubShellsOf(const Atom& atom) const
@@ -197,6 +195,13 @@ namespace SecChem::BasisSet::Gaussian
 		auto ContractedSubShellsOf(const Atom& atom) const
 		{
 			return ContractedSubShellsOfAtomAt(m_Molecule.IndexOf(atom));
+		}
+
+		auto ContractedSphericalOrbitalsFrom(const Atom& atom) const
+		{
+			const auto atomIndex = m_Molecule.IndexOf(atom);
+			return ranges::views::iota(m_ContractedSphericalOrbitalSegmentationTable[atomIndex],
+			                           m_ContractedSphericalOrbitalSegmentationTable[atomIndex + 1]);
 		}
 
 		Eigen::Index AtomIndexFromContractedSphericalOrbital(const Eigen::Index orbitalIndex) const noexcept

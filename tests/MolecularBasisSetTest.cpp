@@ -405,6 +405,19 @@ H 1.1 0 0
 	}
 
 	{
+		const std::vector<Eigen::Index> reference =
+		        ranges::views::iota(Eigen::Index{5}, Eigen::Index{10}) | ranges::to_vector;
+		const auto actual = basis.ContractedSphericalOrbitalsFrom(molecule[1]) | ranges::to_vector;
+		REQUIRE(actual == reference);
+	}
+	{
+		const std::vector<Eigen::Index> reference =
+		        ranges::views::iota(Eigen::Index{10}, Eigen::Index{24}) | ranges::to_vector;
+		const auto actual = basis.ContractedSphericalOrbitalsFrom(molecule[2]) | ranges::to_vector;
+		REQUIRE(actual == reference);
+	}
+
+	{
 		Eigen::VectorXd charges = Eigen::VectorXd::Zero(basis.ContractedSubShellCount());
 		auto chargeIterator = charges.begin();
 
