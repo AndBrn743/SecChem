@@ -11,6 +11,7 @@
 #include <string>
 #include <cmath>
 #include <string_view>
+#include <exception>
 
 
 #if !defined(CONSTEXPR23)
