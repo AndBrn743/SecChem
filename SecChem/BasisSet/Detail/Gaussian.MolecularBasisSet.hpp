@@ -204,6 +204,23 @@ namespace SecChem::BasisSet::Gaussian
 			                           m_ContractedSphericalOrbitalSegmentationTable[atomIndex + 1]);
 		}
 
+		auto ContractedSphericalOrbitalsFrom(const Atom& atom, const ElectronicSubShell shell) const
+		{
+			const auto atomIndex = m_Molecule.IndexOf(atom);
+			const auto atomicOffset = m_ContractedSphericalOrbitalSegmentationTable[atomIndex];
+			const ElementaryBasisPtr basisPtr = m_BasisAssignments[atomIndex];
+			const auto azimuthalShellOffset =
+			        m_ComputedElementaryBasisInfoTable.at(basisPtr)
+			                .ContractedSphericalSubShellSegmentationTable[shell.AzimuthalQuantumNumber().Value()];
+			const auto sphericalMagneticQuantumNumberCount = shell.MagneticQuantumNumberCount();
+			const auto offset = atomicOffset + azimuthalShellOffset
+			                    + sphericalMagneticQuantumNumberCount
+			                              * (shell.PrincipalQuantumNumber()
+			                                 - shell.AzimuthalQuantumNumber().MinPrincipalQuantumNumber());
+
+			return ranges::views::iota(offset, offset + sphericalMagneticQuantumNumberCount);
+		}
+
 		Eigen::Index AtomIndexFromContractedSphericalOrbital(const Eigen::Index orbitalIndex) const noexcept
 		{
 			assert(orbitalIndex >= 0 && orbitalIndex <= m_ContractedSphericalOrbitalSegmentationTable.back());

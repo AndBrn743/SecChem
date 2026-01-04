@@ -416,6 +416,26 @@ H 1.1 0 0
 		const auto actual = basis.ContractedSphericalOrbitalsFrom(molecule[2]) | ranges::to_vector;
 		REQUIRE(actual == reference);
 	}
+	{
+		const std::vector<Eigen::Index> reference = {10};
+		const auto actual = basis.ContractedSphericalOrbitalsFrom(molecule[2], 1_Sharp) | ranges::to_vector;
+		REQUIRE(actual == reference);
+	}
+	{
+		const std::vector<Eigen::Index> reference = {13, 14, 15};
+		const auto actual = basis.ContractedSphericalOrbitalsFrom(molecule[2], 2_Principal) | ranges::to_vector;
+		REQUIRE(actual == reference);
+	}
+	{
+		const std::vector<Eigen::Index> reference = {16, 17, 18};
+		const auto actual = basis.ContractedSphericalOrbitalsFrom(molecule[2], 3_Principal) | ranges::to_vector;
+		REQUIRE(actual == reference);
+	}
+	{
+		const std::vector<Eigen::Index> reference = {19, 20, 21, 22, 23};
+		const auto actual = basis.ContractedSphericalOrbitalsFrom(molecule[2], 3_Diffuse) | ranges::to_vector;
+		REQUIRE(actual == reference);
+	}
 
 	{
 		Eigen::VectorXd charges = Eigen::VectorXd::Zero(basis.ContractedSubShellCount());
