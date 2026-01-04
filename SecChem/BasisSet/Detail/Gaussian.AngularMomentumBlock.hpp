@@ -6,6 +6,9 @@
 #error Do not include internal header files directly
 #endif
 
+#include <range/v3/view/iota.hpp>
+#include <range/v3/view/transform.hpp>
+
 namespace SecChem::BasisSet::Gaussian
 {
 	template <typename Derived>
@@ -31,9 +34,29 @@ namespace SecChem::BasisSet::Gaussian
 			return static_cast<const Derived&>(*this).PrimitiveShellCount_Impl();
 		}
 
+		auto PrimitiveShells() const noexcept
+		{
+			const auto l = AngularMomentum();
+			const auto n0 = l.MinPrincipalQuantumNumber();
+
+			return ranges::views::iota(0 + n0, static_cast<int>(PrimitiveShellCount()) + n0)
+				   | ranges::views::transform([l](const int n)
+											  { return ElectronicSubShell{n, l}; });
+		}
+
 		Eigen::Index ContractedShellCount() const noexcept
 		{
 			return static_cast<const Derived&>(*this).ContractedShellCount_Impl();
+		}
+
+		auto ContractedShells() const noexcept
+		{
+			const auto l = AngularMomentum();
+			const auto n0 = l.MinPrincipalQuantumNumber();
+
+			return ranges::views::iota(0 + n0, static_cast<int>(ContractedShellCount()) + n0)
+			       | ranges::views::transform([l](const int n)
+			                                  { return ElectronicSubShell{n, l}; });
 		}
 
 		Eigen::Index PrimitiveCartesianOrbitalCount() const noexcept
