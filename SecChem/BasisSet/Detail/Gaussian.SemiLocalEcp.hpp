@@ -16,26 +16,14 @@ namespace SecChem::BasisSet::Gaussian
 		static constexpr Scalar ZeroTolerance = 1e-15;
 
 		template <typename CoefficientSet, typename RExponentSet, typename GaussianExponentSet>
-		SemiLocalEcp(const Eigen::Index electronCount,
-					 const CoefficientSet& coefficientSet,
-					 const RExponentSet& rExponentSet,
-					 const GaussianExponentSet& gaussianExponentSet)
-			: m_EcpElectronCount(electronCount),
-			  m_Data(CreateDataSet(coefficientSet, rExponentSet, gaussianExponentSet))
+		SemiLocalEcp(const CoefficientSet& coefficientSet,
+		             const RExponentSet& rExponentSet,
+		             const GaussianExponentSet& gaussianExponentSet)
+		    : m_Data(CreateDataSet(coefficientSet, rExponentSet, gaussianExponentSet))
 		{
-			if (electronCount < 0)
-			{
-				throw std::runtime_error("ECP electron count can't be negative");
-			}
-
 			static_assert(std::is_base_of_v<Eigen::EigenBase<CoefficientSet>, CoefficientSet>);
 			static_assert(std::is_base_of_v<Eigen::EigenBase<RExponentSet>, RExponentSet>);
 			static_assert(std::is_base_of_v<Eigen::EigenBase<GaussianExponentSet>, GaussianExponentSet>);
-		}
-
-		Eigen::Index ElectronCount() const noexcept
-		{
-			return m_EcpElectronCount;
 		}
 
 		Eigen::Index TermCount() const noexcept
@@ -86,18 +74,12 @@ namespace SecChem::BasisSet::Gaussian
 				return get(*begin);
 			}
 
-			const auto totalEcpElectronCount = std::accumulate(begin,
-															   end,
-															   Eigen::Index{0},
-															   [get](const Eigen::Index acc, const auto& ecp)
-															   { return acc + get(ecp).m_EcpElectronCount; });
-
 			Eigen::Matrix<Scalar, Eigen::Dynamic, 3> data(std::accumulate(begin,
-																		  end,
-																		  Eigen::Index{0},
-																		  [get](const Eigen::Index acc, const auto& ecp)
-																		  { return acc + get(ecp).m_Data.rows(); }),
-														  3);
+			                                                              end,
+			                                                              Eigen::Index{0},
+			                                                              [get](const Eigen::Index acc, const auto& ecp)
+			                                                              { return acc + get(ecp).m_Data.rows(); }),
+			                                              3);
 
 			for (Eigen::Index offset = 0; begin != end; ++begin)
 			{
@@ -105,7 +87,7 @@ namespace SecChem::BasisSet::Gaussian
 				offset += get(*begin).m_Data.rows();
 			}
 
-			return SemiLocalEcp{totalEcpElectronCount, std::move(data)};
+			return SemiLocalEcp{std::move(data)};
 		}
 
 		template <typename InputIterator>
@@ -116,8 +98,8 @@ namespace SecChem::BasisSet::Gaussian
 
 		template <typename InputIterator, typename Getter>
 		static std::optional<SemiLocalEcp> ConcatNullable(InputIterator begin,
-														  const InputIterator end,
-														  const Getter get)
+		                                                  const InputIterator end,
+		                                                  const Getter get)
 		{
 			if (begin == end)
 			{
@@ -129,29 +111,17 @@ namespace SecChem::BasisSet::Gaussian
 				return get(*begin);
 			}
 
-			const auto totalEcpElectronCount = std::accumulate(begin,
-															   end,
-															   Eigen::Index{0},
-															   [get](const Eigen::Index acc, const auto& ecp)
-															   {
-																   if (!get(ecp).has_value())
-																   {
-																	   return acc;
-																   }
-																   return acc + get(ecp).value().m_EcpElectronCount;
-															   });
-
 			const auto totalTermCount = std::accumulate(begin,
-														end,
-														Eigen::Index{0},
-														[get](const Eigen::Index acc, const auto& ecp)
-														{
-															if (!get(ecp).has_value())
-															{
-																return acc;
-															}
-															return acc + get(ecp).value().m_Data.rows();
-														});
+			                                            end,
+			                                            Eigen::Index{0},
+			                                            [get](const Eigen::Index acc, const auto& ecp)
+			                                            {
+				                                            if (!get(ecp).has_value())
+				                                            {
+					                                            return acc;
+				                                            }
+				                                            return acc + get(ecp).value().m_Data.rows();
+			                                            });
 
 			if (totalTermCount == 0)
 			{
@@ -170,27 +140,26 @@ namespace SecChem::BasisSet::Gaussian
 				}
 			}
 
-			return SemiLocalEcp{totalEcpElectronCount, std::move(data)};
+			return SemiLocalEcp{std::move(data)};
 		}
 
 		template <typename InputIterator>
 		static std::optional<SemiLocalEcp> ConcatNullable(InputIterator begin, const InputIterator end)
 		{
 			return ConcatNullable(
-					begin, end, [](auto&& item) -> decltype(auto) { return std::forward<decltype(item)>(item); });
+			        begin, end, [](auto&& item) -> decltype(auto) { return std::forward<decltype(item)>(item); });
 		}
 
 	private:
-		explicit SemiLocalEcp(const Eigen::Index electronCount, Eigen::Matrix<Scalar, Eigen::Dynamic, 3> data)
-			: m_EcpElectronCount(electronCount), m_Data(std::move(data))
+		explicit SemiLocalEcp(Eigen::Matrix<Scalar, Eigen::Dynamic, 3> data) : m_Data(std::move(data))
 		{
 			/* NO CODE */
 		}
 
 		template <typename CoefficientSet, typename RExponentSet, typename GaussianExponentSet>
 		static Eigen::Matrix<Scalar, Eigen::Dynamic, 3> CreateDataSet(const CoefficientSet& coefficientSet,
-																	  const RExponentSet& rExponentSet,
-																	  const GaussianExponentSet& gaussianExponentSet)
+		                                                              const RExponentSet& rExponentSet,
+		                                                              const GaussianExponentSet& gaussianExponentSet)
 		{
 			ValidateInput(coefficientSet, rExponentSet, gaussianExponentSet);
 			Eigen::Matrix<Scalar, Eigen::Dynamic, 3> data(coefficientSet.size(), 3);
@@ -231,11 +200,9 @@ namespace SecChem::BasisSet::Gaussian
 
 		bool EqualsTo_Impl(const SemiLocalEcp& other, const Scalar tolerance = ZeroTolerance) const noexcept
 		{
-			return m_EcpElectronCount == other.m_EcpElectronCount && m_Data.rows() == other.m_Data.rows()
-				   && (m_Data - other.m_Data).cwiseAbs().maxCoeff() <= tolerance;
+			return m_Data.rows() == other.m_Data.rows() && (m_Data - other.m_Data).cwiseAbs().maxCoeff() <= tolerance;
 		}
 
-		Eigen::Index m_EcpElectronCount;
 		Eigen::Matrix<Scalar, Eigen::Dynamic, 3> m_Data;
 	};
-}
+}  // namespace SecChem::BasisSet::Gaussian

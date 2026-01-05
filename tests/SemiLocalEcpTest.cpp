@@ -29,7 +29,7 @@ TEST_CASE("SemiLocalEcp constructs correctly from column vectors", "[SemiLocalEc
 	Eigen::VectorXd gaussianExponents(3);
 	gaussianExponents << 3.0, 2.0, 1.0;
 
-	SemiLocalEcp ecp(42, coefficients, rExponents, gaussianExponents);
+	SemiLocalEcp ecp(coefficients, rExponents, gaussianExponents);
 
 	REQUIRE(ecp.Coefficients().size() == 3);
 	REQUIRE(ecp.RExponents().size() == 3);
@@ -54,7 +54,7 @@ TEST_CASE("SemiLocalEcp accepts row vectors", "[SemiLocalEcp]")
 	Eigen::RowVectorXd gaussianExponents(3);
 	gaussianExponents << 4.0, 5.0, 6.0;
 
-	SemiLocalEcp ecp(42, coefficients, rExponents, gaussianExponents);
+	SemiLocalEcp ecp(coefficients, rExponents, gaussianExponents);
 
 	CHECK_THAT(ecp.Coefficient(1), WithinRel(0.2, 1e-14));
 	CHECK_THAT(ecp.RExponent(2), WithinRel(3.0, 1e-14));
@@ -72,7 +72,7 @@ TEST_CASE("SemiLocalEcp accepts mixed row and column inputs", "[SemiLocalEcp]")
 	Eigen::VectorXd gaussianExponents(2);
 	gaussianExponents << 2.0, 3.0;
 
-	SemiLocalEcp ecp(42, coefficients, rExponents, gaussianExponents);
+	SemiLocalEcp ecp(coefficients, rExponents, gaussianExponents);
 
 	CHECK_THAT(ecp.Coefficient(0), WithinRel(-1.0, 1e-14));
 	CHECK_THAT(ecp.RExponent(1), WithinRel(1.5, 1e-14));
@@ -90,7 +90,7 @@ TEST_CASE("SemiLocalEcp supports single-term ECP", "[SemiLocalEcp][edge]")
 	Eigen::VectorXd gaussianExponents(1);
 	gaussianExponents << 0.75;
 
-	SemiLocalEcp ecp(42, coefficients, rExponents, gaussianExponents);
+	SemiLocalEcp ecp(coefficients, rExponents, gaussianExponents);
 
 	REQUIRE(ecp.Coefficients().size() == 1);
 	CHECK_THAT(ecp.Coefficient(0), WithinRel(-2.0, 1e-14));
@@ -109,7 +109,7 @@ TEST_CASE("SemiLocalEcp column accessors reference internal storage", "[SemiLoca
 	Eigen::VectorXd gaussianExponents(3);
 	gaussianExponents << 7.0, 8.0, 9.0;
 
-	SemiLocalEcp ecp(42, coefficients, rExponents, gaussianExponents);
+	SemiLocalEcp ecp(coefficients, rExponents, gaussianExponents);
 
 	const auto coeffs = ecp.Coefficients();
 	const auto rExps = ecp.RExponents();
@@ -131,7 +131,7 @@ TEST_CASE("SemiLocalEcp handles large and negative values", "[SemiLocalEcp][nume
 	Eigen::VectorXd gaussianExponents(3);
 	gaussianExponents << 1e-6, 1e-3, 1.0;
 
-	SemiLocalEcp ecp(42, coefficients, rExponents, gaussianExponents);
+	SemiLocalEcp ecp(coefficients, rExponents, gaussianExponents);
 
 	CHECK_THAT(ecp.Coefficient(2), WithinRel(-3e3, 1e-14));
 	CHECK_THAT(ecp.RExponent(1), WithinRel(5.0, 1e-14));
@@ -144,7 +144,7 @@ TEST_CASE("SemiLocalEcp rejects empty coefficient set", "[SemiLocalEcp][invalid]
 	Eigen::VectorXd rExponents(0);
 	Eigen::VectorXd gaussianExponents(0);
 
-	REQUIRE_THROWS_MATCHES(SemiLocalEcp(42, coefficients, rExponents, gaussianExponents),
+	REQUIRE_THROWS_MATCHES(SemiLocalEcp(coefficients, rExponents, gaussianExponents),
 	                       std::invalid_argument,
 	                       MessageMatches(ContainsSubstring("empty")));
 }
@@ -160,7 +160,7 @@ TEST_CASE("SemiLocalEcp rejects size mismatch", "[SemiLocalEcp][invalid]")
 	Eigen::VectorXd gaussianExponents(3);
 	gaussianExponents << 1.0, 2.0, 3.0;
 
-	REQUIRE_THROWS_MATCHES(SemiLocalEcp(42, coefficients, rExponents, gaussianExponents),
+	REQUIRE_THROWS_MATCHES(SemiLocalEcp(coefficients, rExponents, gaussianExponents),
 	                       std::invalid_argument,
 	                       MessageMatches(ContainsSubstring("size")));
 }
@@ -178,7 +178,7 @@ TEST_CASE("SemiLocalEcp rejects non-vector coefficient input", "[SemiLocalEcp][i
 	Eigen::VectorXd gaussianExponents(4);
 	gaussianExponents << 1.0, 2.0, 3.0, 4.0;
 
-	REQUIRE_THROWS_MATCHES(SemiLocalEcp(42, coefficients, rExponents, gaussianExponents),
+	REQUIRE_THROWS_MATCHES(SemiLocalEcp(coefficients, rExponents, gaussianExponents),
 	                       std::invalid_argument,
 	                       MessageMatches(ContainsSubstring("vector")));
 }
@@ -196,7 +196,7 @@ TEST_CASE("SemiLocalEcp rejects non-vector r-exponent input", "[SemiLocalEcp][in
 	Eigen::VectorXd gaussianExponents(4);
 	gaussianExponents << 1.0, 2.0, 3.0, 4.0;
 
-	REQUIRE_THROWS_MATCHES(SemiLocalEcp(42, coefficients, rExponents, gaussianExponents),
+	REQUIRE_THROWS_MATCHES(SemiLocalEcp(coefficients, rExponents, gaussianExponents),
 	                       std::invalid_argument,
 	                       MessageMatches(ContainsSubstring("size mismatch")));
 }
@@ -214,7 +214,7 @@ TEST_CASE("SemiLocalEcp rejects non-vector gaussian exponent input", "[SemiLocal
 		0.1, 0.2,
 		0.3, 0.4;
 
-	REQUIRE_THROWS_MATCHES(SemiLocalEcp(42, coefficients, rExponents, gaussianExponents),
+	REQUIRE_THROWS_MATCHES(SemiLocalEcp(coefficients, rExponents, gaussianExponents),
 	                       std::invalid_argument,
 	                       MessageMatches(ContainsSubstring("size mismatch")));
 }
@@ -232,7 +232,7 @@ TEST_CASE("SemiLocalEcp rejects multiple simultaneous input errors", "[SemiLocal
 	Eigen::RowVectorXd gaussianExponents(1);
 	gaussianExponents << 0.5;
 
-	REQUIRE_THROWS_AS(SemiLocalEcp(42, coefficients, rExponents, gaussianExponents), std::invalid_argument);
+	REQUIRE_THROWS_AS(SemiLocalEcp(coefficients, rExponents, gaussianExponents), std::invalid_argument);
 }
 
 TEST_CASE("SemiLocalEcp ValidateInput accepts valid mixed input", "[SemiLocalEcp][valid]")
@@ -246,7 +246,7 @@ TEST_CASE("SemiLocalEcp ValidateInput accepts valid mixed input", "[SemiLocalEcp
 	Eigen::RowVectorXd gaussianExponents(3);
 	gaussianExponents << 3.0, 2.0, 1.0;
 
-	REQUIRE_NOTHROW(SemiLocalEcp(42, coefficients, rExponents, gaussianExponents));
+	REQUIRE_NOTHROW(SemiLocalEcp(coefficients, rExponents, gaussianExponents));
 }
 
 TEST_CASE("SemiLocalEcp's equality comparison should work", "[SemiLocalEcp]")
@@ -260,7 +260,7 @@ TEST_CASE("SemiLocalEcp's equality comparison should work", "[SemiLocalEcp]")
 	Eigen::RowVectorXd gaussianExponents(3);
 	gaussianExponents << 3.0, 2.0, 1.0;
 
-	SemiLocalEcp ecp0(42, coefficients, rExponents, gaussianExponents);
+	SemiLocalEcp ecp0(coefficients, rExponents, gaussianExponents);
 
 	{
 		SemiLocalEcp ecp1 = ecp0;
@@ -272,7 +272,7 @@ TEST_CASE("SemiLocalEcp's equality comparison should work", "[SemiLocalEcp]")
 		Eigen::RowVectorXd gaussianExponentsToo = gaussianExponents;
 		gaussianExponentsToo[0] += 1e-6;
 
-		SemiLocalEcp ecp2(42, coefficients, rExponents, gaussianExponentsToo);
+		SemiLocalEcp ecp2(coefficients, rExponents, gaussianExponentsToo);
 		REQUIRE_FALSE(ecp2 == ecp0);
 		REQUIRE(ecp2 != ecp0);
 		REQUIRE_FALSE(ecp2.EqualsTo(ecp0, 1e-9));
@@ -280,7 +280,7 @@ TEST_CASE("SemiLocalEcp's equality comparison should work", "[SemiLocalEcp]")
 	}
 
 	{
-		SemiLocalEcp ecp3(42, Eigen::VectorXd::Random(4), Eigen::VectorXd::Random(4), Eigen::VectorXd::Random(4));
+		SemiLocalEcp ecp3(Eigen::VectorXd::Random(4), Eigen::VectorXd::Random(4), Eigen::VectorXd::Random(4));
 		REQUIRE_FALSE(ecp3 == ecp0);
 		REQUIRE(ecp3 != ecp0);
 		REQUIRE_FALSE(ecp3.EqualsTo(ecp0));
@@ -299,7 +299,7 @@ static const auto ecpExampleA = []
 	Eigen::VectorXd gaussianExponents(3);
 	gaussianExponents << 3.0, 2.0, 1.0;
 
-	SemiLocalEcp ecp(42, coefficients, rExponents, gaussianExponents);
+	SemiLocalEcp ecp(coefficients, rExponents, gaussianExponents);
 	return ecp;
 }();
 
@@ -314,7 +314,7 @@ static const auto ecpExampleB = []
 	Eigen::VectorXd gaussianExponents(2);
 	gaussianExponents << 3.2, 2.2;
 
-	SemiLocalEcp ecp(42, coefficients, rExponents, gaussianExponents);
+	SemiLocalEcp ecp(coefficients, rExponents, gaussianExponents);
 	return ecp;
 }();
 

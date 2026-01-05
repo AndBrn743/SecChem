@@ -109,10 +109,11 @@ TEST_CASE("Sample parser should able to parse sample BSE JSON")
 	        ContractedRadialOrbitalSet{Eigen::Vector2d{0.727, 0.141},
 	                                   Eigen::Matrix<double, 2, 2>{{0.430128, 0.5}, {0.678913, 0.5}}}}));
 
+	REQUIRE(sampleBasisSet[Element::H].EcpElectronCount == 0);
+
 	REQUIRE(sampleBasisSet[Element::Ne].AngularMomentumBlocks[0].HasOrbital());
 	REQUIRE(sampleBasisSet[Element::Ne].AngularMomentumBlocks[0].HasSemiLocalEcp());
-	const SecChem::BasisSet::Gaussian::SemiLocalEcp ecp0{
-	        28, Eigen::Vector<double, 1>{-6}, Eigen::Vector<double, 1>{2}, Eigen::Vector<double, 1>{4}};
+	const SemiLocalEcp ecp0{Eigen::Vector<double, 1>{-6}, Eigen::Vector<double, 1>{2}, Eigen::Vector<double, 1>{4}};
 	REQUIRE(sampleBasisSet[Element::Ne].AngularMomentumBlocks[0].EqualsTo(
 	        AngularMomentumBlock{AzimuthalQuantumNumber::S,
 	                             ContractedRadialOrbitalSet{Eigen::Vector2d{38.36, 5.77},
@@ -121,8 +122,9 @@ TEST_CASE("Sample parser should able to parse sample BSE JSON")
 
 	REQUIRE(!sampleBasisSet[Element::Ne].AngularMomentumBlocks[1].HasOrbital());
 	REQUIRE(sampleBasisSet[Element::Ne].AngularMomentumBlocks[1].HasSemiLocalEcp());
-	const SecChem::BasisSet::Gaussian::SemiLocalEcp ecp1{
-	        28, Eigen::Vector<double, 1>{-4}, Eigen::Vector<double, 1>{1.6}, Eigen::Vector<double, 1>{3.5}};
+	const SemiLocalEcp ecp1{Eigen::Vector<double, 1>{-4}, Eigen::Vector<double, 1>{1.6}, Eigen::Vector<double, 1>{3.5}};
 	REQUIRE(sampleBasisSet[Element::Ne].AngularMomentumBlocks[1].EqualsTo(
 	        AngularMomentumBlock{AzimuthalQuantumNumber::P, std::nullopt, ecp1}));
+
+	REQUIRE(sampleBasisSet[Element::Ne].EcpElectronCount == 28);
 }

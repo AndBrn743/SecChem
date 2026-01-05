@@ -76,6 +76,11 @@ SecChem::BasisSet::Gaussian::BasisSet ParseBasisSetExchangeJson(const nlohmann::
 			        angularMomentum, ContractedRadialOrbitalSet{std::move(exponents), std::move(contractionSets)});
 		}
 
+		if (elementData.contains("ecp_electrons"))
+		{
+			result[element].EcpElectronCount = elementData.at("ecp_electrons").get<int>();
+		}
+
 		if (!elementData.contains("ecp_potentials"))
 		{
 			continue;
@@ -101,8 +106,7 @@ SecChem::BasisSet::Gaussian::BasisSet ParseBasisSetExchangeJson(const nlohmann::
 			if (attachPointIterator != result[element].AngularMomentumBlocks.end())
 			{
 				attachPointIterator->AddOrOverrideSemiLocalEcp(
-				        {elementData.at("ecp_electrons").get<int>(),
-				         ecpJson.at("coefficients").get<Eigen::VectorXd>(),
+				        {ecpJson.at("coefficients").get<Eigen::VectorXd>(),
 				         ecpJson.at("r_exponents").get<Eigen::VectorXd>(),
 				         ecpJson.at("gaussian_exponents").get<Eigen::VectorXd>()});
 			}
@@ -112,12 +116,10 @@ SecChem::BasisSet::Gaussian::BasisSet ParseBasisSetExchangeJson(const nlohmann::
 				        angularMomentum,
 				        std::nullopt,
 				        SecChem::BasisSet::Gaussian::SemiLocalEcp{
-				                elementData.at("ecp_electrons").get<int>(),
 				                ecpJson.at("coefficients").get<Eigen::VectorXd>(),
 				                ecpJson.at("r_exponents").get<Eigen::VectorXd>(),
 				                ecpJson.at("gaussian_exponents").get<Eigen::VectorXd>()});
 			}
-			result[element].EcpElectronCount = elementData.at("ecp_electrons").get<int>();
 		}
 	}
 
