@@ -37,14 +37,14 @@ namespace SecChem::BasisSet::Gaussian
 			return m_Molecule;
 		}
 
-		auto ElementaryBasisSet() const noexcept
+		auto ElementaryBasisSets() const noexcept
 		{
 			return m_BasisAssignments
-			       | ranges::views::transform([](const ElementaryBasisSet_* ptr) -> const ElementaryBasisSet_&
+			       | ranges::views::transform([](const ElementaryBasisSet* ptr) -> const ElementaryBasisSet&
 			                                  { return *ptr; });
 		}
 
-		const ElementaryBasisSet_& ElementaryBasisAt(const std::size_t index) const
+		const ElementaryBasisSet& ElementaryBasisAt(const std::size_t index) const
 		{
 			if (index >= m_BasisAssignments.size())
 			{
@@ -54,23 +54,23 @@ namespace SecChem::BasisSet::Gaussian
 			return *m_BasisAssignments[index];
 		}
 
-		const ElementaryBasisSet_& ElementaryBasisOf(const Atom& atom) const
+		const ElementaryBasisSet& ElementaryBasisOf(const Atom& atom) const
 		{
 			return *m_BasisAssignments[m_Molecule.IndexOf(atom)];
 		}
 
-		std::size_t UniqueElementaryBasisCount() const noexcept
+		std::size_t UniqueElementaryBasisSetCount() const noexcept
 		{
 			return m_ComputedElementaryBasisInfoTable.size();
 		}
 
-		auto UniqueElementaryBasis() const noexcept
+		auto UniqueElementaryBasisSet() const noexcept
 		{
 			// due to the limitation of range-v3 0.12.0 and std::range of C++20 (C++23's std::range is fine) we can only
 			// use non-const flat_map. this should be fine, we just have to be *VERY* careful
-			return const_cast<polyfill::flat_map<const ElementaryBasisSet_*, ComputedElementaryBasisInfo>&>(
+			return const_cast<polyfill::flat_map<const ElementaryBasisSet*, ComputedElementaryBasisInfo>&>(
 			               m_ComputedElementaryBasisInfoTable)
-			       | ranges::views::transform([](const auto& kv) -> const ElementaryBasisSet_&
+			       | ranges::views::transform([](const auto& kv) -> const ElementaryBasisSet&
 			                                  { return *std::get<0>(kv); });
 		}
 
@@ -202,7 +202,7 @@ namespace SecChem::BasisSet::Gaussian
 		{
 			const auto atomIndex = m_Molecule.IndexOf(atom);
 			const auto atomicOffset = m_ContractedSphericalOrbitalSegmentationTable[atomIndex];
-			const ElementaryBasisSet_* basisPtr = m_BasisAssignments[atomIndex];
+			const ElementaryBasisSet* basisPtr = m_BasisAssignments[atomIndex];
 			const auto azimuthalShellOffset =
 			        m_ComputedElementaryBasisInfoTable.at(basisPtr)
 			                .ContractedSphericalSubShellSegmentationTable[shell.AzimuthalQuantumNumber().Value()];
@@ -268,7 +268,7 @@ namespace SecChem::BasisSet::Gaussian
 	private:
 		MolecularBasisSet(Gaussian::SharedBasisSetLibrary library,
 		                  const SharedMolecule& molecule,
-		                  std::vector<const ElementaryBasisSet_*> basisAssignments)
+		                  std::vector<const ElementaryBasisSet*> basisAssignments)
 		    : m_Library(std::move(library)), m_Molecule(molecule), m_BasisAssignments(std::move(basisAssignments)),
 		      m_PrimitiveSphericalOrbitalSegmentationTable(CreateSegmentationTableOfSomeKindOfOrbitals(
 		              [](const AngularMomentumBlock& amb) { return amb.PrimitiveSphericalOrbitalCount(); })),
@@ -288,7 +288,7 @@ namespace SecChem::BasisSet::Gaussian
 			Eigen::Index offset = 0;
 			ranges::transform(m_BasisAssignments,
 			                  std::next(segTable.begin()),
-			                  [&offset, orbitalCountOf](const ElementaryBasisSet_* basisPtr)
+			                  [&offset, orbitalCountOf](const ElementaryBasisSet* basisPtr)
 			                  {
 				                  offset += ranges::accumulate(basisPtr->AngularMomentumBlocks,
 				                                               Eigen::Index{0},
@@ -302,12 +302,12 @@ namespace SecChem::BasisSet::Gaussian
 
 		struct ComputedElementaryBasisInfo
 		{
-			static polyfill::flat_map<const ElementaryBasisSet_*, ComputedElementaryBasisInfo> CreateStatisticsFor(
-			        const std::vector<const ElementaryBasisSet_*>& basisAssignments)
+			static polyfill::flat_map<const ElementaryBasisSet*, ComputedElementaryBasisInfo> CreateStatisticsFor(
+			        const std::vector<const ElementaryBasisSet*>& basisAssignments)
 			{
-				polyfill::flat_map<const ElementaryBasisSet_*, ComputedElementaryBasisInfo> statistics;
+				polyfill::flat_map<const ElementaryBasisSet*, ComputedElementaryBasisInfo> statistics;
 
-				for (const ElementaryBasisSet_* basisPtr : basisAssignments)
+				for (const ElementaryBasisSet* basisPtr : basisAssignments)
 				{
 					auto& [referenceCount,
 					       primitiveSphericalSubShellSegTable,
@@ -350,10 +350,10 @@ namespace SecChem::BasisSet::Gaussian
 		};
 
 		using SubShellSegmentationTableOfEachElementaryBasis =
-		        std::vector<std::pair<const ElementaryBasisSet_*, std::vector<Eigen::Index>>>;
+		        std::vector<std::pair<const ElementaryBasisSet*, std::vector<Eigen::Index>>>;
 
 		template <typename OrbitalCounter>
-		static std::vector<Eigen::Index> CreateSubShellSegmentationTableFor(const ElementaryBasisSet_& basis,
+		static std::vector<Eigen::Index> CreateSubShellSegmentationTableFor(const ElementaryBasisSet& basis,
 		                                                                    OrbitalCounter orbitalCountOf)
 		{
 			const auto segCount = basis.AngularMomentumBlocks.back().AngularMomentum().Value() + 1;
@@ -375,6 +375,102 @@ namespace SecChem::BasisSet::Gaussian
 			return segTable;
 		}
 
+		static std::vector<int> CreatePrincipalQuantumNumberOffsetsTableFor(const ElementaryBasisSet& basis)
+		{
+			std::vector offsets(basis.AngularMomentumBlocks.back().AngularMomentum().Value() + 1, 0);
+			const auto it = ranges::find_if(basis.AngularMomentumBlocks,
+			                                [](const AngularMomentumBlock& amb) { return amb.HasSemiLocalEcp(); });
+			if (it == basis.AngularMomentumBlocks.end())
+			{
+				return offsets;
+			}
+
+			const auto x = basis.EcpElectronCount;
+
+			if (x == 0)
+			{
+				return offsets;
+			}
+
+			if (offsets.size() > 0)
+			{
+				if (x >= 2)
+				{
+					offsets[0] = 1;
+				}
+				if (x >= 4)
+				{
+					offsets[0] = 2;
+				}
+				if (x >= 12)
+				{
+					offsets[0] = 3;
+				}
+				if (x >= 30)
+				{
+					offsets[0] = 4;
+				}
+				if (x >= 62)
+				{
+					offsets[0] = 5;
+				}
+			}
+			if (offsets.size() > 1)
+			{
+				if (x >= 10)
+				{
+					offsets[1] = 1;
+				}
+				if (x >= 18)
+				{
+					offsets[1] = 2;
+				}
+				if (x >= 36)
+				{
+					offsets[1] = 3;
+				}
+				if (x >= 68)
+				{
+					offsets[1] = 4;
+				}
+			}
+			else if (offsets.size() > 2)
+			{
+				if (x >= 28)
+				{
+					offsets[2] = 1;
+				}
+				if (x >= 60)
+				{
+					offsets[2] = 2;
+				}
+				if (x >= 78)
+				{
+					offsets[2] = 3;
+				}
+			}
+			else if (offsets.size() > 3)
+			{
+				if (x >= 60)
+				{
+					offsets[3] = 1;
+				}
+				if (x >= 92)
+				{
+					offsets[3] = 2;
+				}
+			}
+			else if (offsets.size() > 4)
+			{
+				if (x >= 110)
+				{
+					offsets[4] = 1;
+				}
+			}
+
+			return offsets;
+		}
+
 		template <typename OrbitalCounter>
 		Eigen::Index CountOfSomeKindOfOrbitalOf(const Atom& atom, OrbitalCounter orbitalCountOf) const
 		{
@@ -387,7 +483,7 @@ namespace SecChem::BasisSet::Gaussian
 		{
 			return ranges::accumulate(m_BasisAssignments,
 			                          Eigen::Index{0},
-			                          [orbitalCountOf](const Eigen::Index acc, const ElementaryBasisSet_* basisPtr)
+			                          [orbitalCountOf](const Eigen::Index acc, const ElementaryBasisSet* basisPtr)
 			                          {
 				                          return acc
 				                                 + ranges::accumulate(basisPtr->AngularMomentumBlocks,
@@ -404,7 +500,7 @@ namespace SecChem::BasisSet::Gaussian
 		                                                                const Eigen::Index atomIndex) const noexcept
 		{
 			const auto atomicOffset = m_ContractedSphericalOrbitalSegmentationTable[atomIndex];
-			const ElementaryBasisSet_* basisPtr = m_BasisAssignments[atomIndex];
+			const ElementaryBasisSet* basisPtr = m_BasisAssignments[atomIndex];
 
 			const auto& subshellSegTable =
 			        m_ComputedElementaryBasisInfoTable.at(basisPtr).ContractedSphericalSubShellSegmentationTable;
@@ -422,11 +518,10 @@ namespace SecChem::BasisSet::Gaussian
 
 		Gaussian::SharedBasisSetLibrary m_Library;
 		SharedMolecule m_Molecule;
-		std::vector<const ElementaryBasisSet_*> m_BasisAssignments{};
+		std::vector<const ElementaryBasisSet*> m_BasisAssignments{};
 		std::vector<Eigen::Index> m_PrimitiveSphericalOrbitalSegmentationTable{};
 		std::vector<Eigen::Index> m_ContractedSphericalOrbitalSegmentationTable{};
-		polyfill::flat_map<const ElementaryBasisSet_*, ComputedElementaryBasisInfo>
-		        m_ComputedElementaryBasisInfoTable{};
+		polyfill::flat_map<const ElementaryBasisSet*, ComputedElementaryBasisInfo> m_ComputedElementaryBasisInfoTable{};
 	};
 }  // namespace SecChem::BasisSet::Gaussian
 
@@ -487,7 +582,7 @@ public:
 	BasisSet::Gaussian::MolecularBasisSet BuildWith(Parser parser, std::istream& input)
 	{
 		std::vector<Atom> atoms{};
-		std::vector<const BasisSet::Gaussian::ElementaryBasisSet_*> assignments{};
+		std::vector<const BasisSet::Gaussian::ElementaryBasisSet*> assignments{};
 
 		for (std::string line; std::getline(input, line); /* NO CODE */)
 		{
@@ -526,6 +621,6 @@ private:
 	}
 
 	BasisSet::Gaussian::SharedBasisSetLibrary m_Library;
-	std::unordered_map<Element, const BasisSet::Gaussian::ElementaryBasisSet_*> m_DefaultBasisSet;
+	std::unordered_map<Element, const BasisSet::Gaussian::ElementaryBasisSet*> m_DefaultBasisSet;
 	bool m_WasGlobalDefaultBasisSetSet = false;
 };

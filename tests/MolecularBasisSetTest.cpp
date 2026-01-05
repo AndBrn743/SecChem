@@ -30,14 +30,14 @@ class MolecularInputInterpreter
 		std::string Basis{};
 	};
 
-	using LineParsingReturnType = std::pair<SecChem::Atom, const SecChem::BasisSet::Gaussian::ElementaryBasisSet_*>;
+	using LineParsingReturnType = std::pair<SecChem::Atom, const SecChem::BasisSet::Gaussian::ElementaryBasisSet*>;
 
 public:
 	LineParsingReturnType ParseLine(
 	        const std::string& line,
 	        const std::vector<SecChem::Atom>& atoms,
 	        const SecChem::BasisSet::Gaussian::SharedBasisSetLibrary& library,
-	        const std::unordered_map<SecChem::Element, const SecChem::BasisSet::Gaussian::ElementaryBasisSet_*>&
+	        const std::unordered_map<SecChem::Element, const SecChem::BasisSet::Gaussian::ElementaryBasisSet*>&
 	                defaultBasisSet)
 	{
 		const auto tokens = SecUtility::SplitRespectingQuotes(line);
@@ -283,8 +283,8 @@ H 1.1 0 0
 	REQUIRE(molecule[3].Element() == Element::Ne);
 	REQUIRE(molecule[4].Element() == Element::H);
 
-	REQUIRE(basis.UniqueElementaryBasisCount() == 4);
-	REQUIRE(basis.UniqueElementaryBasis().size() == 4);
+	REQUIRE(basis.UniqueElementaryBasisSetCount() == 4);
+	REQUIRE(basis.UniqueElementaryBasisSet().size() == 4);
 
 	REQUIRE(basis.AtomIndexFromPrimitiveSphericalOrbital(0) == 0);
 	REQUIRE(basis.AtomIndexFromPrimitiveSphericalOrbital(1) == 0);

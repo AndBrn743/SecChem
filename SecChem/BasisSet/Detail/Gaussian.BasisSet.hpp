@@ -13,7 +13,7 @@
 
 namespace SecChem::BasisSet::Gaussian
 {
-	struct ElementaryBasisSet_
+	class ElementaryBasisSet
 	{
 	private:
 		static auto AngularMomentumBlockConcatSets(const std::vector<AngularMomentumBlock>& sortedAngularMomentumBlocks)
@@ -158,7 +158,7 @@ namespace SecChem::BasisSet::Gaussian
 			angularMomentumBlocks = concatenatedAngularMomentumBlocks;
 		}
 
-		bool EqualsTo(const ElementaryBasisSet_& other, const Scalar tolerance = 1e-15) const noexcept
+		bool EqualsTo(const ElementaryBasisSet& other, const Scalar tolerance = 1e-15) const noexcept
 		{
 			if (AngularMomentumBlocks.size() != other.AngularMomentumBlocks.size())
 			{
@@ -178,17 +178,17 @@ namespace SecChem::BasisSet::Gaussian
 			return true;
 		}
 
-		bool NotEqualsTo(const ElementaryBasisSet_& other, const Scalar tolerance = 1e-15) const noexcept
+		bool NotEqualsTo(const ElementaryBasisSet& other, const Scalar tolerance = 1e-15) const noexcept
 		{
 			return !EqualsTo(other, tolerance);
 		}
 
-		bool operator==(const ElementaryBasisSet_& other) const
+		bool operator==(const ElementaryBasisSet& other) const
 		{
 			return EqualsTo(other, 0);
 		}
 
-		bool operator!=(const ElementaryBasisSet_& other) const
+		bool operator!=(const ElementaryBasisSet& other) const
 		{
 			return !EqualsTo(other, 0);
 		}
@@ -201,7 +201,7 @@ namespace SecChem::BasisSet::Gaussian
 		{
 			static constexpr auto AlternativeOwnershipSemantics =
 			        static_cast<OwnershipSemantics>(!static_cast<bool>(Semantics));
-			using DataType = std::unordered_map<Element, ElementaryBasisSet_>;
+			using DataType = std::unordered_map<Element, ElementaryBasisSet>;
 			using StorageType =
 			        std::conditional_t<Semantics == OwnershipSemantics::Value, DataType, std::shared_ptr<DataType>>;
 			friend BasisSetImpl<OwnershipSemantics::Reference>;
@@ -283,23 +283,23 @@ namespace SecChem::BasisSet::Gaussian
 				return BasisSetImpl{std::make_shared<DataType>(*m_DataStorage)};
 			}
 
-			const ElementaryBasisSet_& operator[](const Element element) const
+			const ElementaryBasisSet& operator[](const Element element) const
 			{
 				return Data().at(element);
 			}
 
-			ElementaryBasisSet_& operator[](const Element element)
+			ElementaryBasisSet& operator[](const Element element)
 			{
 				return Data().at(element);
 			}
 
-			ElementaryBasisSet_& AddOrOverwriteEntryOf(const Element element)
+			ElementaryBasisSet& AddOrOverwriteEntryOf(const Element element)
 			{
 				Data()[element] = {};
 				return Data()[element];
 			}
 
-			ElementaryBasisSet_& AddEntryFor(const Element element)
+			ElementaryBasisSet& AddEntryFor(const Element element)
 			{
 				if (Data().find(element) != Data().end())
 				{
@@ -311,7 +311,7 @@ namespace SecChem::BasisSet::Gaussian
 				return Data()[element];
 			}
 
-			ElementaryBasisSet_& OverwriteEntryOf(const Element element)
+			ElementaryBasisSet& OverwriteEntryOf(const Element element)
 			{
 				Data().at(element) = {};
 				return Data()[element];
