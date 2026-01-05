@@ -192,7 +192,98 @@ namespace SecChem::BasisSet::Gaussian
 		{
 			return !EqualsTo(other, 0);
 		}
+
+		/// <c>EcpElectronCount</c> must be 2, 4, 10, 12, 18, 28, 30, 36, 46, 60, 62, 68, 78, 92, or 110.
+		/// the behavior is undefined otherwise
+		std::vector<int> CreatePrincipalQuantumNumberOffsetTable() const
+		{
+			std::vector offsets(AngularMomentumBlocks.back().AngularMomentum().Value() + 1, 0);
+
+			if (EcpElectronCount == 0)
+			{
+				return offsets;
+			}
+
+			if (offsets.size() > 0)
+			{
+				if (EcpElectronCount >= 2)
+				{
+					offsets[0] = 1;
+				}
+				if (EcpElectronCount >= 4)
+				{
+					offsets[0] = 2;
+				}
+				if (EcpElectronCount >= 12)
+				{
+					offsets[0] = 3;
+				}
+				if (EcpElectronCount >= 30)
+				{
+					offsets[0] = 4;
+				}
+				if (EcpElectronCount >= 62)
+				{
+					offsets[0] = 5;
+				}
+			}
+			if (offsets.size() > 1)
+			{
+				if (EcpElectronCount >= 10)
+				{
+					offsets[1] = 1;
+				}
+				if (EcpElectronCount >= 18)
+				{
+					offsets[1] = 2;
+				}
+				if (EcpElectronCount >= 36)
+				{
+					offsets[1] = 3;
+				}
+				if (EcpElectronCount >= 68)
+				{
+					offsets[1] = 4;
+				}
+			}
+			else if (offsets.size() > 2)
+			{
+				if (EcpElectronCount >= 28)
+				{
+					offsets[2] = 1;
+				}
+				if (EcpElectronCount >= 60)
+				{
+					offsets[2] = 2;
+				}
+				if (EcpElectronCount >= 78)
+				{
+					offsets[2] = 3;
+				}
+			}
+			else if (offsets.size() > 3)
+			{
+				if (EcpElectronCount >= 60)
+				{
+					offsets[3] = 1;
+				}
+				if (EcpElectronCount >= 92)
+				{
+					offsets[3] = 2;
+				}
+			}
+			else if (offsets.size() > 4)
+			{
+				if (EcpElectronCount >= 110)
+				{
+					offsets[4] = 1;
+				}
+			}
+
+			return offsets;
+		}
 	};
+
 
 	namespace Detail
 	{

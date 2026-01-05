@@ -86,7 +86,6 @@ namespace SecChem::BasisSet::Gaussian
 			                       });
 		}
 
-
 		Eigen::Index PrimitiveSubShellCount() const noexcept
 		{
 			return std::accumulate(m_ComputedElementaryBasisInfoTable.cbegin(),
@@ -313,7 +312,8 @@ namespace SecChem::BasisSet::Gaussian
 					       primitiveSphericalSubShellSegTable,
 					       contractedSphericalSubShellSegTable,
 					       primitiveSubShellCount,
-					       contractedSubShellCount] = statistics[basisPtr];
+					       contractedSubShellCount,
+					       principalQuantumNumberOffsetTable] = statistics[basisPtr];
 
 					referenceCount++;
 
@@ -336,6 +336,8 @@ namespace SecChem::BasisSet::Gaussian
 						                                             Eigen::Index{0},
 						                                             std::plus<>{},
 						                                             &AngularMomentumBlock::ContractedShellCount);
+
+						principalQuantumNumberOffsetTable = basisPtr->CreatePrincipalQuantumNumberOffsetTable();
 					}
 				}
 
@@ -347,6 +349,7 @@ namespace SecChem::BasisSet::Gaussian
 			std::vector<Eigen::Index> ContractedSphericalSubShellSegmentationTable;
 			Eigen::Index PrimitiveSubShellCount;
 			Eigen::Index ContractedSubShellCount;
+			std::vector<int> PrincipalQuantumNumberOffsetTable;
 		};
 
 		using SubShellSegmentationTableOfEachElementaryBasis =
@@ -373,102 +376,6 @@ namespace SecChem::BasisSet::Gaussian
 			}
 
 			return segTable;
-		}
-
-		static std::vector<int> CreatePrincipalQuantumNumberOffsetsTableFor(const ElementaryBasisSet& basis)
-		{
-			std::vector offsets(basis.AngularMomentumBlocks.back().AngularMomentum().Value() + 1, 0);
-			const auto it = ranges::find_if(basis.AngularMomentumBlocks,
-			                                [](const AngularMomentumBlock& amb) { return amb.HasSemiLocalEcp(); });
-			if (it == basis.AngularMomentumBlocks.end())
-			{
-				return offsets;
-			}
-
-			const auto x = basis.EcpElectronCount;
-
-			if (x == 0)
-			{
-				return offsets;
-			}
-
-			if (offsets.size() > 0)
-			{
-				if (x >= 2)
-				{
-					offsets[0] = 1;
-				}
-				if (x >= 4)
-				{
-					offsets[0] = 2;
-				}
-				if (x >= 12)
-				{
-					offsets[0] = 3;
-				}
-				if (x >= 30)
-				{
-					offsets[0] = 4;
-				}
-				if (x >= 62)
-				{
-					offsets[0] = 5;
-				}
-			}
-			if (offsets.size() > 1)
-			{
-				if (x >= 10)
-				{
-					offsets[1] = 1;
-				}
-				if (x >= 18)
-				{
-					offsets[1] = 2;
-				}
-				if (x >= 36)
-				{
-					offsets[1] = 3;
-				}
-				if (x >= 68)
-				{
-					offsets[1] = 4;
-				}
-			}
-			else if (offsets.size() > 2)
-			{
-				if (x >= 28)
-				{
-					offsets[2] = 1;
-				}
-				if (x >= 60)
-				{
-					offsets[2] = 2;
-				}
-				if (x >= 78)
-				{
-					offsets[2] = 3;
-				}
-			}
-			else if (offsets.size() > 3)
-			{
-				if (x >= 60)
-				{
-					offsets[3] = 1;
-				}
-				if (x >= 92)
-				{
-					offsets[3] = 2;
-				}
-			}
-			else if (offsets.size() > 4)
-			{
-				if (x >= 110)
-				{
-					offsets[4] = 1;
-				}
-			}
-
-			return offsets;
 		}
 
 		template <typename OrbitalCounter>
