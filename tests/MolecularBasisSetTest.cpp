@@ -30,16 +30,14 @@ class MolecularInputInterpreter
 		std::string Basis{};
 	};
 
-	using LineParsingReturnType =
-	        std::pair<SecChem::Atom, const std::vector<SecChem::BasisSet::Gaussian::AngularMomentumBlock>*>;
+	using LineParsingReturnType = std::pair<SecChem::Atom, const SecChem::BasisSet::Gaussian::ElementaryBasisSet_*>;
 
 public:
 	LineParsingReturnType ParseLine(
 	        const std::string& line,
 	        const std::vector<SecChem::Atom>& atoms,
 	        const SecChem::BasisSet::Gaussian::SharedBasisSetLibrary& library,
-	        const std::unordered_map<SecChem::Element,
-	                                 const std::vector<SecChem::BasisSet::Gaussian::AngularMomentumBlock>*>&
+	        const std::unordered_map<SecChem::Element, const SecChem::BasisSet::Gaussian::ElementaryBasisSet_*>&
 	                defaultBasisSet)
 	{
 		const auto tokens = SecUtility::SplitRespectingQuotes(line);
@@ -257,7 +255,7 @@ TEST_CASE("BasisSetLibrary sanity", "[basis][library]")
 	REQUIRE(lib["example-basis"].Has(Element::H));
 	REQUIRE(lib["example-basis"].Has(Element::Ne));
 
-	REQUIRE(lib["example-basis"][Element::Ne][0].HasSemiLocalEcp());
+	REQUIRE(lib["example-basis"][Element::Ne].AngularMomentumBlocks[0].HasSemiLocalEcp());
 }
 
 TEST_CASE("MolecularBasisSet build succeeds", "[basis][builder]")
@@ -511,11 +509,11 @@ TEST_CASE("ECP-only angular momentum blocks are preserved", "[basis][ecp]")
 	                         .SetOrOverwriteGlobalDefaultBasisSetTo("def2-SVP")
 	                         .BuildWith(MolecularInputInterpreter{}, R"(Ne 0 0 0 basis="example-basis")");
 
-	REQUIRE(mbs.ElementaryBasisAt(0).size() == 2);
-	REQUIRE(mbs.ElementaryBasisAt(0)[0].HasSemiLocalEcp());
-	REQUIRE(mbs.ElementaryBasisAt(0)[1].HasSemiLocalEcp());
-	REQUIRE(mbs.ElementaryBasisAt(0)[0].HasOrbital());
-	REQUIRE_FALSE(mbs.ElementaryBasisAt(0)[1].HasOrbital());
+	REQUIRE(mbs.ElementaryBasisAt(0).AngularMomentumBlocks.size() == 2);
+	REQUIRE(mbs.ElementaryBasisAt(0).AngularMomentumBlocks[0].HasSemiLocalEcp());
+	REQUIRE(mbs.ElementaryBasisAt(0).AngularMomentumBlocks[1].HasSemiLocalEcp());
+	REQUIRE(mbs.ElementaryBasisAt(0).AngularMomentumBlocks[0].HasOrbital());
+	REQUIRE_FALSE(mbs.ElementaryBasisAt(0).AngularMomentumBlocks[1].HasOrbital());
 }
 
 TEST_CASE("Elementary default basis cannot be set before global default", "[basis][builder][negative]")

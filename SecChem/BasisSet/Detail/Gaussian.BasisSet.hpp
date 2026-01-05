@@ -6,8 +6,194 @@
 #error Do not include internal header files directly
 #endif
 
+#include <range/v3/algorithm/is_sorted.hpp>
+#include <range/v3/algorithm/none_of.hpp>
+#include <range/v3/algorithm/sort.hpp>
+#include <range/v3/numeric/accumulate.hpp>
+
 namespace SecChem::BasisSet::Gaussian
 {
+	struct ElementaryBasisSet_
+	{
+	private:
+		static auto AngularMomentumBlockConcatSets(const std::vector<AngularMomentumBlock>& sortedAngularMomentumBlocks)
+		{
+			using Iterator = std::vector<AngularMomentumBlock>::const_iterator;
+			std::vector<std::pair<Iterator, Iterator>> concatSets;
+			auto it0 = sortedAngularMomentumBlocks.begin();
+			while (it0 != sortedAngularMomentumBlocks.end())
+			{
+				auto it1 = std::find_if_not(std::next(it0),
+				                            sortedAngularMomentumBlocks.end(),
+				                            [l0 = it0->AngularMomentum()](const AngularMomentumBlock& block)
+				                            { return block.AngularMomentum() == l0; });
+
+				if (it1 != std::next(it0))
+				{
+					concatSets.push_back({it0, it1});
+					it0 = it1;
+				}
+				else
+				{
+					++it0;
+				}
+			}
+
+			return concatSets;
+		}
+
+
+	public:
+		std::vector<AngularMomentumBlock> AngularMomentumBlocks{};
+		int EcpElectronCount{};
+
+		static constexpr auto IsInStandardStorageOrder =
+		        [](const AngularMomentumBlock& lhs, const AngularMomentumBlock& rhs)
+		{
+			if (lhs.AngularMomentum() != rhs.AngularMomentum())
+			{
+				return lhs.AngularMomentum() < rhs.AngularMomentum();
+			}
+
+			//----------------------
+
+			if (lhs.HasOrbital() != rhs.HasOrbital())
+			{
+				return lhs.HasOrbital();
+			}
+
+			if (lhs.HasOrbital())
+			{
+				if (lhs.ExponentSet().size() != rhs.ExponentSet().size())
+				{
+					return lhs.ExponentSet().size() > rhs.ExponentSet().size();
+				}
+
+				return lhs.ExponentSet()[0] > rhs.ExponentSet()[0];
+			}
+
+			//----------------------
+
+			if (lhs.HasSemiLocalEcp() != rhs.HasSemiLocalEcp())
+			{
+				return lhs.HasSemiLocalEcp();
+			}
+
+			if (lhs.HasSemiLocalEcp())
+			{
+				if (lhs.SemiLocalEcp().TermCount() != rhs.SemiLocalEcp().TermCount())
+				{
+					return lhs.SemiLocalEcp().TermCount() > rhs.SemiLocalEcp().TermCount();
+				}
+
+				return lhs.SemiLocalEcp().GaussianExponent(0) > rhs.SemiLocalEcp().GaussianExponent(0);
+			}
+
+			return false;
+		};
+
+		bool IsInStandardRepresentation() const noexcept
+		{
+			if (AngularMomentumBlocks.empty() || !ranges::is_sorted(AngularMomentumBlocks, IsInStandardStorageOrder)
+			    || !AngularMomentumBlockConcatSets(AngularMomentumBlocks).empty())
+			{
+				return false;
+			}
+
+			return true;
+		}
+
+		void StandardizeRepresentation()
+		{
+			auto& angularMomentumBlocks = AngularMomentumBlocks;
+			if (angularMomentumBlocks.empty()
+			    || ranges::none_of(angularMomentumBlocks,
+			                       [](const AngularMomentumBlock& amb)
+			                       { return amb.HasOrbital() || amb.HasSemiLocalEcp(); }))
+			{
+				return;
+			}
+
+			if (angularMomentumBlocks.size() <= 1)
+			{
+				return;
+			}
+
+			ranges::sort(angularMomentumBlocks, IsInStandardStorageOrder);
+
+			const auto concatSets = AngularMomentumBlockConcatSets(angularMomentumBlocks);
+			if (concatSets.empty())
+			{
+				return;
+			}
+
+			const auto concatenatedAmbCount =
+			        angularMomentumBlocks.size()
+			        - ranges::accumulate(concatSets,
+			                             Eigen::Index{0},
+			                             [](const Eigen::Index acc, const auto& iteratorPair)
+			                             { return acc + std::distance(iteratorPair.first, iteratorPair.second) - 1; });
+
+			std::vector<AngularMomentumBlock> concatenatedAngularMomentumBlocks;
+			concatenatedAngularMomentumBlocks.reserve(concatenatedAmbCount);
+
+			auto ambIterator = angularMomentumBlocks.cbegin();
+			auto concatSetIterator = concatSets.cbegin();
+			while (ambIterator != angularMomentumBlocks.cend())
+			{
+				if (ambIterator == concatSetIterator->first)
+				{
+					concatenatedAngularMomentumBlocks.emplace_back(
+					        AngularMomentumBlock::Concat(concatSetIterator->first, concatSetIterator->second));
+					ambIterator = concatSetIterator->second;
+					++concatSetIterator;
+				}
+				else
+				{
+					concatenatedAngularMomentumBlocks.emplace_back(*ambIterator);
+					++ambIterator;
+				}
+			}
+
+			angularMomentumBlocks = concatenatedAngularMomentumBlocks;
+		}
+
+		bool EqualsTo(const ElementaryBasisSet_& other, const Scalar tolerance = 1e-15) const noexcept
+		{
+			if (AngularMomentumBlocks.size() != other.AngularMomentumBlocks.size())
+			{
+				return false;
+			}
+
+			for (auto it0 = AngularMomentumBlocks.cbegin(), it1 = other.AngularMomentumBlocks.cbegin();
+			     it0 != AngularMomentumBlocks.cend();
+			     ++it0, ++it1)
+			{
+				if (it0->NotEqualsTo(*it1, tolerance))
+				{
+					return false;
+				}
+			}
+
+			return true;
+		}
+
+		bool NotEqualsTo(const ElementaryBasisSet_& other, const Scalar tolerance = 1e-15) const noexcept
+		{
+			return !EqualsTo(other, tolerance);
+		}
+
+		bool operator==(const ElementaryBasisSet_& other) const
+		{
+			return EqualsTo(other, 0);
+		}
+
+		bool operator!=(const ElementaryBasisSet_& other) const
+		{
+			return !EqualsTo(other, 0);
+		}
+	};
+
 	namespace Detail
 	{
 		template <OwnershipSemantics Semantics>
@@ -15,7 +201,7 @@ namespace SecChem::BasisSet::Gaussian
 		{
 			static constexpr auto AlternativeOwnershipSemantics =
 			        static_cast<OwnershipSemantics>(!static_cast<bool>(Semantics));
-			using DataType = std::unordered_map<Element, std::vector<AngularMomentumBlock>>;
+			using DataType = std::unordered_map<Element, ElementaryBasisSet_>;
 			using StorageType =
 			        std::conditional_t<Semantics == OwnershipSemantics::Value, DataType, std::shared_ptr<DataType>>;
 			friend BasisSetImpl<OwnershipSemantics::Reference>;
@@ -97,23 +283,23 @@ namespace SecChem::BasisSet::Gaussian
 				return BasisSetImpl{std::make_shared<DataType>(*m_DataStorage)};
 			}
 
-			const std::vector<AngularMomentumBlock>& operator[](const Element element) const
+			const ElementaryBasisSet_& operator[](const Element element) const
 			{
 				return Data().at(element);
 			}
 
-			std::vector<AngularMomentumBlock>& operator[](const Element element)
+			ElementaryBasisSet_& operator[](const Element element)
 			{
 				return Data().at(element);
 			}
 
-			std::vector<AngularMomentumBlock>& AddOrOverwriteEntryOf(const Element element)
+			ElementaryBasisSet_& AddOrOverwriteEntryOf(const Element element)
 			{
 				Data()[element] = {};
 				return Data()[element];
 			}
 
-			std::vector<AngularMomentumBlock>& AddEntryFor(const Element element)
+			ElementaryBasisSet_& AddEntryFor(const Element element)
 			{
 				if (Data().find(element) != Data().end())
 				{
@@ -125,7 +311,7 @@ namespace SecChem::BasisSet::Gaussian
 				return Data()[element];
 			}
 
-			std::vector<AngularMomentumBlock>& OverwriteEntryOf(const Element element)
+			ElementaryBasisSet_& OverwriteEntryOf(const Element element)
 			{
 				Data().at(element) = {};
 				return Data()[element];
@@ -181,28 +367,17 @@ namespace SecChem::BasisSet::Gaussian
 					return false;
 				}
 
-				for (const auto& [element, angularMomentumBlocks] : Data())
+				for (const auto& [element, elementaryBasis] : Data())
 				{
-					const auto iteratorToOtherAngularMomentumBlocks = other.Data().find(element);
-					if (iteratorToOtherAngularMomentumBlocks == other.Data().end())
+					const auto iteratorToOtherElementaryBasis = other.Data().find(element);
+					if (iteratorToOtherElementaryBasis == other.Data().end())
 					{
 						return false;
 					}
 
-					const auto& [_, otherAngularMomentumBlocks] = *iteratorToOtherAngularMomentumBlocks;
-					if (angularMomentumBlocks.size() != otherAngularMomentumBlocks.size())
+					if (elementaryBasis.NotEqualsTo(iteratorToOtherElementaryBasis->second, tolerance))
 					{
 						return false;
-					}
-
-					for (auto it0 = angularMomentumBlocks.cbegin(), it1 = otherAngularMomentumBlocks.cbegin();
-					     it0 != angularMomentumBlocks.cend();
-					     ++it0, ++it1)
-					{
-						if (it0->NotEqualsTo(*it1, tolerance))
-						{
-							return false;
-						}
 					}
 				}
 
@@ -222,12 +397,9 @@ namespace SecChem::BasisSet::Gaussian
 					return true;
 				}
 
-				for (const auto& [_, angularMomentumBlocks] : Data())
+				for (const auto& [_, elementaryBasis] : Data())
 				{
-					if (angularMomentumBlocks.empty()
-					    || !std::is_sorted(
-					            angularMomentumBlocks.cbegin(), angularMomentumBlocks.cend(), IsInStandardStorageOrder)
-					    || !AngularMomentumBlockConcatSets(angularMomentumBlocks).empty())
+					if (!elementaryBasis.IsInStandardRepresentation())
 					{
 						return false;
 					}
@@ -240,61 +412,18 @@ namespace SecChem::BasisSet::Gaussian
 			{
 				std::vector<Element> nullElements;
 
-				for (auto& [element, angularMomentumBlocks] : Data())
+				for (auto& [element, elementaryBasis] : Data())
 				{
+					const auto& angularMomentumBlocks = elementaryBasis.AngularMomentumBlocks;
 					if (angularMomentumBlocks.empty()
-					    || std::none_of(angularMomentumBlocks.cbegin(),
-					                    angularMomentumBlocks.cend(),
-					                    [](const AngularMomentumBlock& amb)
-					                    { return amb.HasOrbital() || amb.HasSemiLocalEcp(); }))
+					    || ranges::none_of(angularMomentumBlocks,
+					                       [](const AngularMomentumBlock& amb)
+					                       { return amb.HasOrbital() || amb.HasSemiLocalEcp(); }))
 					{
 						nullElements.emplace_back(element);
 					}
 
-					if (angularMomentumBlocks.size() <= 1)
-					{
-						continue;
-					}
-
-					std::sort(angularMomentumBlocks.begin(), angularMomentumBlocks.end(), IsInStandardStorageOrder);
-
-					const auto concatSets = AngularMomentumBlockConcatSets(angularMomentumBlocks);
-					if (concatSets.empty())
-					{
-						continue;
-					}
-
-					const auto concatenatedAmbCount =
-					        angularMomentumBlocks.size()
-					        - std::accumulate(
-					                concatSets.cbegin(),
-					                concatSets.cend(),
-					                Eigen::Index{0},
-					                [](const Eigen::Index acc, const auto& iteratorPair)
-					                { return acc + std::distance(iteratorPair.first, iteratorPair.second) - 1; });
-
-					std::vector<AngularMomentumBlock> concatenatedAngularMomentumBlocks;
-					concatenatedAngularMomentumBlocks.reserve(concatenatedAmbCount);
-
-					auto ambIterator = angularMomentumBlocks.cbegin();
-					auto concatSetIterator = concatSets.cbegin();
-					while (ambIterator != angularMomentumBlocks.cend())
-					{
-						if (ambIterator == concatSetIterator->first)
-						{
-							concatenatedAngularMomentumBlocks.emplace_back(
-							        AngularMomentumBlock::Concat(concatSetIterator->first, concatSetIterator->second));
-							ambIterator = concatSetIterator->second;
-							++concatSetIterator;
-						}
-						else
-						{
-							concatenatedAngularMomentumBlocks.emplace_back(*ambIterator);
-							++ambIterator;
-						}
-					}
-
-					angularMomentumBlocks = concatenatedAngularMomentumBlocks;
+					elementaryBasis.StandardizeRepresentation();
 				}
 
 				for (const auto element : nullElements)
@@ -390,33 +519,6 @@ namespace SecChem::BasisSet::Gaussian
 				{
 					return m_DataStorage;
 				}
-			}
-
-			static auto AngularMomentumBlockConcatSets(
-			        const std::vector<AngularMomentumBlock>& sortedAngularMomentumBlocks)
-			{
-				using Iterator = std::vector<AngularMomentumBlock>::const_iterator;
-				std::vector<std::pair<Iterator, Iterator>> concatSets;
-				auto it0 = sortedAngularMomentumBlocks.begin();
-				while (it0 != sortedAngularMomentumBlocks.end())
-				{
-					auto it1 = std::find_if_not(std::next(it0),
-					                            sortedAngularMomentumBlocks.end(),
-					                            [l0 = it0->AngularMomentum()](const AngularMomentumBlock& block)
-					                            { return block.AngularMomentum() == l0; });
-
-					if (it1 != std::next(it0))
-					{
-						concatSets.push_back({it0, it1});
-						it0 = it1;
-					}
-					else
-					{
-						++it0;
-					}
-				}
-
-				return concatSets;
 			}
 
 

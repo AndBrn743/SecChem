@@ -83,15 +83,18 @@ TEST_CASE("AddEntryFor / OverwriteEntryOf behavior", "[BasisSet]")
 	BasisSet bs;
 
 	auto& h = bs.AddEntryFor(Element::H);
-	REQUIRE(h.empty());
+	REQUIRE(h.AngularMomentumBlocks.empty());
+	REQUIRE(h.EcpElectronCount == 0);
 
 	REQUIRE_THROWS_AS(bs.AddEntryFor(Element::H), std::logic_error);
 
 	auto& h2 = bs.OverwriteEntryOf(Element::H);
-	REQUIRE(h2.empty());
+	REQUIRE(h2.AngularMomentumBlocks.empty());
+	REQUIRE(h2.EcpElectronCount == 0);
 
 	auto& h3 = bs.AddOrOverwriteEntryOf(Element::H);
-	REQUIRE(h3.empty());
+	REQUIRE(h3.AngularMomentumBlocks.empty());
+	REQUIRE(h3.EcpElectronCount == 0);
 }
 
 TEST_CASE("operator== is representation-based", "[BasisSet]")
@@ -101,7 +104,7 @@ TEST_CASE("operator== is representation-based", "[BasisSet]")
 
 	REQUIRE(a == b);  // distinct storage
 
-	a.AddEntryFor(Element::H)
+	a.AddEntryFor(Element::H).AngularMomentumBlocks
 	        .emplace_back(AzimuthalQuantumNumber{0},
 	                      ContractedRadialOrbitalSet{Eigen::VectorXd::Constant(1, 1.0),
 	                                                 Eigen::MatrixXd::Constant(1, 1, 1.0)});
@@ -115,7 +118,7 @@ TEST_CASE("operator== is representation-based", "[BasisSet]")
 TEST_CASE("EqualsTo performs deep comparison", "[BasisSet]")
 {
 	BasisSet a;
-	a.AddEntryFor(Element::H)
+	a.AddEntryFor(Element::H).AngularMomentumBlocks
 	        .emplace_back(
 	                AzimuthalQuantumNumber{0},
 	                ContractedRadialOrbitalSet{Eigen::VectorXd::Constant(2, 1.0), Eigen::MatrixXd::Identity(2, 1)});
@@ -131,7 +134,7 @@ TEST_CASE("EqualsTo performs deep comparison", "[BasisSet]")
 TEST_CASE("Clone creates deep copy for Reference semantics", "[BasisSet]")
 {
 	BasisSet value;
-	value.AddEntryFor(Element::H)
+	value.AddEntryFor(Element::H).AngularMomentumBlocks
 	        .emplace_back(AzimuthalQuantumNumber::F,
 	                      ContractedRadialOrbitalSet{Eigen::VectorXd::Constant(1, 2.0),
 	                                                 Eigen::MatrixXd::Constant(1, 1, 3.0)});
@@ -148,7 +151,7 @@ TEST_CASE("StandardizeRepresentation sorts AngularMomentumBlocks", "[BasisSet]")
 	BasisSet bs;
 	REQUIRE(bs.IsInStandardRepresentation());
 
-	auto& c = bs.AddEntryFor(Element::Carbon);
+	auto& c = bs.AddEntryFor(Element::Carbon).AngularMomentumBlocks;
 	REQUIRE_FALSE(bs.IsInStandardRepresentation());
 
 	c.emplace_back(AzimuthalQuantumNumber{2},
@@ -171,7 +174,7 @@ TEST_CASE("StandardizeRepresentation sorts AngularMomentumBlocks", "[BasisSet]")
 TEST_CASE("StandardizeRepresentation concatenates same-l blocks", "[BasisSet]")
 {
 	BasisSet bs;
-	auto& h = bs.AddEntryFor(Element::H);
+	auto& h = bs.AddEntryFor(Element::H).AngularMomentumBlocks;
 
 	h.emplace_back(AzimuthalQuantumNumber::S,
 	               ContractedRadialOrbitalSet{Eigen::VectorXd::Constant(1, 1.0), Eigen::MatrixXd::Constant(1, 1, 1.0)});
@@ -191,7 +194,7 @@ TEST_CASE("ToStandardizedRepresentation does not mutate original", "[BasisSet]")
 {
 	BasisSet bs;
 	bs.AddEntryFor(Element::Neutron);
-	auto& h = bs.AddEntryFor(Element::H);
+	auto& h = bs.AddEntryFor(Element::H).AngularMomentumBlocks;
 
 	h.emplace_back(AzimuthalQuantumNumber::S,
 	               ContractedRadialOrbitalSet{Eigen::VectorXd::Constant(1, 1.0), Eigen::MatrixXd::Constant(1, 1, 1.1)});
@@ -222,11 +225,11 @@ TEST_CASE("Misc .EqualsTo(...)", "[BasisSet]")
 
 	SECTION("Value diff")
 	{
-		bss0.AddEntryFor(Element::H)
+		bss0.AddEntryFor(Element::H).AngularMomentumBlocks
 		        .emplace_back(AzimuthalQuantumNumber::P,
 		                      ContractedRadialOrbitalSet{Eigen::VectorXd::Constant(1, 3.0),
 		                                                 Eigen::MatrixXd::Constant(1, 1, 3.1)});
-		bss1.AddEntryFor(Element::H)
+		bss1.AddEntryFor(Element::H).AngularMomentumBlocks
 		        .emplace_back(AzimuthalQuantumNumber::P,
 		                      ContractedRadialOrbitalSet{Eigen::VectorXd::Constant(1, 3.0),
 		                                                 Eigen::MatrixXd::Constant(1, 1, 3.2)});
@@ -235,14 +238,14 @@ TEST_CASE("Misc .EqualsTo(...)", "[BasisSet]")
 
 	SECTION("AzimuthalQuantumNumber range diff")
 	{
-		auto& h0 = bss0.AddEntryFor(Element::H);
+		auto& h0 = bss0.AddEntryFor(Element::H).AngularMomentumBlocks;
 		h0.emplace_back(
 		        AzimuthalQuantumNumber::S,
 		        ContractedRadialOrbitalSet{Eigen::VectorXd::Constant(1, 3.0), Eigen::MatrixXd::Constant(1, 1, 3.1)});
 		h0.emplace_back(
 		        AzimuthalQuantumNumber::P,
 		        ContractedRadialOrbitalSet{Eigen::VectorXd::Constant(2, 3.0), Eigen::MatrixXd::Constant(2, 1, 3.1)});
-		bss1.AddEntryFor(Element::H)
+		bss1.AddEntryFor(Element::H).AngularMomentumBlocks
 		        .emplace_back(AzimuthalQuantumNumber::S,
 		                      ContractedRadialOrbitalSet{Eigen::VectorXd::Constant(1, 3.0),
 		                                                 Eigen::MatrixXd::Constant(1, 1, 3.1)});
