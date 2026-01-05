@@ -34,10 +34,10 @@ namespace SecChem::BasisSet::Gaussian
 			return static_cast<const Derived&>(*this).PrimitiveShellCount_Impl();
 		}
 
-		auto PrimitiveShells() const noexcept
+		auto PrimitiveShells(const int principalQuantumNumberOffset = 0) const noexcept
 		{
 			const auto l = AngularMomentum();
-			const auto n0 = l.MinPrincipalQuantumNumber();
+			const auto n0 = l.MinPrincipalQuantumNumber() + principalQuantumNumberOffset;
 
 			return ranges::views::iota(0 + n0, static_cast<int>(PrimitiveShellCount()) + n0)
 				   | ranges::views::transform([l](const int n)
@@ -49,10 +49,10 @@ namespace SecChem::BasisSet::Gaussian
 			return static_cast<const Derived&>(*this).ContractedShellCount_Impl();
 		}
 
-		auto ContractedShells() const noexcept
+		auto ContractedShells(const int principalQuantumNumberOffset = 0) const noexcept
 		{
 			const auto l = AngularMomentum();
-			const auto n0 = l.MinPrincipalQuantumNumber();
+			const auto n0 = l.MinPrincipalQuantumNumber() + principalQuantumNumberOffset;
 
 			return ranges::views::iota(0 + n0, static_cast<int>(ContractedShellCount()) + n0)
 			       | ranges::views::transform([l](const int n)

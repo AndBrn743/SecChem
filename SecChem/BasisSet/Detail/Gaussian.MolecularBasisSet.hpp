@@ -171,13 +171,47 @@ namespace SecChem::BasisSet::Gaussian
 		auto PrimitiveSubShellsOfAtomAt(const std::size_t index) const
 		{
 			return ElementaryBasisAt(index).AngularMomentumBlocks
-			       | ranges::views::transform(&AngularMomentumBlock::PrimitiveShells) | ranges::views::join;
+			       | ranges::views::transform([](const AngularMomentumBlock& amb) { return amb.PrimitiveShells(); })
+			       | ranges::views::join;
 		}
 
 		auto ContractedSubShellsOfAtomAt(const std::size_t index) const
 		{
 			return ElementaryBasisAt(index).AngularMomentumBlocks
-			       | ranges::views::transform(&AngularMomentumBlock::ContractedShells) | ranges::views::join;
+			       | ranges::views::transform([](const AngularMomentumBlock& amb) { return amb.ContractedShells(); })
+			       | ranges::views::join;
+		}
+
+		auto EcpOffsettedPrimitiveSubShellsOfAtomAt(const std::size_t index) const
+		{
+			const auto* basisPtr = m_BasisAssignments[index];
+			const auto& ambs = basisPtr->AngularMomentumBlocks;
+
+			const auto* ambsPtr = ambs.data();
+			const auto* principalQuantumNumberOffsetsPtr =
+			        m_ComputedElementaryBasisInfoTable.at(basisPtr).PrincipalQuantumNumberOffsetTable.data();
+
+			return ambs
+			       | ranges::views::transform(
+			               [principalQuantumNumberOffsetsPtr, ambsPtr](const AngularMomentumBlock& amb)
+			               { return amb.PrimitiveShells(principalQuantumNumberOffsetsPtr[&amb - ambsPtr]); })
+			       | ranges::views::join;
+		}
+
+		auto EcpOffsettedContractedSubShellsOfAtomAt(const std::size_t index) const
+		{
+			const auto* basisPtr = m_BasisAssignments[index];
+			const auto& ambs = basisPtr->AngularMomentumBlocks;
+
+			const auto* ambsPtr = ambs.data();
+			const auto* principalQuantumNumberOffsetsPtr =
+					m_ComputedElementaryBasisInfoTable.at(basisPtr).PrincipalQuantumNumberOffsetTable.data();
+
+			return ambs
+				   | ranges::views::transform(
+						   [principalQuantumNumberOffsetsPtr, ambsPtr](const AngularMomentumBlock& amb)
+						   { return amb.ContractedShells(principalQuantumNumberOffsetsPtr[&amb - ambsPtr]); })
+				   | ranges::views::join;
 		}
 
 		auto PrimitiveSubShellsOf(const Atom& atom) const
@@ -188,6 +222,16 @@ namespace SecChem::BasisSet::Gaussian
 		auto ContractedSubShellsOf(const Atom& atom) const
 		{
 			return ContractedSubShellsOfAtomAt(m_Molecule.IndexOf(atom));
+		}
+
+		auto EcpOffsettedPrimitiveSubShellsOf(const Atom& atom) const
+		{
+			return EcpOffsettedPrimitiveSubShellsOfAtomAt(m_Molecule.IndexOf(atom));
+		}
+
+		auto EcpOffsettedContractedSubShellsOf(const Atom& atom) const
+		{
+			return EcpOffsettedContractedSubShellsOfAtomAt(m_Molecule.IndexOf(atom));
 		}
 
 		auto ContractedSphericalOrbitalsFrom(const Atom& atom) const

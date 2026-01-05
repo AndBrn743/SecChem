@@ -360,6 +360,16 @@ H 1.1 0 0
 		const auto actual = basis.ContractedSubShellsOf(molecule[2]) | ranges::to_vector;
 		REQUIRE(actual == reference);
 	}
+	{
+		const std::vector reference = {1_Sharp};
+		const auto actual = basis.ContractedSubShellsOf(molecule[3]) | ranges::to_vector;
+		REQUIRE(actual == reference);
+	}
+	{
+		const std::vector reference = {4_Sharp};
+		const auto actual = basis.EcpOffsettedContractedSubShellsOf(molecule[3]) | ranges::to_vector;
+		REQUIRE(actual == reference);
+	}
 
 	REQUIRE(basis.PrimitiveSubShellCount() == 19 + 5 + 12 + 2 + 5);
 	{
