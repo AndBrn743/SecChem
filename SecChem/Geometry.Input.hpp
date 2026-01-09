@@ -71,7 +71,7 @@ namespace SecChem::Geometry::Input
 		static_assert(IndexingConvention == 0 || IndexingConvention == 1, "IndexingConvention must be set to 0 or 1");
 		static_assert(std::is_same_v<std::decay_t<decltype(toRadian(3.14))>, double>);
 
-		const auto atomCount = std::distance(atomBegin, atomEnd);
+		const auto atomCount = static_cast<std::uint64_t>(std::distance(atomBegin, atomEnd));
 		const auto tokenCount = std::distance(tokenBegin, tokenEnd);
 		if (tokenCount == 0)
 		{

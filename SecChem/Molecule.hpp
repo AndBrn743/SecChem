@@ -140,10 +140,9 @@ namespace SecChem
 			const auto first = static_cast<const Atom*>(cbegin().operator->());
 #endif
 			static_assert(std::is_same_v<decltype(first), const Atom* const>);
-			const auto last = first + AtomCount();
 			const auto ptr = std::addressof(atom);
 
-			assert(ptr >= first && ptr < last && "Atom can't be found inside the molecule by identity");
+			assert(ptr >= first && ptr < first + AtomCount() && "Atom can't be found inside the molecule by identity");
 
 			return static_cast<std::size_t>(ptr - first);
 		}
