@@ -289,7 +289,7 @@ namespace SecChem::BasisSet::Gaussian
 
 		Eigen::Index AtomIndexFromContractedSphericalOrbital(const Eigen::Index orbitalIndex) const noexcept
 		{
-			assert(orbitalIndex >= 0 && orbitalIndex <= m_ContractedSphericalOrbitalSegmentationTable.back());
+			assert(orbitalIndex >= 0 && orbitalIndex < m_ContractedSphericalOrbitalSegmentationTable.back());
 
 			return std::distance(
 			        m_ContractedSphericalOrbitalSegmentationTable.cbegin(),
@@ -303,7 +303,7 @@ namespace SecChem::BasisSet::Gaussian
 
 		Eigen::Index AtomIndexFromPrimitiveSphericalOrbital(const Eigen::Index orbitalIndex) const noexcept
 		{
-			assert(orbitalIndex >= 0 && orbitalIndex <= m_PrimitiveSphericalOrbitalSegmentationTable.back());
+			assert(orbitalIndex >= 0 && orbitalIndex < m_PrimitiveSphericalOrbitalSegmentationTable.back());
 
 			return std::distance(
 			        m_PrimitiveSphericalOrbitalSegmentationTable.cbegin(),
