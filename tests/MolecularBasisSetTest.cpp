@@ -11,6 +11,230 @@
 
 #include <SecChem/Geometry.Input.hpp>
 
+namespace SecChem::Experimental
+{
+	struct Atom
+	{
+		int Index;
+	};
+
+	enum class Contraction
+	{
+		Unspecified,
+		Primitive,
+		Contracted
+	};
+
+	enum class Representation
+	{
+		Unspecified,
+		Cartesian,
+		Spherical
+	};
+
+	template <Contraction C, Representation R>
+	class BasisView;
+
+	class MolecularBasisSet
+	{
+	public:
+		template <Contraction C, Representation R>
+		std::size_t OrbitalCountOf(const Atom& atom) const
+		{
+			return atom.Index * 1000 + static_cast<int>(C) * 10 + static_cast<int>(R);  // mocked
+		}
+
+		BasisView<Contraction::Primitive, Representation::Unspecified> Primitive() const;
+
+		BasisView<Contraction::Contracted, Representation::Unspecified> Contracted() const;
+
+		BasisView<Contraction::Unspecified, Representation::Cartesian> Cartesian() const;
+
+		BasisView<Contraction::Unspecified, Representation::Spherical> Spherical() const;
+	};
+
+	template <Contraction C, Representation R>
+	class BasisView
+	{
+		static_assert((C == Contraction::Contracted || C == Contraction::Primitive)
+		              && (R == Representation::Spherical || R == Representation::Cartesian));
+
+	public:
+		constexpr explicit BasisView(const MolecularBasisSet& basis) noexcept : cr_BasisSet(basis)
+		{
+			/* NO CODE */
+		}
+
+		// ---- final operation ----
+
+		std::size_t OrbitalCountOf(const Atom& atom) const
+		{
+			return cr_BasisSet.OrbitalCountOf<C, R>(atom);
+		}
+
+	private:
+		const MolecularBasisSet& cr_BasisSet;
+	};
+
+	template <>
+	class BasisView<Contraction::Primitive, Representation::Unspecified>
+	{
+	public:
+		constexpr explicit BasisView(const MolecularBasisSet& basis) noexcept : cr_BasisSet(basis)
+		{
+			/* NO CODE */
+		}
+
+		auto Cartesian() const
+		{
+			return BasisView<Contraction::Primitive, Representation::Cartesian>{cr_BasisSet};
+		}
+
+		auto Spherical() const
+		{
+			return BasisView<Contraction::Primitive, Representation::Spherical>{cr_BasisSet};
+		}
+
+	private:
+		const MolecularBasisSet& cr_BasisSet;
+	};
+
+	template <>
+	class BasisView<Contraction::Contracted, Representation::Unspecified>
+	{
+	public:
+		constexpr explicit BasisView(const MolecularBasisSet& basis) noexcept : cr_BasisSet(basis)
+		{
+			/* NO CODE */
+		}
+
+		auto Cartesian() const
+		{
+			return BasisView<Contraction::Contracted, Representation::Cartesian>{cr_BasisSet};
+		}
+
+		auto Spherical() const
+		{
+			return BasisView<Contraction::Contracted, Representation::Spherical>{cr_BasisSet};
+		}
+
+	private:
+		const MolecularBasisSet& cr_BasisSet;
+	};
+
+	template <>
+	class BasisView<Contraction::Unspecified, Representation::Cartesian>
+	{
+	public:
+		constexpr explicit BasisView(const MolecularBasisSet& basis) noexcept : cr_BasisSet(basis)
+		{
+			/* NO CODE */
+		}
+
+		auto Primitive() const
+		{
+			return BasisView<Contraction::Primitive, Representation::Cartesian>{cr_BasisSet};
+		}
+
+		auto Contracted() const
+		{
+			return BasisView<Contraction::Contracted, Representation::Cartesian>{cr_BasisSet};
+		}
+
+	private:
+		const MolecularBasisSet& cr_BasisSet;
+	};
+
+	template <>
+	class BasisView<Contraction::Unspecified, Representation::Spherical>
+	{
+	public:
+		constexpr explicit BasisView(const MolecularBasisSet& basis) noexcept : cr_BasisSet(basis)
+		{
+			/* NO CODE */
+		}
+
+		auto Primitive() const
+		{
+			return BasisView<Contraction::Primitive, Representation::Spherical>{cr_BasisSet};
+		}
+
+		auto Contracted() const
+		{
+			return BasisView<Contraction::Contracted, Representation::Spherical>{cr_BasisSet};
+		}
+
+	private:
+		const MolecularBasisSet& cr_BasisSet;
+	};
+
+	template <>
+	class BasisView<Contraction::Unspecified, Representation::Unspecified>
+	{
+	public:
+		constexpr explicit BasisView(const MolecularBasisSet& basis) noexcept : cr_BasisSet(basis)
+		{
+			/* NO CODE */
+		}
+
+		auto Primitive() const
+		{
+			return BasisView<Contraction::Primitive, Representation::Unspecified>{cr_BasisSet};
+		}
+
+		auto Contracted() const
+		{
+			return BasisView<Contraction::Contracted, Representation::Unspecified>{cr_BasisSet};
+		}
+
+		auto Cartesian() const
+		{
+			return BasisView<Contraction::Unspecified, Representation::Cartesian>{cr_BasisSet};
+		}
+
+		auto Spherical() const
+		{
+			return BasisView<Contraction::Unspecified, Representation::Spherical>{cr_BasisSet};
+		}
+
+	private:
+		const MolecularBasisSet& cr_BasisSet;
+	};
+
+	BasisView<Contraction::Primitive, Representation::Unspecified> MolecularBasisSet::Primitive() const
+	{
+		return BasisView<Contraction::Primitive, Representation::Unspecified>{*this};
+	}
+
+	BasisView<Contraction::Contracted, Representation::Unspecified> MolecularBasisSet::Contracted() const
+	{
+		return BasisView<Contraction::Contracted, Representation::Unspecified>{*this};
+	}
+
+	BasisView<Contraction::Unspecified, Representation::Cartesian> MolecularBasisSet::Cartesian() const
+	{
+		return BasisView<Contraction::Unspecified, Representation::Cartesian>{*this};
+	}
+
+	BasisView<Contraction::Unspecified, Representation::Spherical> MolecularBasisSet::Spherical() const
+	{
+		return BasisView<Contraction::Unspecified, Representation::Spherical>{*this};
+	}
+}  // namespace SecChem::Experimental
+
+TEST_CASE("Experimental::BasisSetLibrary sanity")
+{
+	using namespace SecChem::Experimental;
+
+	MolecularBasisSet basis;
+
+	std::cout << basis.Contracted().Spherical().OrbitalCountOf(Atom{42}) << std::endl;
+	std::cout << basis.Cartesian().Contracted().OrbitalCountOf(Atom{42}) << std::endl;
+	std::cout << basis.Spherical().Primitive().OrbitalCountOf(Atom{42}) << std::endl;
+	std::cout << basis.Primitive().Cartesian().OrbitalCountOf(Atom{42}) << std::endl;
+}
+
+#if 1
 using namespace SecChem::Geometry::Input;
 
 class MolecularInputInterpreter
@@ -286,92 +510,92 @@ H 1.1 0 0
 	REQUIRE(basis.UniqueElementaryBasisSetCount() == 4);
 	REQUIRE(basis.UniqueElementaryBasisSet().size() == 4);
 
-	REQUIRE(basis.AtomIndexFromPrimitiveSphericalOrbital(0) == 0);
-	REQUIRE(basis.AtomIndexFromPrimitiveSphericalOrbital(1) == 0);
-	REQUIRE(basis.AtomIndexFromPrimitiveSphericalOrbital(20) == 0);
-	REQUIRE(basis.AtomIndexFromPrimitiveSphericalOrbital(30) == 0);
-	REQUIRE(basis.AtomIndexFromPrimitiveSphericalOrbital(32) == 0);
-	REQUIRE(basis.AtomIndexFromPrimitiveSphericalOrbital(33) == 1);
+	REQUIRE(basis.Primitive().Spherical().AtomIndexFromOrbital(0) == 0);
+	REQUIRE(basis.Primitive().Spherical().AtomIndexFromOrbital(1) == 0);
+	REQUIRE(basis.Primitive().Spherical().AtomIndexFromOrbital(20) == 0);
+	REQUIRE(basis.Primitive().Spherical().AtomIndexFromOrbital(30) == 0);
+	REQUIRE(basis.Primitive().Spherical().AtomIndexFromOrbital(32) == 0);
+	REQUIRE(basis.Primitive().Spherical().AtomIndexFromOrbital(33) == 1);
 
-	REQUIRE(basis.AtomIndexFromContractedSphericalOrbital(0) == 0);
-	REQUIRE(basis.AtomIndexFromContractedSphericalOrbital(1) == 0);
-	REQUIRE(basis.AtomIndexFromContractedSphericalOrbital(2) == 0);
-	REQUIRE(basis.AtomIndexFromContractedSphericalOrbital(3) == 0);
-	REQUIRE(basis.AtomIndexFromContractedSphericalOrbital(4) == 0);
+	REQUIRE(basis.Contracted().Spherical().AtomIndexFromOrbital(0) == 0);
+	REQUIRE(basis.Contracted().Spherical().AtomIndexFromOrbital(1) == 0);
+	REQUIRE(basis.Contracted().Spherical().AtomIndexFromOrbital(2) == 0);
+	REQUIRE(basis.Contracted().Spherical().AtomIndexFromOrbital(3) == 0);
+	REQUIRE(basis.Contracted().Spherical().AtomIndexFromOrbital(4) == 0);
 
-	REQUIRE(basis.AtomIndexFromContractedSphericalOrbital(5) == 1);
-	REQUIRE(basis.AtomIndexFromContractedSphericalOrbital(6) == 1);
-	REQUIRE(basis.AtomIndexFromContractedSphericalOrbital(7) == 1);
-	REQUIRE(basis.AtomIndexFromContractedSphericalOrbital(8) == 1);
-	REQUIRE(basis.AtomIndexFromContractedSphericalOrbital(9) == 1);
+	REQUIRE(basis.Contracted().Spherical().AtomIndexFromOrbital(5) == 1);
+	REQUIRE(basis.Contracted().Spherical().AtomIndexFromOrbital(6) == 1);
+	REQUIRE(basis.Contracted().Spherical().AtomIndexFromOrbital(7) == 1);
+	REQUIRE(basis.Contracted().Spherical().AtomIndexFromOrbital(8) == 1);
+	REQUIRE(basis.Contracted().Spherical().AtomIndexFromOrbital(9) == 1);
 
-	REQUIRE(basis.AtomIndexFromContractedSphericalOrbital(10) == 2);  // 1s
-	REQUIRE(basis.AtomIndexFromContractedSphericalOrbital(11) == 2);  // 2s
-	REQUIRE(basis.AtomIndexFromContractedSphericalOrbital(12) == 2);  // 3s
-	REQUIRE(basis.AtomIndexFromContractedSphericalOrbital(13) == 2);  // 2p(-1)
-	REQUIRE(basis.AtomIndexFromContractedSphericalOrbital(14) == 2);  // 2p(0)
-	REQUIRE(basis.AtomIndexFromContractedSphericalOrbital(15) == 2);  // 2p(+1)
-	REQUIRE(basis.AtomIndexFromContractedSphericalOrbital(16) == 2);  // 3p(-1)
-	REQUIRE(basis.AtomIndexFromContractedSphericalOrbital(17) == 2);  // 3p(0)
-	REQUIRE(basis.AtomIndexFromContractedSphericalOrbital(18) == 2);  // 3p(+1)
-	REQUIRE(basis.AtomIndexFromContractedSphericalOrbital(19) == 2);  // 3d(-2)
-	REQUIRE(basis.AtomIndexFromContractedSphericalOrbital(20) == 2);  // 3d(-1)
-	REQUIRE(basis.AtomIndexFromContractedSphericalOrbital(21) == 2);  // 3d(0)
-	REQUIRE(basis.AtomIndexFromContractedSphericalOrbital(22) == 2);  // 3d(+1)
-	REQUIRE(basis.AtomIndexFromContractedSphericalOrbital(23) == 2);  // 3d(+2)
+	REQUIRE(basis.Spherical().Contracted().AtomIndexFromOrbital(10) == 2);  // 1s
+	REQUIRE(basis.Spherical().Contracted().AtomIndexFromOrbital(11) == 2);  // 2s
+	REQUIRE(basis.Spherical().Contracted().AtomIndexFromOrbital(12) == 2);  // 3s
+	REQUIRE(basis.Spherical().Contracted().AtomIndexFromOrbital(13) == 2);  // 2p(-1)
+	REQUIRE(basis.Spherical().Contracted().AtomIndexFromOrbital(14) == 2);  // 2p(0)
+	REQUIRE(basis.Spherical().Contracted().AtomIndexFromOrbital(15) == 2);  // 2p(+1)
+	REQUIRE(basis.Spherical().Contracted().AtomIndexFromOrbital(16) == 2);  // 3p(-1)
+	REQUIRE(basis.Spherical().Contracted().AtomIndexFromOrbital(17) == 2);  // 3p(0)
+	REQUIRE(basis.Spherical().Contracted().AtomIndexFromOrbital(18) == 2);  // 3p(+1)
+	REQUIRE(basis.Spherical().Contracted().AtomIndexFromOrbital(19) == 2);  // 3d(-2)
+	REQUIRE(basis.Spherical().Contracted().AtomIndexFromOrbital(20) == 2);  // 3d(-1)
+	REQUIRE(basis.Spherical().Contracted().AtomIndexFromOrbital(21) == 2);  // 3d(0)
+	REQUIRE(basis.Spherical().Contracted().AtomIndexFromOrbital(22) == 2);  // 3d(+1)
+	REQUIRE(basis.Spherical().Contracted().AtomIndexFromOrbital(23) == 2);  // 3d(+2)
 
-	REQUIRE(basis.AtomIndexFromContractedSphericalOrbital(24) == 3);
+	REQUIRE(basis.Contracted().Spherical().AtomIndexFromOrbital(24) == 3);
 
-	REQUIRE(basis.AtomIndexAndSubShellFromContractedSphericalOrbital(0) == std::pair{Eigen::Index{0}, 1_Sharp});
-	REQUIRE(basis.AtomIndexAndSubShellFromContractedSphericalOrbital(1) == std::pair{Eigen::Index{0}, 2_Sharp});
-	REQUIRE(basis.AtomIndexAndSubShellFromContractedSphericalOrbital(2) == std::pair{Eigen::Index{0}, 2_Principal});
-	REQUIRE(basis.AtomIndexAndSubShellFromContractedSphericalOrbital(3) == std::pair{Eigen::Index{0}, 2_Principal});
-	REQUIRE(basis.AtomIndexAndSubShellFromContractedSphericalOrbital(4) == std::pair{Eigen::Index{0}, 2_Principal});
+	REQUIRE(basis.Contracted().Spherical().AtomIndexAndSubshellFromOrbital(0) == std::pair{Eigen::Index{0}, 1_Sharp});
+	REQUIRE(basis.Contracted().Spherical().AtomIndexAndSubshellFromOrbital(1) == std::pair{Eigen::Index{0}, 2_Sharp});
+	REQUIRE(basis.Contracted().Spherical().AtomIndexAndSubshellFromOrbital(2) == std::pair{Eigen::Index{0}, 2_Principal});
+	REQUIRE(basis.Contracted().Spherical().AtomIndexAndSubshellFromOrbital(3) == std::pair{Eigen::Index{0}, 2_Principal});
+	REQUIRE(basis.Contracted().Spherical().AtomIndexAndSubshellFromOrbital(4) == std::pair{Eigen::Index{0}, 2_Principal});
 
-	REQUIRE(basis.AtomIndexAndSubShellFromContractedSphericalOrbital(5) == std::pair{Eigen::Index{1}, 1_Sharp});
-	REQUIRE(basis.AtomIndexAndSubShellFromContractedSphericalOrbital(6) == std::pair{Eigen::Index{1}, 2_Sharp});
-	REQUIRE(basis.AtomIndexAndSubShellFromContractedSphericalOrbital(7) == std::pair{Eigen::Index{1}, 2_Principal});
-	REQUIRE(basis.AtomIndexAndSubShellFromContractedSphericalOrbital(8) == std::pair{Eigen::Index{1}, 2_Principal});
-	REQUIRE(basis.AtomIndexAndSubShellFromContractedSphericalOrbital(9) == std::pair{Eigen::Index{1}, 2_Principal});
+	REQUIRE(basis.Contracted().Spherical().AtomIndexAndSubshellFromOrbital(5) == std::pair{Eigen::Index{1}, 1_Sharp});
+	REQUIRE(basis.Contracted().Spherical().AtomIndexAndSubshellFromOrbital(6) == std::pair{Eigen::Index{1}, 2_Sharp});
+	REQUIRE(basis.Contracted().Spherical().AtomIndexAndSubshellFromOrbital(7) == std::pair{Eigen::Index{1}, 2_Principal});
+	REQUIRE(basis.Contracted().Spherical().AtomIndexAndSubshellFromOrbital(8) == std::pair{Eigen::Index{1}, 2_Principal});
+	REQUIRE(basis.Contracted().Spherical().AtomIndexAndSubshellFromOrbital(9) == std::pair{Eigen::Index{1}, 2_Principal});
 
-	REQUIRE(basis.AtomIndexAndSubShellFromContractedSphericalOrbital(10) == std::pair{Eigen::Index{2}, 1_Sharp});
-	REQUIRE(basis.AtomIndexAndSubShellFromContractedSphericalOrbital(11) == std::pair{Eigen::Index{2}, 2_Sharp});
-	REQUIRE(basis.AtomIndexAndSubShellFromContractedSphericalOrbital(12) == std::pair{Eigen::Index{2}, 3_Sharp});
-	REQUIRE(basis.AtomIndexAndSubShellFromContractedSphericalOrbital(13) == std::pair{Eigen::Index{2}, 2_Principal});
-	REQUIRE(basis.AtomIndexAndSubShellFromContractedSphericalOrbital(14) == std::pair{Eigen::Index{2}, 2_Principal});
-	REQUIRE(basis.AtomIndexAndSubShellFromContractedSphericalOrbital(15) == std::pair{Eigen::Index{2}, 2_Principal});
-	REQUIRE(basis.AtomIndexAndSubShellFromContractedSphericalOrbital(16) == std::pair{Eigen::Index{2}, 3_Principal});
-	REQUIRE(basis.AtomIndexAndSubShellFromContractedSphericalOrbital(17) == std::pair{Eigen::Index{2}, 3_Principal});
-	REQUIRE(basis.AtomIndexAndSubShellFromContractedSphericalOrbital(18) == std::pair{Eigen::Index{2}, 3_Principal});
-	REQUIRE(basis.AtomIndexAndSubShellFromContractedSphericalOrbital(19) == std::pair{Eigen::Index{2}, 3_Diffuse});
-	REQUIRE(basis.AtomIndexAndSubShellFromContractedSphericalOrbital(20) == std::pair{Eigen::Index{2}, 3_Diffuse});
-	REQUIRE(basis.AtomIndexAndSubShellFromContractedSphericalOrbital(21) == std::pair{Eigen::Index{2}, 3_Diffuse});
-	REQUIRE(basis.AtomIndexAndSubShellFromContractedSphericalOrbital(22) == std::pair{Eigen::Index{2}, 3_Diffuse});
-	REQUIRE(basis.AtomIndexAndSubShellFromContractedSphericalOrbital(23) == std::pair{Eigen::Index{2}, 3_Diffuse});
+	REQUIRE(basis.Contracted().Spherical().AtomIndexAndSubshellFromOrbital(10) == std::pair{Eigen::Index{2}, 1_Sharp});
+	REQUIRE(basis.Contracted().Spherical().AtomIndexAndSubshellFromOrbital(11) == std::pair{Eigen::Index{2}, 2_Sharp});
+	REQUIRE(basis.Contracted().Spherical().AtomIndexAndSubshellFromOrbital(12) == std::pair{Eigen::Index{2}, 3_Sharp});
+	REQUIRE(basis.Contracted().Spherical().AtomIndexAndSubshellFromOrbital(13) == std::pair{Eigen::Index{2}, 2_Principal});
+	REQUIRE(basis.Contracted().Spherical().AtomIndexAndSubshellFromOrbital(14) == std::pair{Eigen::Index{2}, 2_Principal});
+	REQUIRE(basis.Contracted().Spherical().AtomIndexAndSubshellFromOrbital(15) == std::pair{Eigen::Index{2}, 2_Principal});
+	REQUIRE(basis.Contracted().Spherical().AtomIndexAndSubshellFromOrbital(16) == std::pair{Eigen::Index{2}, 3_Principal});
+	REQUIRE(basis.Contracted().Spherical().AtomIndexAndSubshellFromOrbital(17) == std::pair{Eigen::Index{2}, 3_Principal});
+	REQUIRE(basis.Contracted().Spherical().AtomIndexAndSubshellFromOrbital(18) == std::pair{Eigen::Index{2}, 3_Principal});
+	REQUIRE(basis.Contracted().Spherical().AtomIndexAndSubshellFromOrbital(19) == std::pair{Eigen::Index{2}, 3_Diffuse});
+	REQUIRE(basis.Contracted().Spherical().AtomIndexAndSubshellFromOrbital(20) == std::pair{Eigen::Index{2}, 3_Diffuse});
+	REQUIRE(basis.Contracted().Spherical().AtomIndexAndSubshellFromOrbital(21) == std::pair{Eigen::Index{2}, 3_Diffuse});
+	REQUIRE(basis.Contracted().Spherical().AtomIndexAndSubshellFromOrbital(22) == std::pair{Eigen::Index{2}, 3_Diffuse});
+	REQUIRE(basis.Contracted().Spherical().AtomIndexAndSubshellFromOrbital(23) == std::pair{Eigen::Index{2}, 3_Diffuse});
 
-	REQUIRE(basis.ContractedSubShellCount() == 3 + 3 + 6 + 1 + 3);
+	REQUIRE(basis.Contracted().SubshellCount() == 3 + 3 + 6 + 1 + 3);
 	{
 		const std::vector reference = {1_Sharp, 2_Sharp, 2_Principal};
-		const auto actual = basis.ContractedSubShellsOf(molecule[0]) | ranges::to_vector;
+		const auto actual = basis.Contracted().SubshellsOf(molecule[0]) | ranges::to_vector;
 		REQUIRE(actual == reference);
 	}
 	{
 		const std::vector reference = {1_Sharp, 2_Sharp, 3_Sharp, 2_Principal, 3_Principal, 3_Diffuse};
-		const auto actual = basis.ContractedSubShellsOf(molecule[2]) | ranges::to_vector;
+		const auto actual = basis.Contracted().SubshellsOf(molecule[2]) | ranges::to_vector;
 		REQUIRE(actual == reference);
 	}
 	{
 		const std::vector reference = {1_Sharp};
-		const auto actual = basis.ContractedSubShellsOf(molecule[3]) | ranges::to_vector;
+		const auto actual = basis.Contracted().SubshellsOf(molecule[3]) | ranges::to_vector;
 		REQUIRE(actual == reference);
 	}
 	{
 		const std::vector reference = {4_Sharp};
-		const auto actual = basis.EcpOffsettedContractedSubShellsOf(molecule[3]) | ranges::to_vector;
+		const auto actual = basis.Contracted().EcpOffsettedSubshellsOf(molecule[3]) | ranges::to_vector;
 		REQUIRE(actual == reference);
 	}
 
-	REQUIRE(basis.PrimitiveSubShellCount() == 19 + 5 + 12 + 2 + 5);
+	REQUIRE(basis.Primitive().SubshellCount() == 19 + 5 + 12 + 2 + 5);
 	{
 		const std::vector reference = {1_Sharp,
 		                               2_Sharp,
@@ -392,7 +616,7 @@ H 1.1 0 0
 		                               6_Principal,
 		                               7_Principal,
 		                               8_Principal};
-		const auto actual = basis.PrimitiveSubShellsOf(molecule[0]) | ranges::to_vector;
+		const auto actual = basis.Primitive().SubshellsOf(molecule[0]) | ranges::to_vector;
 		REQUIRE(actual == reference);
 	}
 	{
@@ -408,54 +632,66 @@ H 1.1 0 0
 		                               4_Principal,
 		                               5_Principal,
 		                               3_Diffuse};
-		const auto actual = basis.PrimitiveSubShellsOf(molecule[2]) | ranges::to_vector;
+		const auto actual = basis.Primitive().SubshellsOf(molecule[2]) | ranges::to_vector;
 		REQUIRE(actual == reference);
 	}
 
 	{
 		const std::vector<Eigen::Index> reference =
 		        ranges::views::iota(Eigen::Index{5}, Eigen::Index{10}) | ranges::to_vector;
-		const auto actual = basis.ContractedSphericalOrbitalsFrom(molecule[1]) | ranges::to_vector;
+		const auto actual = basis.Contracted().Spherical().OrbitalsFrom(molecule[1]) | ranges::to_vector;
 		REQUIRE(actual == reference);
 	}
 	{
 		const std::vector<Eigen::Index> reference =
 		        ranges::views::iota(Eigen::Index{10}, Eigen::Index{24}) | ranges::to_vector;
-		const auto actual = basis.ContractedSphericalOrbitalsFrom(molecule[2]) | ranges::to_vector;
+		const auto actual = basis.Contracted().Spherical().OrbitalsFrom(molecule[2]) | ranges::to_vector;
 		REQUIRE(actual == reference);
 	}
 	{
 		const std::vector<Eigen::Index> reference = {10};
-		const auto actual = basis.ContractedSphericalOrbitalsFrom(molecule[2], 1_Sharp) | ranges::to_vector;
+		const auto actual = basis.Contracted().Spherical().OrbitalsFrom(molecule[2], 1_Sharp) | ranges::to_vector;
 		REQUIRE(actual == reference);
 	}
 	{
 		const std::vector<Eigen::Index> reference = {13, 14, 15};
-		const auto actual = basis.ContractedSphericalOrbitalsFrom(molecule[2], 2_Principal) | ranges::to_vector;
+		const auto actual = basis.Contracted().Spherical().OrbitalsFrom(molecule[2], 2_Principal) | ranges::to_vector;
 		REQUIRE(actual == reference);
 	}
 	{
 		const std::vector<Eigen::Index> reference = {16, 17, 18};
-		const auto actual = basis.ContractedSphericalOrbitalsFrom(molecule[2], 3_Principal) | ranges::to_vector;
+		const auto actual = basis.Spherical().Contracted().OrbitalsFrom(molecule[2], 3_Principal) | ranges::to_vector;
 		REQUIRE(actual == reference);
 	}
 	{
 		const std::vector<Eigen::Index> reference = {19, 20, 21, 22, 23};
-		const auto actual = basis.ContractedSphericalOrbitalsFrom(molecule[2], 3_Diffuse) | ranges::to_vector;
+		const auto actual = basis.Contracted().Spherical().OrbitalsFrom(molecule[2], 3_Diffuse) | ranges::to_vector;
 		REQUIRE(actual == reference);
 	}
 
 	{
-		Eigen::VectorXd charges = Eigen::VectorXd::Zero(basis.ContractedSubShellCount());
+		Eigen::VectorXd moCharges = Eigen::VectorXd::Random(basis.Contracted().Spherical().OrbitalCount());
+		Eigen::VectorXd charges = Eigen::VectorXd::Zero(basis.Contracted().SubshellCount());
 		auto chargeIterator = charges.begin();
 
 		for (const Atom& atom : molecule)
 		{
-			for (const ElectronicSubShell shell : basis.ContractedSubShellsOf(atom))
+			for (const ElectronicSubShell shell : basis.Contracted().SubshellsOf(atom))
 			{
 				*chargeIterator = 0.5 * atom.Element().ElectronConfiguration()[shell];
+
+				for (const auto p : basis.Contracted().Spherical().OrbitalsFrom(atom, shell))
+				{
+					std::cout << p << ", ";
+					*chargeIterator += moCharges[p];
+				}
+				std::cout << std::endl;
+				std::cout << basis.Contracted().Spherical().OrbitalSegmentOf(moCharges, atom, shell).transpose() << std::endl;
+
 				++chargeIterator;
 			}
+
+			std::cout <<  "--> " << basis.Contracted().Spherical().OrbitalSegmentOf(moCharges, atom).transpose() << std::endl;
 		}
 	}
 }
@@ -1140,3 +1376,4 @@ static const SecChem::BasisSet::Gaussian::SharedBasisSetLibrary& Library()
 
 	return library;
 }
+#endif

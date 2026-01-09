@@ -8,6 +8,7 @@
 
 #include <range/v3/algorithm.hpp>
 #include <range/v3/numeric.hpp>
+#include <range/v3/numeric/accumulate.hpp>
 #include <range/v3/view/join.hpp>
 #include <range/v3/view/transform.hpp>
 #include <sstream>
@@ -20,9 +21,46 @@
 
 namespace SecChem::BasisSet::Gaussian
 {
+	namespace Detail::MolecularBasisSet
+	{
+		enum class Contraction
+		{
+			Unspecified,
+			Primitive,
+			Contracted
+		};
+
+		enum class Representation
+		{
+			Unspecified,
+			Cartesian,
+			Spherical
+		};
+
+		template <Contraction C, Representation R>
+		class BasisView;
+	}  // namespace Detail::MolecularBasisSet
+
 	class MolecularBasisSet
 	{
 		friend Builder<MolecularBasisSet>;
+		friend Detail::MolecularBasisSet::BasisView<Detail::MolecularBasisSet::Contraction::Primitive,
+		                                            Detail::MolecularBasisSet::Representation::Cartesian>;
+		friend Detail::MolecularBasisSet::BasisView<Detail::MolecularBasisSet::Contraction::Primitive,
+		                                            Detail::MolecularBasisSet::Representation::Spherical>;
+		friend Detail::MolecularBasisSet::BasisView<Detail::MolecularBasisSet::Contraction::Contracted,
+		                                            Detail::MolecularBasisSet::Representation::Cartesian>;
+		friend Detail::MolecularBasisSet::BasisView<Detail::MolecularBasisSet::Contraction::Contracted,
+		                                            Detail::MolecularBasisSet::Representation::Spherical>;
+
+		friend Detail::MolecularBasisSet::BasisView<Detail::MolecularBasisSet::Contraction::Unspecified,
+		                                            Detail::MolecularBasisSet::Representation::Cartesian>;
+		friend Detail::MolecularBasisSet::BasisView<Detail::MolecularBasisSet::Contraction::Unspecified,
+		                                            Detail::MolecularBasisSet::Representation::Spherical>;
+		friend Detail::MolecularBasisSet::BasisView<Detail::MolecularBasisSet::Contraction::Primitive,
+		                                            Detail::MolecularBasisSet::Representation::Unspecified>;
+		friend Detail::MolecularBasisSet::BasisView<Detail::MolecularBasisSet::Contraction::Contracted,
+		                                            Detail::MolecularBasisSet::Representation::Unspecified>;
 
 	public:
 		// GCC require it
@@ -74,267 +112,18 @@ namespace SecChem::BasisSet::Gaussian
 			                                  { return *std::get<0>(kv); });
 		}
 
-		Eigen::Index ContractedSubShellCount() const noexcept
-		{
-			return std::accumulate(m_ComputedElementaryBasisInfoTable.cbegin(),
-			                       m_ComputedElementaryBasisInfoTable.cend(),
-			                       Eigen::Index{0},
-			                       [](const Eigen::Index acc, const auto& kv)
-			                       {
-				                       const ComputedElementaryBasisInfo& info = std::get<1>(kv);
-				                       return acc + info.ReferenceCount * info.ContractedSubShellCount;
-			                       });
-		}
-
-		Eigen::Index PrimitiveSubShellCount() const noexcept
-		{
-			return std::accumulate(m_ComputedElementaryBasisInfoTable.cbegin(),
-			                       m_ComputedElementaryBasisInfoTable.cend(),
-			                       Eigen::Index{0},
-			                       [](const Eigen::Index acc, const auto& kv)
-			                       {
-				                       const ComputedElementaryBasisInfo& info = std::get<1>(kv);
-				                       return acc + info.ReferenceCount * info.PrimitiveSubShellCount;
-			                       });
-		}
-
-		// this method DOES cache
-		Eigen::Index PrimitiveSphericalOrbitalCountOf(const Atom& atom) const
-		{
-			const auto index = Molecule().IndexOf(atom);
-			return m_PrimitiveSphericalOrbitalSegmentationTable[index + 1]
-			       - m_PrimitiveSphericalOrbitalSegmentationTable[index];
-		}
-
-		// this method does NOT cache
-		Eigen::Index PrimitiveCartesianOrbitalCountOf(const Atom& atom) const
-		{
-			return CountOfSomeKindOfOrbitalOf(atom, &AngularMomentumBlock::PrimitiveCartesianOrbitalCount);
-		}
-
-		// this method DOES cache
-		Eigen::Index ContractedSphericalOrbitalCountOf(const Atom& atom) const
-		{
-			const auto index = Molecule().IndexOf(atom);
-			return m_ContractedSphericalOrbitalSegmentationTable[index + 1]
-			       - m_ContractedSphericalOrbitalSegmentationTable[index];
-		}
-
-		// this method does NOT cache
-		Eigen::Index ContractedCartesianOrbitalCountOf(const Atom& atom) const
-		{
-			return CountOfSomeKindOfOrbitalOf(atom, &AngularMomentumBlock::ContractedCartesianOrbitalCount);
-		}
-
-		// this method DOES cache
-		Eigen::Index PrimitiveSphericalOrbitalCount() const noexcept
-		{
-			return m_PrimitiveSphericalOrbitalSegmentationTable.back();
-		}
-
-		// this method does NOT cache
-		Eigen::Index PrimitiveCartesianOrbitalCount() const noexcept
-		{
-			return CountOfSomeKindOfOrbital(&AngularMomentumBlock::PrimitiveCartesianOrbitalCount);
-		}
-
-		// this method DOES cache
-		Eigen::Index ContractedSphericalOrbitalCount() const noexcept
-		{
-			return m_ContractedSphericalOrbitalSegmentationTable.back();
-		}
-
-		// this method does NOT cache
-		Eigen::Index ContractedCartesianOrbitalCount() const noexcept
-		{
-			return CountOfSomeKindOfOrbital(&AngularMomentumBlock::ContractedCartesianOrbitalCount);
-		}
-
-		// this method does NOT cache
-		Eigen::Index PrimitiveSubShellCountOf(const Atom& atom) const
-		{
-			return ranges::accumulate(ElementaryBasisOf(atom).AngularMomentumBlocks,
-			                          Eigen::Index{0},
-			                          std::plus<>{},
-			                          &AngularMomentumBlock::PrimitiveShellCount);
-		}
-
-		// this method does NOT cache
-		Eigen::Index ContractedSubShellCountOf(const Atom& atom) const
-		{
-			return ranges::accumulate(ElementaryBasisOf(atom).AngularMomentumBlocks,
-			                          Eigen::Index{0},
-			                          std::plus<>{},
-			                          &AngularMomentumBlock::ContractedShellCount);
-		}
-
-		auto PrimitiveSubShellsOfAtomAt(const std::size_t index) const
-		{
-			return ElementaryBasisAt(index).AngularMomentumBlocks
-			       | ranges::views::transform([](const AngularMomentumBlock& amb) { return amb.PrimitiveShells(); })
-			       | ranges::views::join;
-		}
-
-		auto ContractedSubShellsOfAtomAt(const std::size_t index) const
-		{
-			return ElementaryBasisAt(index).AngularMomentumBlocks
-			       | ranges::views::transform([](const AngularMomentumBlock& amb) { return amb.ContractedShells(); })
-			       | ranges::views::join;
-		}
-
-		auto EcpOffsettedPrimitiveSubShellsOfAtomAt(const std::size_t index) const
-		{
-			const auto* basisPtr = m_BasisAssignments[index];
-			const auto& ambs = basisPtr->AngularMomentumBlocks;
-
-			const auto* ambsPtr = ambs.data();
-			const auto* principalQuantumNumberOffsetsPtr =
-			        m_ComputedElementaryBasisInfoTable.at(basisPtr).PrincipalQuantumNumberOffsetTable.data();
-
-			return ambs
-			       | ranges::views::transform(
-			               [principalQuantumNumberOffsetsPtr, ambsPtr](const AngularMomentumBlock& amb)
-			               { return amb.PrimitiveShells(principalQuantumNumberOffsetsPtr[&amb - ambsPtr]); })
-			       | ranges::views::join;
-		}
-
-		auto EcpOffsettedContractedSubShellsOfAtomAt(const std::size_t index) const
-		{
-			const auto* basisPtr = m_BasisAssignments[index];
-			const auto& ambs = basisPtr->AngularMomentumBlocks;
-
-			const auto* ambsPtr = ambs.data();
-			const auto* principalQuantumNumberOffsetsPtr =
-			        m_ComputedElementaryBasisInfoTable.at(basisPtr).PrincipalQuantumNumberOffsetTable.data();
-
-			return ambs
-			       | ranges::views::transform(
-			               [principalQuantumNumberOffsetsPtr, ambsPtr](const AngularMomentumBlock& amb)
-			               { return amb.ContractedShells(principalQuantumNumberOffsetsPtr[&amb - ambsPtr]); })
-			       | ranges::views::join;
-		}
-
-		auto PrimitiveSubShellsOf(const Atom& atom) const
-		{
-			return PrimitiveSubShellsOfAtomAt(m_Molecule.IndexOf(atom));
-		}
-
-		auto ContractedSubShellsOf(const Atom& atom) const
-		{
-			return ContractedSubShellsOfAtomAt(m_Molecule.IndexOf(atom));
-		}
-
-		auto EcpOffsettedPrimitiveSubShellsOf(const Atom& atom) const
-		{
-			return EcpOffsettedPrimitiveSubShellsOfAtomAt(m_Molecule.IndexOf(atom));
-		}
-
-		auto EcpOffsettedContractedSubShellsOf(const Atom& atom) const
-		{
-			return EcpOffsettedContractedSubShellsOfAtomAt(m_Molecule.IndexOf(atom));
-		}
-
-		auto ContractedSphericalOrbitalsFrom(const Atom& atom) const
-		{
-			const auto atomIndex = m_Molecule.IndexOf(atom);
-			return ranges::views::iota(m_ContractedSphericalOrbitalSegmentationTable[atomIndex],
-			                           m_ContractedSphericalOrbitalSegmentationTable[atomIndex + 1]);
-		}
-
-		auto ContractedSphericalOrbitalsFrom(const Atom& atom, const ElectronicSubShell shell) const
-		{
-			const auto atomIndex = m_Molecule.IndexOf(atom);
-			const auto atomicOffset = m_ContractedSphericalOrbitalSegmentationTable[atomIndex];
-			const ElementaryBasisSet* basisPtr = m_BasisAssignments[atomIndex];
-			const auto azimuthalShellOffset =
-			        m_ComputedElementaryBasisInfoTable.at(basisPtr)
-			                .ContractedSphericalSubShellSegmentationTable[shell.AzimuthalQuantumNumber().Value()];
-			const auto sphericalMagneticQuantumNumberCount = shell.MagneticQuantumNumberCount();
-			const auto offset = atomicOffset + azimuthalShellOffset
-			                    + sphericalMagneticQuantumNumberCount
-			                              * (shell.PrincipalQuantumNumber()
-			                                 - shell.AzimuthalQuantumNumber().MinPrincipalQuantumNumber());
-
-			return ranges::views::iota(offset, offset + sphericalMagneticQuantumNumberCount);
-		}
-
-		template <typename VectorLike>
-		auto ContractedSphericalOrbitalSegmentOf(VectorLike&& vector,
-		                                         const Atom& atom,
-		                                         const ElectronicSubShell shell) const
-		{
-			const auto atomIndex = m_Molecule.IndexOf(atom);
-			const auto atomicOffset = m_ContractedSphericalOrbitalSegmentationTable[atomIndex];
-			const ElementaryBasisSet* basisPtr = m_BasisAssignments[atomIndex];
-			const auto azimuthalShellOffset =
-			        m_ComputedElementaryBasisInfoTable.at(basisPtr)
-			                .ContractedSphericalSubShellSegmentationTable[shell.AzimuthalQuantumNumber().Value()];
-			const auto sphericalMagneticQuantumNumberCount = shell.MagneticQuantumNumberCount();
-			const auto offset = atomicOffset + azimuthalShellOffset
-			                    + sphericalMagneticQuantumNumberCount
-			                              * (shell.PrincipalQuantumNumber()
-			                                 - shell.AzimuthalQuantumNumber().MinPrincipalQuantumNumber());
-
-			return vector.segment(offset, sphericalMagneticQuantumNumberCount);
-		}
-
-		template <typename VectorLike>
-		auto ContractedSphericalOrbitalSegmentOf(VectorLike&& vector, const Atom& atom) const
-		{
-			const auto atomIndex = m_Molecule.IndexOf(atom);
-			return vector.segment(m_ContractedSphericalOrbitalSegmentationTable[atomIndex],
-			                      m_ContractedSphericalOrbitalSegmentationTable[atomIndex + 1]
-			                              - m_ContractedSphericalOrbitalSegmentationTable[atomIndex]);
-		}
-
-		Eigen::Index AtomIndexFromContractedSphericalOrbital(const Eigen::Index orbitalIndex) const noexcept
-		{
-			assert(orbitalIndex >= 0 && orbitalIndex < m_ContractedSphericalOrbitalSegmentationTable.back());
-
-			return std::distance(
-			        m_ContractedSphericalOrbitalSegmentationTable.cbegin(),
-			        std::prev(ranges::upper_bound(m_ContractedSphericalOrbitalSegmentationTable, orbitalIndex)));
-		}
-
-		const Atom& AtomFromContractedSphericalOrbital(const Eigen::Index orbitalIndex) const noexcept
-		{
-			return Molecule()[AtomIndexFromContractedSphericalOrbital(orbitalIndex)];
-		}
-
-		Eigen::Index AtomIndexFromPrimitiveSphericalOrbital(const Eigen::Index orbitalIndex) const noexcept
-		{
-			assert(orbitalIndex >= 0 && orbitalIndex < m_PrimitiveSphericalOrbitalSegmentationTable.back());
-
-			return std::distance(
-			        m_PrimitiveSphericalOrbitalSegmentationTable.cbegin(),
-			        std::prev(ranges::upper_bound(m_PrimitiveSphericalOrbitalSegmentationTable, orbitalIndex)));
-		}
-
-		const Atom& AtomFromPrimitiveSphericalOrbital(const Eigen::Index orbitalIndex) const noexcept
-		{
-			return Molecule()[AtomIndexFromPrimitiveSphericalOrbital(orbitalIndex)];
-		}
-
-		ElectronicSubShell AtomicSubShellFromContractedSphericalOrbital(const Eigen::Index orbitalIndex) const noexcept
-		{
-			return AtomicSubShellFromContractedSphericalOrbital(orbitalIndex,
-			                                                    AtomIndexFromContractedSphericalOrbital(orbitalIndex));
-		}
-
-		std::pair<const Atom&, ElectronicSubShell> AtomAndSubShellFromContractedSphericalOrbital(
-		        const Eigen::Index orbitalIndex) const noexcept
-		{
-			const auto atomIndex = AtomIndexFromContractedSphericalOrbital(orbitalIndex);
-			return std::pair<const Atom&, ElectronicSubShell>{
-			        Molecule()[atomIndex], AtomicSubShellFromContractedSphericalOrbital(orbitalIndex, atomIndex)};
-		}
-
-		std::pair<Eigen::Index, ElectronicSubShell> AtomIndexAndSubShellFromContractedSphericalOrbital(
-		        const Eigen::Index orbitalIndex) const noexcept
-		{
-			const auto atomIndex = AtomIndexFromContractedSphericalOrbital(orbitalIndex);
-			return std::pair{atomIndex, AtomicSubShellFromContractedSphericalOrbital(orbitalIndex, atomIndex)};
-		}
+		Detail::MolecularBasisSet::BasisView<Detail::MolecularBasisSet::Contraction::Primitive,
+		                                     Detail::MolecularBasisSet::Representation::Unspecified>
+		Primitive() const;
+		Detail::MolecularBasisSet::BasisView<Detail::MolecularBasisSet::Contraction::Contracted,
+		                                     Detail::MolecularBasisSet::Representation::Unspecified>
+		Contracted() const;
+		Detail::MolecularBasisSet::BasisView<Detail::MolecularBasisSet::Contraction::Unspecified,
+		                                     Detail::MolecularBasisSet::Representation::Cartesian>
+		Cartesian() const;
+		Detail::MolecularBasisSet::BasisView<Detail::MolecularBasisSet::Contraction::Unspecified,
+		                                     Detail::MolecularBasisSet::Representation::Spherical>
+		Spherical() const;
 
 
 	private:
@@ -343,9 +132,13 @@ namespace SecChem::BasisSet::Gaussian
 		                  std::vector<const ElementaryBasisSet*> basisAssignments)
 		    : m_Library(std::move(library)), m_Molecule(molecule), m_BasisAssignments(std::move(basisAssignments)),
 		      m_PrimitiveSphericalOrbitalSegmentationTable(CreateSegmentationTableOfSomeKindOfOrbitals(
-		              [](const AngularMomentumBlock& amb) { return amb.PrimitiveSphericalOrbitalCount(); })),
+		              &AngularMomentumBlock::PrimitiveSphericalOrbitalCount)),
 		      m_ContractedSphericalOrbitalSegmentationTable(CreateSegmentationTableOfSomeKindOfOrbitals(
-		              [](const AngularMomentumBlock& amb) { return amb.ContractedSphericalOrbitalCount(); })),
+		              &AngularMomentumBlock::ContractedSphericalOrbitalCount)),
+		      m_PrimitiveCartesianOrbitalSegmentationTable(CreateSegmentationTableOfSomeKindOfOrbitals(
+		              &AngularMomentumBlock::PrimitiveCartesianOrbitalCount)),
+		      m_ContractedCartesianOrbitalSegmentationTable(CreateSegmentationTableOfSomeKindOfOrbitals(
+		              &AngularMomentumBlock::ContractedCartesianOrbitalCount)),
 		      m_ComputedElementaryBasisInfoTable(ComputedElementaryBasisInfo::CreateStatisticsFor(m_BasisAssignments))
 		{
 			assert(molecule.AtomCount() == m_BasisAssignments.size());
@@ -427,6 +220,49 @@ namespace SecChem::BasisSet::Gaussian
 				return statistics;
 			}
 
+			template <Detail::MolecularBasisSet::Contraction C, Detail::MolecularBasisSet::Representation R>
+			const auto& SubShellSegmentationTable() const noexcept
+			{
+				static_assert((C == Detail::MolecularBasisSet::Contraction::Contracted
+				               || C == Detail::MolecularBasisSet::Contraction::Primitive)
+				              && (R == Detail::MolecularBasisSet::Representation::Cartesian
+				                  || R == Detail::MolecularBasisSet::Representation::Spherical));
+
+				if constexpr (C == Detail::MolecularBasisSet::Contraction::Contracted)
+				{
+					if constexpr (R == Detail::MolecularBasisSet::Representation::Cartesian)
+					{
+						return ContractedCartesianSubShellSegmentationTable;
+					}
+					else
+					{
+						return ContractedSphericalSubShellSegmentationTable;
+					}
+				}
+				else
+				{
+					if constexpr (R == Detail::MolecularBasisSet::Representation::Cartesian)
+					{
+						return PrimitiveCartesianSubShellSegmentationTable;
+					}
+					else
+					{
+						return PrimitiveSphericalSubShellSegmentationTable;
+					}
+				}
+			}
+
+
+			template <Detail::MolecularBasisSet::Contraction C>
+			const auto& SubShellCount() const noexcept
+			{
+				static_assert(C == Detail::MolecularBasisSet::Contraction::Contracted
+				              || C == Detail::MolecularBasisSet::Contraction::Primitive);
+
+				return C == Detail::MolecularBasisSet::Contraction::Contracted ? ContractedSubShellCount
+				                                                               : PrimitiveSubShellCount;
+			}
+
 			Eigen::Index ReferenceCount;
 			std::vector<Eigen::Index> PrimitiveSphericalSubShellSegmentationTable;
 			std::vector<Eigen::Index> ContractedSphericalSubShellSegmentationTable;
@@ -485,27 +321,36 @@ namespace SecChem::BasisSet::Gaussian
 			                          });
 		}
 
-		/// <c>atomIndex</c> must be resolved by IndexOfAtomOfContractedSphericalOrbital(orbitalIndex).
-		/// the behavior is undefined otherwise.
-		/// do not make this method public
-		ElectronicSubShell AtomicSubShellFromContractedSphericalOrbital(const Eigen::Index orbitalIndex,
-		                                                                const Eigen::Index atomIndex) const noexcept
+		template <Detail::MolecularBasisSet::Contraction C, Detail::MolecularBasisSet::Representation R>
+		const std::vector<Eigen::Index>& OrbitalSegmentationTable() const noexcept
 		{
-			const auto atomicOffset = m_ContractedSphericalOrbitalSegmentationTable[atomIndex];
-			const ElementaryBasisSet* basisPtr = m_BasisAssignments[atomIndex];
+			static_assert((C == Detail::MolecularBasisSet::Contraction::Contracted
+			               || C == Detail::MolecularBasisSet::Contraction::Primitive)
+			              && (R == Detail::MolecularBasisSet::Representation::Spherical
+			                  || R == Detail::MolecularBasisSet::Representation::Cartesian));
 
-			const auto& subshellSegTable =
-			        m_ComputedElementaryBasisInfoTable.at(basisPtr).ContractedSphericalSubShellSegmentationTable;
-			assert(subshellSegTable.size() >= 2);
-			const auto segIterator = std::prev(std::upper_bound(
-			        std::next(subshellSegTable.cbegin()), subshellSegTable.cend(), orbitalIndex - atomicOffset));
-			const AzimuthalQuantumNumber angularMomentum{
-			        static_cast<int>(std::distance(subshellSegTable.cbegin(), segIterator))};
-			const auto principalQuantumNumber = static_cast<int>(orbitalIndex - *segIterator - atomicOffset)
-			                                            / angularMomentum.MagneticQuantumNumberCount()
-			                                    + 1 + angularMomentum.Value();
-
-			return ElectronicSubShell{principalQuantumNumber, angularMomentum};
+			if constexpr (C == Detail::MolecularBasisSet::Contraction::Contracted)
+			{
+				if constexpr (R == Detail::MolecularBasisSet::Representation::Spherical)
+				{
+					return m_ContractedSphericalOrbitalSegmentationTable;
+				}
+				else
+				{
+					return m_ContractedCartesianOrbitalSegmentationTable;
+				}
+			}
+			else
+			{
+				if constexpr (R == Detail::MolecularBasisSet::Representation::Spherical)
+				{
+					return m_PrimitiveSphericalOrbitalSegmentationTable;
+				}
+				else
+				{
+					return m_PrimitiveCartesianOrbitalSegmentationTable;
+				}
+			}
 		}
 
 		Gaussian::SharedBasisSetLibrary m_Library;
@@ -513,8 +358,471 @@ namespace SecChem::BasisSet::Gaussian
 		std::vector<const ElementaryBasisSet*> m_BasisAssignments{};
 		std::vector<Eigen::Index> m_PrimitiveSphericalOrbitalSegmentationTable{};
 		std::vector<Eigen::Index> m_ContractedSphericalOrbitalSegmentationTable{};
+		std::vector<Eigen::Index> m_PrimitiveCartesianOrbitalSegmentationTable{};
+		std::vector<Eigen::Index> m_ContractedCartesianOrbitalSegmentationTable{};
 		polyfill::flat_map<const ElementaryBasisSet*, ComputedElementaryBasisInfo> m_ComputedElementaryBasisInfoTable{};
 	};
+
+
+	namespace Detail::MolecularBasisSet
+	{
+		template <Contraction C, Representation R>
+		class BasisView
+		{
+			static_assert((C == Contraction::Contracted || C == Contraction::Primitive)
+			              && (R == Representation::Spherical || R == Representation::Cartesian));
+
+			struct OrbitalSegmentDescription
+			{
+				Eigen::Index First;
+				Eigen::Index Count;
+			};
+
+		public:
+			constexpr explicit BasisView(const Gaussian::MolecularBasisSet& basis) noexcept : cr_BasisSet(basis)
+			{
+				/* NO CODE */
+			}
+
+			// ---- final operation ----
+
+			std::size_t OrbitalCount() const
+			{
+				return cr_BasisSet.OrbitalSegmentationTable<C, R>().back();
+			}
+
+			std::size_t OrbitalCountOf(const Atom& atom) const
+			{
+				const auto index = cr_BasisSet.Molecule().IndexOf(atom);
+				return cr_BasisSet.OrbitalSegmentationTable<C, R>()[index + 1]
+				       - cr_BasisSet.OrbitalSegmentationTable<C, R>()[index];
+			}
+
+			Eigen::Index SubshellCount() const noexcept
+			{
+				return BasisView<C, Representation::Unspecified>{cr_BasisSet}.SubshellCount();
+			}
+
+			auto SubshellsOf(const Atom& atom) const
+			{
+				return BasisView<C, Representation::Unspecified>{cr_BasisSet}.SubshellsOf(atom);
+			}
+
+			auto EcpOffsettedSubshellsOf(const Atom& atom) const
+			{
+				return BasisView<C, Representation::Unspecified>{cr_BasisSet}.EcpOffsettedSubshellsOf(atom);
+			}
+
+			auto OrbitalsFrom(const Atom& atom) const
+			{
+				const auto atomIndex = cr_BasisSet.m_Molecule.IndexOf(atom);
+				return ranges::views::iota(cr_BasisSet.OrbitalSegmentationTable<C, R>()[atomIndex],
+				                           cr_BasisSet.OrbitalSegmentationTable<C, R>()[atomIndex + 1]);
+			}
+
+			auto OrbitalsFrom(const Atom& atom, const ElectronicSubShell shell) const
+			{
+				const auto atomIndex = cr_BasisSet.m_Molecule.IndexOf(atom);
+				const auto atomicOffset = cr_BasisSet.OrbitalSegmentationTable<C, R>()[atomIndex];
+				const ElementaryBasisSet* basisPtr = cr_BasisSet.m_BasisAssignments[atomIndex];
+				const auto azimuthalShellOffset =
+				        cr_BasisSet.m_ComputedElementaryBasisInfoTable.at(basisPtr)
+				                .SubShellSegmentationTable<C, R>()[shell.AzimuthalQuantumNumber().Value()];
+				const auto magneticQuantumNumberCount = R == Representation::Spherical
+				                                                ? shell.MagneticQuantumNumberCount()
+				                                                : shell.CartesianMagneticQuantumNumberCount();
+				const auto offset = atomicOffset + azimuthalShellOffset
+				                    + magneticQuantumNumberCount
+				                              * (shell.PrincipalQuantumNumber()
+				                                 - shell.AzimuthalQuantumNumber().MinPrincipalQuantumNumber());
+
+				return ranges::views::iota(offset, offset + magneticQuantumNumberCount);
+			}
+
+
+			Eigen::Index AtomIndexFromOrbital(const Eigen::Index orbitalIndex) const noexcept
+			{
+				assert(orbitalIndex >= 0 && orbitalIndex < (cr_BasisSet.OrbitalSegmentationTable<C, R>().back()));
+
+				return std::distance(
+				        cr_BasisSet.OrbitalSegmentationTable<C, R>().cbegin(),
+				        std::prev(ranges::upper_bound(cr_BasisSet.OrbitalSegmentationTable<C, R>(), orbitalIndex)));
+			}
+
+			const Atom& AtomFromOrbital(const Eigen::Index orbitalIndex) const noexcept
+			{
+				return cr_BasisSet.m_Molecule[AtomIndexFromOrbital(orbitalIndex)];
+			}
+
+			ElectronicSubShell AtomicSubshellFromOrbital(const Eigen::Index orbitalIndex) const noexcept
+			{
+				return AtomicSubshellFromOrbital(orbitalIndex, AtomIndexFromOrbital(orbitalIndex));
+			}
+
+			std::pair<const Atom&, ElectronicSubShell> AtomAndSubshellFromOrbital(
+			        const Eigen::Index orbitalIndex) const noexcept
+			{
+				const auto atomIndex = AtomIndexFromOrbital(orbitalIndex);
+				return std::pair<const Atom&, ElectronicSubShell>{Molecule()[atomIndex],
+				                                                  AtomicSubshellFromOrbital(orbitalIndex, atomIndex)};
+			}
+
+			std::pair<Eigen::Index, ElectronicSubShell> AtomIndexAndSubshellFromOrbital(
+			        const Eigen::Index orbitalIndex) const noexcept
+			{
+				const auto atomIndex = AtomIndexFromOrbital(orbitalIndex);
+				return std::pair{atomIndex, AtomicSubshellFromOrbital(orbitalIndex, atomIndex)};
+			}
+
+			// Returned Eigen views are valid only as long as the input vector lives.
+			template <typename VectorLike>
+			auto OrbitalSegmentOf(Eigen::MatrixBase<VectorLike>& vector, const Atom& atom) const
+			{
+				auto desc = OrbitalSegmentDescriptionOf(cr_BasisSet.m_Molecule.IndexOf(atom));
+				return vector.segment(desc.First, desc.Count);
+			}
+
+			// Returned Eigen views are valid only as long as the input vector lives.
+			template <typename VectorLike>
+			auto OrbitalSegmentOf(const Eigen::MatrixBase<VectorLike>& vector, const Atom& atom) const
+			{
+				auto desc = OrbitalSegmentDescriptionOf(cr_BasisSet.m_Molecule.IndexOf(atom));
+				return vector.segment(desc.First, desc.Count);
+			}
+
+			// Returned Eigen object will out-live the input vector
+			template <typename VectorLike>
+			auto OrbitalSegmentOf(Eigen::MatrixBase<VectorLike>&& vector, const Atom& atom) const
+			{
+				auto desc = OrbitalSegmentDescriptionOf(cr_BasisSet.m_Molecule.IndexOf(atom));
+				return vector.segment(desc.First, desc.Count).eval();
+			}
+
+			// Returned Eigen views are valid only as long as the input vector lives.
+			template <typename VectorLike>
+			auto OrbitalSegmentOf(Eigen::MatrixBase<VectorLike>& vector,
+			                      const Atom& atom,
+			                      const ElectronicSubShell shell) const
+			{
+				auto desc = OrbitalSegmentDescriptionOf(cr_BasisSet.m_Molecule.IndexOf(atom), shell);
+				return vector.segment(desc.First, desc.Count);
+			}
+
+			// Returned Eigen views are valid only as long as the input vector lives.
+			template <typename VectorLike>
+			auto OrbitalSegmentOf(const Eigen::MatrixBase<VectorLike>& vector,
+			                      const Atom& atom,
+			                      const ElectronicSubShell shell) const
+			{
+				auto desc = OrbitalSegmentDescriptionOf(cr_BasisSet.m_Molecule.IndexOf(atom), shell);
+				return vector.segment(desc.First, desc.Count);
+			}
+
+			// Returned Eigen object will out-live the input vector
+			template <typename VectorLike>
+			auto OrbitalSegmentOf(Eigen::MatrixBase<VectorLike>&& vector,
+			                      const Atom& atom,
+			                      const ElectronicSubShell shell) const
+			{
+				auto desc = OrbitalSegmentDescriptionOf(cr_BasisSet.m_Molecule.IndexOf(atom), shell);
+				return vector.segment(desc.First, desc.Count).eval();
+			}
+
+
+		private:
+			ElectronicSubShell AtomicSubshellFromOrbital(const Eigen::Index orbitalIndex,
+			                                             const Eigen::Index atomIndex) const noexcept
+			{
+				const auto atomicOffset = cr_BasisSet.OrbitalSegmentationTable<C, R>()[atomIndex];
+				const ElementaryBasisSet* basisPtr = cr_BasisSet.m_BasisAssignments[atomIndex];
+
+				const auto& subshellSegTable =
+				        cr_BasisSet.m_ComputedElementaryBasisInfoTable.at(basisPtr).SubShellSegmentationTable<C, R>();
+				assert(subshellSegTable.size() >= 2);
+				const auto segIterator = std::prev(std::upper_bound(
+				        std::next(subshellSegTable.cbegin()), subshellSegTable.cend(), orbitalIndex - atomicOffset));
+				const AzimuthalQuantumNumber angularMomentum{
+				        static_cast<int>(std::distance(subshellSegTable.cbegin(), segIterator))};
+				const auto magneticQuantumNumberCount = R == Representation::Spherical
+				                                                ? angularMomentum.MagneticQuantumNumberCount()
+				                                                : angularMomentum.CartesianMagneticQuantumNumberCount();
+				const auto principalQuantumNumber =
+				        angularMomentum.MinPrincipalQuantumNumber()
+				        + static_cast<int>(orbitalIndex - *segIterator - atomicOffset) / magneticQuantumNumberCount;
+
+				return ElectronicSubShell{principalQuantumNumber, angularMomentum};
+			}
+
+			OrbitalSegmentDescription OrbitalSegmentDescriptionOf(const std::size_t atomIndex) const
+			{
+				return {cr_BasisSet.OrbitalSegmentationTable<C, R>()[atomIndex],
+				        cr_BasisSet.OrbitalSegmentationTable<C, R>()[atomIndex + 1]
+				                - cr_BasisSet.OrbitalSegmentationTable<C, R>()[atomIndex]};
+			}
+
+			OrbitalSegmentDescription OrbitalSegmentDescriptionOf(const std::size_t atomIndex,
+			                                                      const ElectronicSubShell shell) const
+			{
+				const auto atomicOffset = cr_BasisSet.OrbitalSegmentationTable<C, R>()[atomIndex];
+				const ElementaryBasisSet* basisPtr = cr_BasisSet.m_BasisAssignments[atomIndex];
+				const auto azimuthalShellOffset =
+				        cr_BasisSet.m_ComputedElementaryBasisInfoTable.at(basisPtr)
+				                .SubShellSegmentationTable<C, R>()[shell.AzimuthalQuantumNumber().Value()];
+				const auto sphericalMagneticQuantumNumberCount = R == Representation::Spherical
+				                                                         ? shell.MagneticQuantumNumberCount()
+				                                                         : shell.CartesianMagneticQuantumNumberCount();
+				const auto offset = atomicOffset + azimuthalShellOffset
+				                    + sphericalMagneticQuantumNumberCount
+				                              * (shell.PrincipalQuantumNumber()
+				                                 - shell.AzimuthalQuantumNumber().MinPrincipalQuantumNumber());
+
+				return {offset, sphericalMagneticQuantumNumberCount};
+			}
+
+		private:
+			const Gaussian::MolecularBasisSet& cr_BasisSet;
+		};
+
+		template <>
+		class BasisView<Contraction::Primitive, Representation::Unspecified>
+		{
+		public:
+			constexpr explicit BasisView(const Gaussian::MolecularBasisSet& basis) noexcept : cr_BasisSet(basis)
+			{
+				/* NO CODE */
+			}
+
+			auto Cartesian() const
+			{
+				return BasisView<Contraction::Primitive, Representation::Cartesian>{cr_BasisSet};
+			}
+
+			auto Spherical() const
+			{
+				return BasisView<Contraction::Primitive, Representation::Spherical>{cr_BasisSet};
+			}
+
+			Eigen::Index SubshellCount() const noexcept
+			{
+				// we need to remove the const-ness for the limitation of range-v3 and C++20 range library.
+				// we won't and shan't modify the map, but it won't compile unless const was removed
+				return std::accumulate(
+				        cr_BasisSet.m_ComputedElementaryBasisInfoTable.cbegin(),
+				        cr_BasisSet.m_ComputedElementaryBasisInfoTable.cend(),
+				        Eigen::Index{0},
+				        [](const Eigen::Index acc, const auto& kv)
+				        {
+					        const auto& info = std::get<1>(kv);
+					        return acc + info.ReferenceCount * info.template SubShellCount<Contraction::Primitive>();
+				        });
+			}
+
+			auto SubshellsOf(const Atom& atom) const
+			{
+				return cr_BasisSet.ElementaryBasisAt(cr_BasisSet.m_Molecule.IndexOf(atom)).AngularMomentumBlocks
+				       | ranges::views::transform([](const AngularMomentumBlock& amb) { return amb.PrimitiveShells(); })
+				       | ranges::views::join;
+			}
+
+			auto EcpOffsettedSubshellsOf(const Atom& atom) const
+			{
+				const auto* basisPtr = cr_BasisSet.m_BasisAssignments[cr_BasisSet.m_Molecule.IndexOf(atom)];
+				const auto& ambs = basisPtr->AngularMomentumBlocks;
+
+				const auto* ambsPtr = ambs.data();
+				const auto* principalQuantumNumberOffsetsPtr =
+				        cr_BasisSet.m_ComputedElementaryBasisInfoTable.at(basisPtr)
+				                .PrincipalQuantumNumberOffsetTable.data();
+
+				return ambs
+				       | ranges::views::transform(
+				               [principalQuantumNumberOffsetsPtr, ambsPtr](const AngularMomentumBlock& amb)
+				               { return amb.PrimitiveShells(principalQuantumNumberOffsetsPtr[&amb - ambsPtr]); })
+				       | ranges::views::join;
+			}
+
+
+		private:
+			const Gaussian::MolecularBasisSet& cr_BasisSet;
+		};
+
+		template <>
+		class BasisView<Contraction::Contracted, Representation::Unspecified>
+		{
+		public:
+			constexpr explicit BasisView(const Gaussian::MolecularBasisSet& basis) noexcept : cr_BasisSet(basis)
+			{
+				/* NO CODE */
+			}
+
+			auto Cartesian() const
+			{
+				return BasisView<Contraction::Contracted, Representation::Cartesian>{cr_BasisSet};
+			}
+
+			auto Spherical() const
+			{
+				return BasisView<Contraction::Contracted, Representation::Spherical>{cr_BasisSet};
+			}
+
+			Eigen::Index SubshellCount() const noexcept
+			{
+				// we need to remove the const-ness for the limitation of range-v3 and C++20 range library
+				// we won't and shan't modify the map, but it won't compile unless const was removed
+				return std::accumulate(
+				        cr_BasisSet.m_ComputedElementaryBasisInfoTable.cbegin(),
+				        cr_BasisSet.m_ComputedElementaryBasisInfoTable.cend(),
+				        Eigen::Index{0},
+				        [](const Eigen::Index acc, const auto& kv)
+				        {
+					        const auto& info = std::get<1>(kv);
+					        return acc + info.ReferenceCount * info.template SubShellCount<Contraction::Contracted>();
+				        });
+			}
+
+			auto SubshellsOf(const Atom& atom) const
+			{
+				return cr_BasisSet.ElementaryBasisAt(cr_BasisSet.m_Molecule.IndexOf(atom)).AngularMomentumBlocks
+				       | ranges::views::transform([](const AngularMomentumBlock& amb)
+				                                  { return amb.ContractedShells(); })
+				       | ranges::views::join;
+			}
+
+			auto EcpOffsettedSubshellsOf(const Atom& atom) const
+			{
+				const auto* basisPtr = cr_BasisSet.m_BasisAssignments[cr_BasisSet.m_Molecule.IndexOf(atom)];
+				const auto& ambs = basisPtr->AngularMomentumBlocks;
+
+				const auto* ambsPtr = ambs.data();
+				const auto* principalQuantumNumberOffsetsPtr =
+				        cr_BasisSet.m_ComputedElementaryBasisInfoTable.at(basisPtr)
+				                .PrincipalQuantumNumberOffsetTable.data();
+
+				return ambs
+				       | ranges::views::transform(
+				               [principalQuantumNumberOffsetsPtr, ambsPtr](const AngularMomentumBlock& amb)
+				               { return amb.ContractedShells(principalQuantumNumberOffsetsPtr[&amb - ambsPtr]); })
+				       | ranges::views::join;
+			}
+
+
+		private:
+		private:
+			const Gaussian::MolecularBasisSet& cr_BasisSet;
+		};
+
+		template <>
+		class BasisView<Contraction::Unspecified, Representation::Cartesian>
+		{
+		public:
+			constexpr explicit BasisView(const Gaussian::MolecularBasisSet& basis) noexcept : cr_BasisSet(basis)
+			{
+				/* NO CODE */
+			}
+
+			auto Primitive() const
+			{
+				return BasisView<Contraction::Primitive, Representation::Cartesian>{cr_BasisSet};
+			}
+
+			auto Contracted() const
+			{
+				return BasisView<Contraction::Contracted, Representation::Cartesian>{cr_BasisSet};
+			}
+
+		private:
+			const Gaussian::MolecularBasisSet& cr_BasisSet;
+		};
+
+		template <>
+		class BasisView<Contraction::Unspecified, Representation::Spherical>
+		{
+		public:
+			constexpr explicit BasisView(const Gaussian::MolecularBasisSet& basis) noexcept : cr_BasisSet(basis)
+			{
+				/* NO CODE */
+			}
+
+			auto Primitive() const
+			{
+				return BasisView<Contraction::Primitive, Representation::Spherical>{cr_BasisSet};
+			}
+
+			auto Contracted() const
+			{
+				return BasisView<Contraction::Contracted, Representation::Spherical>{cr_BasisSet};
+			}
+
+		private:
+			const Gaussian::MolecularBasisSet& cr_BasisSet;
+		};
+
+		template <>
+		class BasisView<Contraction::Unspecified, Representation::Unspecified>
+		{
+		public:
+			constexpr explicit BasisView(const Gaussian::MolecularBasisSet& basis) noexcept : cr_BasisSet(basis)
+			{
+				/* NO CODE */
+			}
+
+			auto Primitive() const
+			{
+				return BasisView<Contraction::Primitive, Representation::Unspecified>{cr_BasisSet};
+			}
+
+			auto Contracted() const
+			{
+				return BasisView<Contraction::Contracted, Representation::Unspecified>{cr_BasisSet};
+			}
+
+			auto Cartesian() const
+			{
+				return BasisView<Contraction::Unspecified, Representation::Cartesian>{cr_BasisSet};
+			}
+
+			auto Spherical() const
+			{
+				return BasisView<Contraction::Unspecified, Representation::Spherical>{cr_BasisSet};
+			}
+
+		private:
+			const Gaussian::MolecularBasisSet& cr_BasisSet;
+		};
+	}  // namespace Detail::MolecularBasisSet
+
+
+	inline Detail::MolecularBasisSet::BasisView<Detail::MolecularBasisSet::Contraction::Primitive,
+	                                            Detail::MolecularBasisSet::Representation::Unspecified>
+	MolecularBasisSet::Primitive() const
+	{
+		return Detail::MolecularBasisSet::BasisView<Detail::MolecularBasisSet::Contraction::Primitive,
+		                                            Detail::MolecularBasisSet::Representation::Unspecified>{*this};
+	}
+
+	inline Detail::MolecularBasisSet::BasisView<Detail::MolecularBasisSet::Contraction::Contracted,
+	                                            Detail::MolecularBasisSet::Representation::Unspecified>
+	MolecularBasisSet::Contracted() const
+	{
+		return Detail::MolecularBasisSet::BasisView<Detail::MolecularBasisSet::Contraction::Contracted,
+		                                            Detail::MolecularBasisSet::Representation::Unspecified>{*this};
+	}
+
+	inline Detail::MolecularBasisSet::BasisView<Detail::MolecularBasisSet::Contraction::Unspecified,
+	                                            Detail::MolecularBasisSet::Representation::Cartesian>
+	MolecularBasisSet::Cartesian() const
+	{
+		return Detail::MolecularBasisSet::BasisView<Detail::MolecularBasisSet::Contraction::Unspecified,
+		                                            Detail::MolecularBasisSet::Representation::Cartesian>{*this};
+	}
+
+	inline Detail::MolecularBasisSet::BasisView<Detail::MolecularBasisSet::Contraction::Unspecified,
+	                                            Detail::MolecularBasisSet::Representation::Spherical>
+	MolecularBasisSet::Spherical() const
+	{
+		return Detail::MolecularBasisSet::BasisView<Detail::MolecularBasisSet::Contraction::Unspecified,
+		                                            Detail::MolecularBasisSet::Representation::Spherical>{*this};
+	}
 }  // namespace SecChem::BasisSet::Gaussian
 
 
