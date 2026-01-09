@@ -205,13 +205,13 @@ namespace SecChem::BasisSet::Gaussian
 
 			const auto* ambsPtr = ambs.data();
 			const auto* principalQuantumNumberOffsetsPtr =
-					m_ComputedElementaryBasisInfoTable.at(basisPtr).PrincipalQuantumNumberOffsetTable.data();
+			        m_ComputedElementaryBasisInfoTable.at(basisPtr).PrincipalQuantumNumberOffsetTable.data();
 
 			return ambs
-				   | ranges::views::transform(
-						   [principalQuantumNumberOffsetsPtr, ambsPtr](const AngularMomentumBlock& amb)
-						   { return amb.ContractedShells(principalQuantumNumberOffsetsPtr[&amb - ambsPtr]); })
-				   | ranges::views::join;
+			       | ranges::views::transform(
+			               [principalQuantumNumberOffsetsPtr, ambsPtr](const AngularMomentumBlock& amb)
+			               { return amb.ContractedShells(principalQuantumNumberOffsetsPtr[&amb - ambsPtr]); })
+			       | ranges::views::join;
 		}
 
 		auto PrimitiveSubShellsOf(const Atom& atom) const
@@ -256,6 +256,35 @@ namespace SecChem::BasisSet::Gaussian
 			                                 - shell.AzimuthalQuantumNumber().MinPrincipalQuantumNumber());
 
 			return ranges::views::iota(offset, offset + sphericalMagneticQuantumNumberCount);
+		}
+
+		template <typename VectorLike>
+		auto ContractedSphericalOrbitalSegmentOf(VectorLike&& vector,
+		                                         const Atom& atom,
+		                                         const ElectronicSubShell shell) const
+		{
+			const auto atomIndex = m_Molecule.IndexOf(atom);
+			const auto atomicOffset = m_ContractedSphericalOrbitalSegmentationTable[atomIndex];
+			const ElementaryBasisSet* basisPtr = m_BasisAssignments[atomIndex];
+			const auto azimuthalShellOffset =
+			        m_ComputedElementaryBasisInfoTable.at(basisPtr)
+			                .ContractedSphericalSubShellSegmentationTable[shell.AzimuthalQuantumNumber().Value()];
+			const auto sphericalMagneticQuantumNumberCount = shell.MagneticQuantumNumberCount();
+			const auto offset = atomicOffset + azimuthalShellOffset
+			                    + sphericalMagneticQuantumNumberCount
+			                              * (shell.PrincipalQuantumNumber()
+			                                 - shell.AzimuthalQuantumNumber().MinPrincipalQuantumNumber());
+
+			return vector.segment(offset, sphericalMagneticQuantumNumberCount);
+		}
+
+		template <typename VectorLike>
+		auto ContractedSphericalOrbitalSegmentOf(VectorLike&& vector, const Atom& atom) const
+		{
+			const auto atomIndex = m_Molecule.IndexOf(atom);
+			return vector.segment(m_ContractedSphericalOrbitalSegmentationTable[atomIndex],
+			                      m_ContractedSphericalOrbitalSegmentationTable[atomIndex + 1]
+			                              - m_ContractedSphericalOrbitalSegmentationTable[atomIndex]);
 		}
 
 		Eigen::Index AtomIndexFromContractedSphericalOrbital(const Eigen::Index orbitalIndex) const noexcept
