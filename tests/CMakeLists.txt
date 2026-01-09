@@ -79,6 +79,10 @@ add_executable(AtomTest AtomTest.cpp)
 target_link_libraries(AtomTest PRIVATE Catch2::Catch2WithMain SecChem)
 add_test(NAME AtomTest COMMAND AtomTest)
 
+add_executable(MoleculeTest MoleculeTest.cpp)
+target_link_libraries(MoleculeTest PRIVATE Catch2::Catch2WithMain SecChem)
+add_test(NAME MoleculeTest COMMAND MoleculeTest)
+
 add_executable(InternalCoordinateLineParseTest InternalCoordinateLineParseTest.cpp)
 target_link_libraries(InternalCoordinateLineParseTest PRIVATE Catch2::Catch2WithMain SecChem)
 add_test(NAME InternalCoordinateLineParseTest COMMAND InternalCoordinateLineParseTest)
