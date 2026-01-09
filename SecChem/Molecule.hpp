@@ -33,13 +33,14 @@ struct SecUtility::Traits<SecChem::Molecule>
 
 namespace SecChem
 {
+	/// AbstractMolecule must use contiguous Atom storage
 	template <typename Derived>
 	class AbstractMolecule
 	{
 	public:
 		std::size_t AtomCount() const noexcept
 		{
-			return std::distance(cbegin(), cend());
+			return static_cast<const Derived*>(this)->AtomCount_Impl();
 		}
 
 		std::size_t TotalNuclearCharge() const noexcept
@@ -90,9 +91,18 @@ namespace SecChem
 
 		std::size_t IndexOf(const Atom& atom) const
 		{
-			if (&atom >= cbegin() && &atom < cend())
+#if __cpp_lib_to_address >= 201711L
+			const auto first = std::to_address(cbegin());
+#else
+			const auto first = static_cast<const Atom*>(cbegin().operator->());
+#endif
+			static_assert(std::is_same_v<decltype(first), const Atom* const>);
+			const auto last = first + AtomCount();
+			const auto ptr = std::addressof(atom);
+
+			if (ptr >= first && ptr < last)
 			{
-				return std::distance(static_cast<const Atom*>(cbegin()), &atom);
+				return static_cast<std::size_t>(ptr - first);
 			}
 
 			if (const auto it = std::find(cbegin(), cend(), atom); it != cend())
@@ -104,7 +114,7 @@ namespace SecChem
 		}
 
 		template <typename CountingFunction>
-		double CoordinationNumberOfAtomAtIndex(const std::size_t atomIndex, CountingFunction countingFunction)
+		double CoordinationNumberOfAtomAtIndex(const std::size_t atomIndex, CountingFunction countingFunction) const
 		{
 			double cn = 0;
 
@@ -120,13 +130,13 @@ namespace SecChem
 		}
 
 		template <typename CountingFunction>
-		double CoordinationNumberOf(const Atom& atom, CountingFunction countingFunction)
+		double CoordinationNumberOf(const Atom& atom, CountingFunction countingFunction) const
 		{
-			return CoordinationNumberOf(IndexOf(atom), countingFunction);
+			return CoordinationNumberOfAtomAtIndex(IndexOf(atom), countingFunction);
 		}
 
 		template <typename CountingFunction>
-		std::vector<double> GenerateCoordinationNumbers(CountingFunction& countingFunction) const
+		std::vector<double> GenerateCoordinationNumbers(CountingFunction countingFunction) const
 		{
 			std::vector<double> coordinationNumbers(AtomCount());
 
@@ -145,7 +155,16 @@ namespace SecChem
 
 		bool Contains(const Atom& atom) const noexcept
 		{
-			if (&atom >= cbegin() && &atom < cend())
+#if __cpp_lib_to_address >= 201711L
+			const auto first = std::to_address(cbegin());
+#else
+			const auto first = static_cast<const Atom*>(cbegin().operator->());
+#endif
+			static_assert(std::is_same_v<decltype(first), const Atom* const>);
+			const auto last = first + AtomCount();
+			const auto ptr = &atom;
+
+			if (ptr >= first && ptr < last)
 			{
 				return true;
 			}
@@ -194,6 +213,11 @@ namespace SecChem
 			return *static_cast<Derived*>(this);
 		}
 
+		/* CRTP VIRTUAL */ std::size_t AtomCount_Impl() const noexcept
+		{
+			return std::distance(cbegin(), cend());
+		}
+
 		/* CRTP PURE VIRTUAL */ auto begin_Impl() noexcept = delete;
 		/* CRTP PURE VIRTUAL */ auto end_Impl() noexcept = delete;
 		/* CRTP PURE VIRTUAL */ auto cbegin_Impl() const noexcept = delete;
@@ -230,22 +254,22 @@ namespace SecChem
 	private:
 		/* CRTP OVERRIDE */ auto begin_Impl() noexcept
 		{
-			return m_Atoms.data();
+			return m_Atoms.begin();
 		}
 
 		/* CRTP OVERRIDE */ auto end_Impl() noexcept
 		{
-			return m_Atoms.data() + m_Atoms.size();
+			return m_Atoms.end();
 		}
 
 		/* CRTP OVERRIDE */ auto cbegin_Impl() const noexcept
 		{
-			return m_Atoms.data();
+			return m_Atoms.cbegin();
 		}
 
 		/* CRTP OVERRIDE */ auto cend_Impl() const noexcept
 		{
-			return m_Atoms.data() + m_Atoms.size();
+			return m_Atoms.cend();
 		}
 
 		std::vector<Atom> m_Atoms;
@@ -291,23 +315,23 @@ namespace SecChem
 		// ReSharper disable once CppMemberFunctionMayBeConst
 		/* CRTP OVERRIDE */ auto begin_Impl() noexcept
 		{
-			return m_AtomsPtr->data();
+			return m_AtomsPtr->begin();
 		}
 
 		// ReSharper disable once CppMemberFunctionMayBeConst
 		/* CRTP OVERRIDE */ auto end_Impl() noexcept
 		{
-			return m_AtomsPtr->data() + m_AtomsPtr->size();
+			return m_AtomsPtr->end();
 		}
 
 		/* CRTP OVERRIDE */ auto cbegin_Impl() const noexcept
 		{
-			return static_cast<const Atom*>(m_AtomsPtr->data());
+			return m_AtomsPtr->cbegin();
 		}
 
 		/* CRTP OVERRIDE */ auto cend_Impl() const noexcept
 		{
-			return static_cast<const Atom*>(m_AtomsPtr->data() + m_AtomsPtr->size());
+			return m_AtomsPtr->cend();
 		}
 
 		std::shared_ptr<std::vector<Atom>> m_AtomsPtr;
