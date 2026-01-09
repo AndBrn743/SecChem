@@ -70,7 +70,7 @@ namespace SecChem
 				{
 					const auto& atom2 = *it2;
 
-					e += atom1.Element.AtomicNumber() * atom2.Element.AtomicNumber() / atom1.DistanceTo(atom2);
+					e += atom1.Element().AtomicNumber() * atom2.Element().AtomicNumber() / atom1.DistanceTo(atom2);
 				}
 			}
 
@@ -130,6 +130,22 @@ namespace SecChem
 			}
 
 			throw std::out_of_range("Atom not found");
+		}
+
+		std::size_t IndexOfUnchecked(const Atom& atom) const
+		{
+#if __cpp_lib_to_address >= 201711L
+			const auto first = std::to_address(cbegin());
+#else
+			const auto first = static_cast<const Atom*>(cbegin().operator->());
+#endif
+			static_assert(std::is_same_v<decltype(first), const Atom* const>);
+			const auto last = first + AtomCount();
+			const auto ptr = std::addressof(atom);
+
+			assert(ptr >= first && ptr < last && "Atom can't be found inside the molecule by identity");
+
+			return static_cast<std::size_t>(ptr - first);
 		}
 
 		template <typename CountingFunction>
