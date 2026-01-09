@@ -384,6 +384,8 @@ namespace SecChem::BasisSet::Gaussian
 					auto& [referenceCount,
 					       primitiveSphericalSubShellSegTable,
 					       contractedSphericalSubShellSegTable,
+					       primitiveCartesianSubShellSegTable,
+					       contractedCartesianSubShellSegTable,
 					       primitiveSubShellCount,
 					       contractedSubShellCount,
 					       principalQuantumNumberOffsetTable] = statistics[basisPtr];
@@ -399,6 +401,14 @@ namespace SecChem::BasisSet::Gaussian
 						contractedSphericalSubShellSegTable = CreateSubShellSegmentationTableFor(
 						        *basisPtr,
 						        [](const AngularMomentumBlock& amb) { return amb.ContractedSphericalOrbitalCount(); });
+
+						primitiveCartesianSubShellSegTable = CreateSubShellSegmentationTableFor(
+						        *basisPtr,
+						        [](const AngularMomentumBlock& amb) { return amb.PrimitiveCartesianOrbitalCount(); });
+
+						contractedCartesianSubShellSegTable = CreateSubShellSegmentationTableFor(
+						        *basisPtr,
+						        [](const AngularMomentumBlock& amb) { return amb.ContractedCartesianOrbitalCount(); });
 
 						primitiveSubShellCount = ranges::accumulate(basisPtr->AngularMomentumBlocks,
 						                                            Eigen::Index{0},
@@ -420,6 +430,8 @@ namespace SecChem::BasisSet::Gaussian
 			Eigen::Index ReferenceCount;
 			std::vector<Eigen::Index> PrimitiveSphericalSubShellSegmentationTable;
 			std::vector<Eigen::Index> ContractedSphericalSubShellSegmentationTable;
+			std::vector<Eigen::Index> PrimitiveCartesianSubShellSegmentationTable;
+			std::vector<Eigen::Index> ContractedCartesianSubShellSegmentationTable;
 			Eigen::Index PrimitiveSubShellCount;
 			Eigen::Index ContractedSubShellCount;
 			std::vector<int> PrincipalQuantumNumberOffsetTable;
