@@ -113,6 +113,25 @@ namespace SecChem
 			throw std::out_of_range("Atom not found");
 		}
 
+		std::size_t IndexOfByIdentity(const Atom& atom) const
+		{
+#if __cpp_lib_to_address >= 201711L
+			const auto first = std::to_address(cbegin());
+#else
+			const auto first = static_cast<const Atom*>(cbegin().operator->());
+#endif
+			static_assert(std::is_same_v<decltype(first), const Atom* const>);
+			const auto last = first + AtomCount();
+			const auto ptr = std::addressof(atom);
+
+			if (ptr >= first && ptr < last)
+			{
+				return static_cast<std::size_t>(ptr - first);
+			}
+
+			throw std::out_of_range("Atom not found");
+		}
+
 		template <typename CountingFunction>
 		double CoordinationNumberOfAtomAtIndex(const std::size_t atomIndex, CountingFunction countingFunction) const
 		{
@@ -170,6 +189,20 @@ namespace SecChem
 			}
 
 			return std::find(cbegin(), cend(), atom) != cend();
+		}
+
+		bool ContainsByIdentity(const Atom& atom) const noexcept
+		{
+#if __cpp_lib_to_address >= 201711L
+			const auto first = std::to_address(cbegin());
+#else
+			const auto first = static_cast<const Atom*>(cbegin().operator->());
+#endif
+			static_assert(std::is_same_v<decltype(first), const Atom* const>);
+			const auto last = first + AtomCount();
+			const auto ptr = &atom;
+
+			return ptr >= first && ptr < last;
 		}
 
 		auto begin() noexcept
