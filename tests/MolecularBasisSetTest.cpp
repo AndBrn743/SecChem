@@ -302,7 +302,11 @@ public:
 		}
 		else if (m_GeometryFormat == GeometryFormat::Unknown)
 		{
+#if defined(_MSC_VER)
+			throw std::runtime_error(std::string{__FUNCSIG__} + ":" + std::to_string(__LINE__));
+#else
 			throw std::runtime_error(std::string{__PRETTY_FUNCTION__} + ":" + std::to_string(__LINE__));
+#endif
 		}
 
 		if (m_GeometryFormat == GeometryFormat::CartesianCoordinate && geomTokenCount != 3)
