@@ -1,0 +1,41 @@
+name: macOS CI
+
+on:
+  push:
+    branches: [ master ]
+    paths:
+      - '.github/workflows/macos.yml'
+      - 'CMakeLists.txt'
+      - 'SecChem/**'
+      - 'tests/**'
+  pull_request:
+    branches: [ master ]
+    paths:
+      - '.github/workflows/macos.yml'
+      - 'CMakeLists.txt'
+      - 'SecChem/**'
+      - 'tests/**'
+  workflow_dispatch:
+
+jobs:
+  xcode-clang:
+    name: Xcode Clang
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure CMake
+        run: |
+          cmake -S . -B build \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_CXX_STANDARD=17 \
+            -DCMAKE_CXX_EXTENSIONS=OFF \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+
+      - name: Build
+        run: cmake --build build -- -j$(sysctl -n hw.ncpu)
+
+      - name: Run tests
+        working-directory: build/tests
+        run: ctest --output-on-failure --verbose

@@ -1,0 +1,70 @@
+name: Windows CI
+
+on:
+  push:
+    branches: [ master ]
+    paths:
+      - '.github/workflows/windows.yml'
+      - 'CMakeLists.txt'
+      - 'SecChem/**'
+      - 'tests/**'
+  pull_request:
+    branches: [ master ]
+    paths:
+      - '.github/workflows/windows.yml'
+      - 'CMakeLists.txt'
+      - 'SecChem/**'
+      - 'tests/**'
+  workflow_dispatch:
+
+jobs:
+  msvc:
+    name: MSVC (VS2022)
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Configure CMake
+        run: |
+          cmake -S . -B build `
+            -DCMAKE_BUILD_TYPE=Debug `
+            -DCMAKE_CXX_STANDARD=17 `
+            -DCMAKE_CXX_EXTENSIONS=OFF `
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+
+      - name: Build
+        run: cmake --build build --config Debug --parallel
+
+      - name: Run tests
+        working-directory: build/tests
+        run: ctest -C Debug --output-on-failure --verbose
+
+  clang-cl:
+    name: clang-cl
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup clang-cl
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Configure CMake
+        run: |
+          cmake -S . -B build `
+            -T ClangCL `
+            -DCMAKE_BUILD_TYPE=Debug `
+            -DCMAKE_CXX_STANDARD=17 `
+            -DCMAKE_CXX_EXTENSIONS=OFF `
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+
+      - name: Build
+        run: cmake --build build --config Debug --parallel
+
+      - name: Run tests
+        working-directory: build/tests
+        run: ctest -C Debug --output-on-failure --verbose

@@ -1,0 +1,134 @@
+name: Local CI (act-friendly)
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+# This workflow is designed to work with act (GitHub Actions emulator) for local testing.
+# It uses system compilers and avoids heavy Docker images to be fast and lightweight.
+#
+# Usage:
+#   act -j local-gcc        # Run GCC job only
+#   act -j local-clang      # Run Clang job only
+#   act                     # Run all jobs
+#
+# Requirements for Arch Linux (or similar):
+#   - Base packages: cmake ninja gcc clang libc++
+#   - For coverage: lcov
+#   - All compilers should be installed system-wide
+
+jobs:
+  local-gcc:
+    name: Local GCC
+    runs-on: self-hosted
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure CMake
+        run: |
+          cmake -S . -B build \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_CXX_COMPILER=g++ \
+            -DCMAKE_CXX_STANDARD=17 \
+            -DCMAKE_CXX_EXTENSIONS=OFF \
+            ${{ env.CATCH2_SOURCE != '' && format('-DCATCH2_SOURCE={0}', env.CATCH2_SOURCE) || '' }} \
+            -G Ninja
+
+      - name: Build
+        run: cmake --build build -- -j$(nproc)
+
+      - name: Run tests
+        working-directory: build/tests
+        run: ctest --output-on-failure
+
+  local-clang-libstdcxx:
+    name: Local Clang (libstdc++)
+    runs-on: self-hosted
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure CMake
+        run: |
+          cmake -S . -B build \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_CXX_COMPILER=clang++ \
+            -DCMAKE_CXX_STANDARD=17 \
+            -DCMAKE_CXX_EXTENSIONS=OFF \
+            ${{ env.CATCH2_SOURCE != '' && format('-DCATCH2_SOURCE={0}', env.CATCH2_SOURCE) || '' }} \
+            -G Ninja
+
+      - name: Build
+        run: cmake --build build -- -j$(nproc)
+
+      - name: Run tests
+        working-directory: build/tests
+        run: ctest --output-on-failure
+
+  local-clang-libcxx:
+    name: Local Clang (libc++)
+    runs-on: self-hosted
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure CMake
+        run: |
+          cmake -S . -B build \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_CXX_COMPILER=clang++ \
+            -DCMAKE_CXX_STANDARD=17 \
+            -DCMAKE_CXX_EXTENSIONS=OFF \
+            -DCMAKE_CXX_FLAGS=-stdlib=libc++ \
+            ${{ env.CATCH2_SOURCE != '' && format('-DCATCH2_SOURCE={0}', env.CATCH2_SOURCE) || '' }} \
+            -G Ninja
+
+      - name: Build
+        run: cmake --build build -- -j$(nproc)
+
+      - name: Run tests
+        working-directory: build/tests
+        run: ctest --output-on-failure
+
+  local-coverage:
+    name: Local Coverage
+    runs-on: self-hosted
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure CMake with coverage
+        run: |
+          cmake -S . -B build \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_CXX_COMPILER=g++ \
+            -DCMAKE_CXX_STANDARD=17 \
+            -DCMAKE_CXX_EXTENSIONS=OFF \
+            -DCMAKE_CXX_FLAGS="--coverage" \
+            -DCMAKE_EXE_LINKER_FLAGS="--coverage" \
+            ${{ env.CATCH2_SOURCE != '' && format('-DCATCH2_SOURCE={0}', env.CATCH2_SOURCE) || '' }} \
+            -G Ninja
+
+      - name: Build
+        run: cmake --build build -- -j$(nproc)
+
+      - name: Run tests
+        working-directory: build/tests
+        run: ctest --output-on-failure
+
+      - name: Generate coverage report
+        working-directory: build/tests
+        run: |
+          lcov --capture --directory . --output-file coverage.info
+          lcov --remove coverage.info '/usr/*' '*_deps/*' 'tests/*' --output-file coverage.info
+          lcov --list coverage.info
+
+      - name: Display coverage summary
+        working-directory: build/tests
+        run: |
+          echo "Coverage report generated at build/tests/coverage.info"
+          echo "To generate HTML report, run: lcov --generate-html coverage.info"

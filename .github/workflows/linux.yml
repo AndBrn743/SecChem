@@ -1,0 +1,151 @@
+name: Linux CI
+
+on:
+  push:
+    branches: [ master ]
+    paths:
+      - '.github/workflows/linux.yml'
+      - 'CMakeLists.txt'
+      - 'SecChem/**'
+      - 'tests/**'
+  pull_request:
+    branches: [ master ]
+    paths:
+      - '.github/workflows/linux.yml'
+      - 'CMakeLists.txt'
+      - 'SecChem/**'
+      - 'tests/**'
+  workflow_dispatch:
+
+jobs:
+  gcc:
+    name: GCC
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build ccache
+
+      - name: Configure CMake
+        run: |
+          cmake -S . -B build \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_CXX_COMPILER=g++ \
+            -DCMAKE_CXX_STANDARD=17 \
+            -DCMAKE_CXX_EXTENSIONS=OFF \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+            -G Ninja
+
+      - name: Build
+        run: cmake --build build -- -j$(nproc)
+
+      - name: Run tests
+        working-directory: build/tests
+        run: ctest --output-on-failure --verbose
+
+  clang-libstdcxx:
+    name: Clang (libstdc++)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build ccache
+
+      - name: Configure CMake
+        run: |
+          cmake -S . -B build \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_CXX_COMPILER=clang++ \
+            -DCMAKE_CXX_STANDARD=17 \
+            -DCMAKE_CXX_EXTENSIONS=OFF \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+            -G Ninja
+
+      - name: Build
+        run: cmake --build build -- -j$(nproc)
+
+      - name: Run tests
+        working-directory: build/tests
+        run: ctest --output-on-failure --verbose
+
+  clang-libcxx:
+    name: Clang (libc++)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build ccache libc++-dev libc++abi-dev
+
+      - name: Configure CMake
+        run: |
+          cmake -S . -B build \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_CXX_COMPILER=clang++ \
+            -DCMAKE_CXX_STANDARD=17 \
+            -DCMAKE_CXX_EXTENSIONS=OFF \
+            -DCMAKE_CXX_FLAGS=-stdlib=libc++ \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+            -G Ninja
+
+      - name: Build
+        run: cmake --build build -- -j$(nproc)
+
+      - name: Run tests
+        working-directory: build/tests
+        run: ctest --output-on-failure --verbose
+
+  coverage:
+    name: Coverage (GCC)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build ccache lcov
+
+      - name: Configure CMake with coverage
+        run: |
+          cmake -S . -B build \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_CXX_COMPILER=g++ \
+            -DCMAKE_CXX_STANDARD=17 \
+            -DCMAKE_CXX_EXTENSIONS=OFF \
+            -DCMAKE_CXX_FLAGS="--coverage" \
+            -DCMAKE_EXE_LINKER_FLAGS="--coverage" \
+            -G Ninja
+
+      - name: Build
+        run: cmake --build build -- -j$(nproc)
+
+      - name: Run tests
+        working-directory: build/tests
+        run: ctest --output-on-failure
+
+      - name: Generate coverage report
+        working-directory: build/tests
+        run: |
+          lcov --capture --directory . --output-file coverage.info
+          lcov --remove coverage.info '/usr/*' '*_deps/*' 'tests/*' --output-file coverage.info
+          lcov --list coverage.info
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: build/coverage.info
+          fail_ci_if_error: false
+          verbose: true
