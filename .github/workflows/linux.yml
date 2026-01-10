@@ -133,6 +133,10 @@ jobs:
       - name: Build
         run: cmake --build build -- -j$(nproc)
 
+      - name: List all cmake scripts to find where is CTestTestfile.cmake hiding
+        working-directory: build
+        run: find . -name "*.cmake"
+
       - name: Run tests
         working-directory: build/tests
         run: ctest --output-on-failure
