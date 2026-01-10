@@ -159,7 +159,15 @@ namespace polyfill
 	private:
 		KeyContainer keys;
 		MappedContainer values;
-		[[no_unique_address]] Compare comp;
+
+#if __cplusplus >= 201803L
+#if defined(_MSC_VER)
+		[[msvc::no_unique_address]]
+#else
+		[[no_unique_address]]
+#endif
+#endif
+		Compare comp;
 
 		template <typename K>
 		auto lower_bound_impl(const K& k) const

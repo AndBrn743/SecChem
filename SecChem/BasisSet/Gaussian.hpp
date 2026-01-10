@@ -5,7 +5,6 @@
 
 #include <Eigen/Dense>
 #include <algorithm>
-#include <filesystem>
 #include <memory>
 #include <numeric>
 #include <optional>
