@@ -427,7 +427,7 @@ namespace SecChem::BasisSet::Gaussian
 				const ElementaryBasisSet* basisPtr = cr_BasisSet.m_BasisAssignments[atomIndex];
 				const auto azimuthalShellOffset =
 				        cr_BasisSet.m_ComputedElementaryBasisInfoTable.at(basisPtr)
-				                .SubShellSegmentationTable<C, R>()[shell.AzimuthalQuantumNumber().Value()];
+				                .template SubShellSegmentationTable<C, R>()[shell.AzimuthalQuantumNumber().Value()];
 				const auto magneticQuantumNumberCount = R == Representation::Spherical
 				                                                ? shell.MagneticQuantumNumberCount()
 				                                                : shell.CartesianMagneticQuantumNumberCount();
@@ -537,7 +537,7 @@ namespace SecChem::BasisSet::Gaussian
 				const ElementaryBasisSet* basisPtr = cr_BasisSet.m_BasisAssignments[atomIndex];
 
 				const auto& subshellSegTable =
-				        cr_BasisSet.m_ComputedElementaryBasisInfoTable.at(basisPtr).SubShellSegmentationTable<C, R>();
+				        cr_BasisSet.m_ComputedElementaryBasisInfoTable.at(basisPtr).template SubShellSegmentationTable<C, R>();
 				assert(subshellSegTable.size() >= 2);
 				const auto segIterator = std::prev(std::upper_bound(
 				        std::next(subshellSegTable.cbegin()), subshellSegTable.cend(), orbitalIndex - atomicOffset));
@@ -567,7 +567,7 @@ namespace SecChem::BasisSet::Gaussian
 				const ElementaryBasisSet* basisPtr = cr_BasisSet.m_BasisAssignments[atomIndex];
 				const auto azimuthalShellOffset =
 				        cr_BasisSet.m_ComputedElementaryBasisInfoTable.at(basisPtr)
-				                .SubShellSegmentationTable<C, R>()[shell.AzimuthalQuantumNumber().Value()];
+				                .template SubShellSegmentationTable<C, R>()[shell.AzimuthalQuantumNumber().Value()];
 				const auto sphericalMagneticQuantumNumberCount = R == Representation::Spherical
 				                                                         ? shell.MagneticQuantumNumberCount()
 				                                                         : shell.CartesianMagneticQuantumNumberCount();
