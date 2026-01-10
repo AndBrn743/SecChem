@@ -456,8 +456,8 @@ TEST_CASE("ParseInternalCoordinateLine: Common bond angles", "[geometry][z-matri
 	{
 		const std::vector<std::string> tokens = {"H", "0", "1.0", "1", "120"};
 		const auto result = ParseInternalCoordinateLine(tokens, atoms, Bohr2Bohr, UnitOfMeasurement::Degree2Radian);
-		CHECK(result.Position.x() == Approx(std::cos(M_PI / 6)).margin(1e-9));
-		CHECK(result.Position.z() == Approx(-std::sin(M_PI / 6)).margin(1e-9));
+		CHECK(result.Position.x() == Approx(std::cos(3.14159265358979323846 / 6)).margin(1e-9));
+		CHECK(result.Position.z() == Approx(-std::sin(3.14159265358979323846 / 6)).margin(1e-9));
 	}
 
 	SECTION("109.5 degrees - tetrahedral")
