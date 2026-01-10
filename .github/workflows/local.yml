@@ -1,10 +1,6 @@
 name: Local CI (act-friendly)
 
 on:
-  push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
   workflow_dispatch:
 
 # This workflow is designed to work with act (GitHub Actions emulator) for local testing.
