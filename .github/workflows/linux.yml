@@ -137,10 +137,11 @@ jobs:
         run: ctest --output-on-failure
 
       - name: Generate coverage report
-        working-directory: build/tests
+        working-directory: build
         run: |
-          lcov --capture --directory . --output-file coverage.info
-          lcov --remove coverage.info '/usr/*' '*_deps/*' --output-file coverage.info
+          find . -name "*.gcda"
+          lcov --ignore-errors empty,unused,inconsistent --capture --directory . --output-file coverage.raw.info --rc geninfo_unexecuted_blocks=1 --ignore-errors source
+          lcov --ignore-errors empty,unused --remove coverage.raw.info '/usr/*' '*/_deps/*' "*/catch2/*" --output-file coverage.info
           lcov --list coverage.info
 
       - name: Upload coverage to Codecov

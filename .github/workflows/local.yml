@@ -117,14 +117,10 @@ jobs:
         run: ctest --output-on-failure
 
       - name: Generate coverage report
-        working-directory: build/tests
+        working-directory: build
         run: |
-          lcov --capture --directory . --output-file coverage.info
-          lcov --remove coverage.info '/usr/*' '*_deps/*' --output-file coverage.info
+          lcov --ignore-errors empty,unused,inconsistent --capture --directory . --output-file coverage.raw.info --rc geninfo_unexecuted_blocks=1 --ignore-errors source
+          lcov --ignore-errors empty,unused --remove coverage.raw.info '/usr/*' '*/_deps/*' "*/catch2/*" --output-file coverage.info
           lcov --list coverage.info
-
-      - name: Display coverage summary
-        working-directory: build/tests
-        run: |
           echo "Coverage report generated at build/tests/coverage.info"
           echo "To generate HTML report, run: lcov --generate-html coverage.info"
