@@ -4,6 +4,7 @@
 #pragma once
 
 #include "Element.hpp"
+#include "Atom.hpp"
 #include "Utility/Parser.hpp"
 #include <Eigen/Dense>
 
@@ -20,7 +21,7 @@ namespace SecChem::Geometry::Input
 
 	template <typename TokenIterator, typename LengthToBohrRadius>
 	auto ParseBasicCartesianCoordinateLine(const TokenIterator tokenBegin, const LengthToBohrRadius toBohrRadius)
-	        -> std::enable_if_t<std::is_same_v<decltype(SecUtility::Parse<double>(tokenBegin[0])), double>
+	        -> std::enable_if_t<std::is_same_v<decltype(SecUtility::Parse<double>(*tokenBegin)), double>
 	                                    && std::is_same_v<std::decay_t<decltype(toBohrRadius(3.14))>, double>,
 	                            BasicGeometryLineParsingResult>
 	{

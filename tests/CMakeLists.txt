@@ -90,6 +90,10 @@ add_executable(InternalCoordinateLineParseTest InternalCoordinateLineParseTest.c
 target_link_libraries(InternalCoordinateLineParseTest PRIVATE Catch2::Catch2WithMain SecChem)
 add_test(NAME InternalCoordinateLineParseTest COMMAND InternalCoordinateLineParseTest)
 
+add_executable(GeometryInputTest GeometryInputTest.cpp)
+target_link_libraries(GeometryInputTest PRIVATE Catch2::Catch2WithMain SecChem)
+add_test(NAME GeometryInputTest COMMAND GeometryInputTest)
+
 add_executable(ContractedRadialOrbitalSetTest ContractedRadialOrbitalSetTest.cpp)
 target_link_libraries(ContractedRadialOrbitalSetTest PRIVATE Catch2::Catch2WithMain SecChem)
 add_test(NAME ContractedRadialOrbitalSetTest COMMAND ContractedRadialOrbitalSetTest)
