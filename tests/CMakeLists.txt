@@ -49,7 +49,7 @@ endif ()
 
 
 add_library(BseJsonParser BasisSetExchangeJsonParserExample.cpp)
-target_link_libraries(BseJsonParser PRIVATE SecChem nlohmann_json::nlohmann_json)
+target_link_libraries(BseJsonParser PUBLIC SecChem nlohmann_json::nlohmann_json)
 
 if (NOT MSVC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic -Werror -Wno-uninitialized -Wno-unknown-pragmas -Wno-unused-but-set-variable -Wno-unused-variable")
