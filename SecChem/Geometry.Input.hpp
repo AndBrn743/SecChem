@@ -68,6 +68,11 @@ namespace SecChem::Geometry::Input
 	                                    && std::is_same_v<std::decay_t<decltype(toRadian(3.14))>, double>,
 	                            BasicGeometryLineParsingResult>
 	{
+#if defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Warray-bounds"  // it produces false positives
+#endif
+
 		using SecUtility::Parse;
 		static_assert(IndexingConvention == 0 || IndexingConvention == 1, "IndexingConvention must be set to 0 or 1");
 		static_assert(std::is_same_v<std::decay_t<decltype(toRadian(3.14))>, double>);
@@ -207,6 +212,10 @@ namespace SecChem::Geometry::Input
 		                + length
 		                          * (std::cos(angle) * e1
 		                             + std::sin(angle) * (std::cos(dihedral) * e3 + std::sin(dihedral) * e2))};
+
+#if defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
 	}
 
 
