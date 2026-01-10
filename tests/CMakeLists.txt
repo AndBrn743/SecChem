@@ -55,7 +55,7 @@ if (NOT MSVC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic -Werror -Wno-uninitialized -Wno-unknown-pragmas -Wno-unused-but-set-variable -Wno-unused-variable")
 endif ()
 
-target_compile_options(SecChem PRIVATE $<$<CXX_COMPILER_ID:AppleClang>:-Wno-deprecated-declarations>)
+target_compile_options(SecChem INTERFACE $<$<CXX_COMPILER_ID:AppleClang>:-Wno-deprecated-declarations>)
 
 include(CTest)
 include(Catch)
