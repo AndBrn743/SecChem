@@ -81,6 +81,7 @@ else ()
 endif ()
 target_link_libraries(SecChem INTERFACE range-v3::range-v3)
 
+enable_testing()
 add_subdirectory(tests)
 
 #-----------------------------------------------------------------------------------
