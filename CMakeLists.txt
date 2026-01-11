@@ -16,6 +16,10 @@ target_include_directories(SecChem INTERFACE
 
 #-----------------------------------------------------------------------------------
 
+if (POLICY CMP0135)
+    cmake_policy(SET CMP0135 NEW)
+endif ()
+
 if (TARGET Eigen3::Eigen)
     message(STATUS "SecChem will use the Eigen3 target defined by ancestor project")
 else ()

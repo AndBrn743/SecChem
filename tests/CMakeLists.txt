@@ -1,3 +1,7 @@
+if (POLICY CMP0135)
+    cmake_policy(SET CMP0135 NEW)
+endif ()
+
 option(USE_SYSTEM_CATCH2 NO)
 
 if (USE_SYSTEM_CATCH2)
