@@ -86,7 +86,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake ninja-build ccache libc++-dev libc++abi-dev
+          sudo apt-get install -y cmake ninja-build ccache libc++-dev libc++abi-dev libunwind-dev
 
       - name: Configure CMake
         run: |
@@ -116,7 +116,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake ninja-build ccache libc++-dev libc++abi-dev
+          sudo apt-get install -y cmake ninja-build ccache libc++-dev libc++abi-dev libunwind-dev
 
       - name: Configure CMake
         run: |
