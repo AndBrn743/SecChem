@@ -35,7 +35,7 @@ jobs:
             -G Ninja
 
       - name: Build
-        run: cmake --build build -- -j$(nproc)
+        run: cmake --build build --parallel
 
       - name: Run tests
         working-directory: build/tests
@@ -59,7 +59,7 @@ jobs:
             -G Ninja
 
       - name: Build
-        run: cmake --build build -- -j$(nproc)
+        run: cmake --build build --parallel
 
       - name: Run tests
         working-directory: build/tests
@@ -84,7 +84,36 @@ jobs:
             -G Ninja
 
       - name: Build
-        run: cmake --build build -- -j$(nproc)
+        run: cmake --build build --parallel
+
+      - name: Run tests
+        working-directory: build/tests
+        run: ctest --output-on-failure
+        
+  local-clang-libcxx-asan-ubsan:
+    name: Clang (libc++, asan, ubsan)
+    runs-on: self-hosted
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure CMake
+        run: |
+          cmake -S . -B build \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_CXX_COMPILER=clang++ \
+            -DCMAKE_CXX_STANDARD=17 \
+            -DCMAKE_CXX_EXTENSIONS=OFF \
+            -DCMAKE_CXX_FLAGS="-stdlib=libc++ -fsanitize=address,undefined -fno-omit-frame-pointer -fno-optimize-sibling-calls -D_LIBCPP_ENABLE_ASSERTIONS=1 -D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG" \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+            ${{ env.CATCH2_SOURCE != '' && format('-DCATCH2_SOURCE={0}', env.CATCH2_SOURCE) || '' }} \
+            -G Ninja
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Set stack limit
+        run: ulimit -s 1048576
 
       - name: Run tests
         working-directory: build/tests
@@ -110,7 +139,7 @@ jobs:
             -G Ninja
 
       - name: Build
-        run: cmake --build build -- -j$(nproc)
+        run: cmake --build build --parallel
 
       - name: Run tests
         working-directory: build/tests
