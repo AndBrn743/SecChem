@@ -92,6 +92,7 @@ jobs:
         run: |
           cmake -S . -B build \
             -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_C_COMPILER=clang \
             -DCMAKE_CXX_COMPILER=clang++ \
             -DCMAKE_CXX_STANDARD=17 \
             -DCMAKE_CXX_EXTENSIONS=OFF \
@@ -124,6 +125,7 @@ jobs:
         run: |
           cmake -S . -B build \
             -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_C_COMPILER=clang \
             -DCMAKE_CXX_COMPILER=clang++ \
             -DCMAKE_CXX_STANDARD=17 \
             -DCMAKE_CXX_EXTENSIONS=OFF \
