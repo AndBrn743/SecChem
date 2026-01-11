@@ -141,7 +141,7 @@ namespace SecChem::BasisSet::Gaussian
 			auto concatSetIterator = concatSets.cbegin();
 			while (ambIterator != angularMomentumBlocks.cend())
 			{
-				if (ambIterator == concatSetIterator->first)
+				if (concatSetIterator != concatSets.cend() && ambIterator == concatSetIterator->first)
 				{
 					concatenatedAngularMomentumBlocks.emplace_back(
 					        AngularMomentumBlock::Concat(concatSetIterator->first, concatSetIterator->second));
