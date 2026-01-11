@@ -96,6 +96,8 @@ jobs:
             -DCMAKE_CXX_STANDARD=17 \
             -DCMAKE_CXX_EXTENSIONS=OFF \
             -DCMAKE_CXX_FLAGS=-stdlib=libc++ \
+            -DCMAKE_EXE_LINKER_FLAGS="-stdlib=libc++ -rtlib=compiler-rt -unwindlib=libunwind" \
+            -DCMAKE_SHARED_LINKER_FLAGS="-stdlib=libc++ -rtlib=compiler-rt -unwindlib=libunwind" \
             -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
             -G Ninja
 
@@ -127,6 +129,8 @@ jobs:
             -DCMAKE_CXX_EXTENSIONS=OFF \
             -DCMAKE_CXX_FLAGS="-stdlib=libc++ -fsanitize=address,undefined -fno-omit-frame-pointer -fno-optimize-sibling-calls -D_LIBCPP_ENABLE_ASSERTIONS=1 -D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG" \
             -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+            -DCMAKE_EXE_LINKER_FLAGS="-stdlib=libc++ -rtlib=compiler-rt -unwindlib=libunwind -fsanitize=address,undefined" \
+            -DCMAKE_SHARED_LINKER_FLAGS="-stdlib=libc++ -rtlib=compiler-rt -unwindlib=libunwind -fsanitize=address,undefined" \
             -G Ninja
 
       - name: Build
