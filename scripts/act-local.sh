@@ -70,6 +70,16 @@ else
     echo_warn "Run: mkdir -p .cache && cd .cache && curl -L -o catch2-v3.7.1.tar.gz https://github.com/catchorg/Catch2/archive/refs/tags/v3.7.1.tar.gz"
 fi
 
+# Check for cached nlohmann/json tarball
+NLOHMANN_JSON_TARBALL="$PROJECT_ROOT/.cache/nlohmann_json-v3.12.0.tar.xz"
+if [ -f "$NLOHMANN_JSON_TARBALL" ]; then
+    echo_info "Using cached nlohmann/json tarball: $NLOHMANN_JSON_TARBALL"
+    export NLOHMANN_JSON_SOURCE="$NLOHMANN_JSON_TARBALL"
+else
+    echo_warn "No cached nlohmann/json tarball found at $NLOHMANN_JSON_TARBALL"
+    echo_warn "Run: mkdir -p .cache && cd .cache && curl -L -o nlohmann_json-v3.12.0.tar.xz https://github.com/nlohmann/json/releases/download/v3.12.0/json.tar.xz"
+fi
+
 # Parse arguments
 JOB=""
 WORKFLOW=".github/workflows/local.yml"
@@ -90,7 +100,7 @@ while [[ $# -gt 0 ]]; do
             echo "Options:"
             echo "  -j, --job JOB     Run specific job (local-gcc, local-clang-libstdcxx, local-clang-libcxx, local-coverage)"
             echo "  -w, --workflow    Use specific workflow file (default: .github/workflows/local.yml)"
-            echo "  --no-cache        Disable using cached Catch2 (force download)"
+            echo "  --no-cache        Disable using cached Catch2 and nlohmann/json (force download)"
             echo "  -h, --help        Show this help message"
             echo ""
             echo "Examples:"
@@ -98,7 +108,7 @@ while [[ $# -gt 0 ]]; do
             echo "  $0 -j local-gcc                       # Run GCC job only"
             echo "  $0 -j local-clang-libcxx              # Run Clang with libc++ job"
             echo "  $0 -j local-coverage                  # Run coverage job"
-            echo "  $0 --no-cache -j local-gcc             # Run without using cached Catch2"
+            echo "  $0 --no-cache -j local-gcc            # Run without using cached Catch2 and nlohmann/json"
             exit 0
             ;;
         --no-cache)

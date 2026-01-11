@@ -32,6 +32,7 @@ jobs:
             -DCMAKE_CXX_STANDARD=17 \
             -DCMAKE_CXX_EXTENSIONS=OFF \
             ${{ env.CATCH2_SOURCE != '' && format('-DCATCH2_SOURCE={0}', env.CATCH2_SOURCE) || '' }} \
+            ${{ env.NLOHMANN_JSON_SOURCE != '' && format('-DNLOHMANN_JSON_SOURCE={0}', env.NLOHMANN_JSON_SOURCE) || '' }} \
             -G Ninja
 
       - name: Build
@@ -56,6 +57,7 @@ jobs:
             -DCMAKE_CXX_STANDARD=17 \
             -DCMAKE_CXX_EXTENSIONS=OFF \
             ${{ env.CATCH2_SOURCE != '' && format('-DCATCH2_SOURCE={0}', env.CATCH2_SOURCE) || '' }} \
+            ${{ env.NLOHMANN_JSON_SOURCE != '' && format('-DNLOHMANN_JSON_SOURCE={0}', env.NLOHMANN_JSON_SOURCE) || '' }} \
             -G Ninja
 
       - name: Build
@@ -81,6 +83,7 @@ jobs:
             -DCMAKE_CXX_EXTENSIONS=OFF \
             -DCMAKE_CXX_FLAGS=-stdlib=libc++ \
             ${{ env.CATCH2_SOURCE != '' && format('-DCATCH2_SOURCE={0}', env.CATCH2_SOURCE) || '' }} \
+            ${{ env.NLOHMANN_JSON_SOURCE != '' && format('-DNLOHMANN_JSON_SOURCE={0}', env.NLOHMANN_JSON_SOURCE) || '' }} \
             -G Ninja
 
       - name: Build
@@ -104,9 +107,10 @@ jobs:
             -DCMAKE_CXX_COMPILER=clang++ \
             -DCMAKE_CXX_STANDARD=17 \
             -DCMAKE_CXX_EXTENSIONS=OFF \
-            -DCMAKE_CXX_FLAGS="-stdlib=libc++ -fsanitize=address,undefined -fno-omit-frame-pointer -fno-optimize-sibling-calls -D_LIBCPP_ENABLE_ASSERTIONS=1 -D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG" \
+            -DCMAKE_CXX_FLAGS="-stdlib=libc++ -fsanitize=address,undefined -fno-omit-frame-pointer -fno-optimize-sibling-calls -D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG" \
             -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
             ${{ env.CATCH2_SOURCE != '' && format('-DCATCH2_SOURCE={0}', env.CATCH2_SOURCE) || '' }} \
+            ${{ env.NLOHMANN_JSON_SOURCE != '' && format('-DNLOHMANN_JSON_SOURCE={0}', env.NLOHMANN_JSON_SOURCE) || '' }} \
             -G Ninja
 
       - name: Build
@@ -136,6 +140,7 @@ jobs:
             -DCMAKE_CXX_FLAGS="--coverage" \
             -DCMAKE_EXE_LINKER_FLAGS="--coverage" \
             ${{ env.CATCH2_SOURCE != '' && format('-DCATCH2_SOURCE={0}', env.CATCH2_SOURCE) || '' }} \
+            ${{ env.NLOHMANN_JSON_SOURCE != '' && format('-DNLOHMANN_JSON_SOURCE={0}', env.NLOHMANN_JSON_SOURCE) || '' }} \
             -G Ninja
 
       - name: Build
