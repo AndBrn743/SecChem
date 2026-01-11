@@ -686,17 +686,29 @@ public:
 
 	Product Build()
 	{
-		return *std::exchange(m_ProductPtr, std::make_unique<Product>()).release();
+		if (m_ProductPtr == nullptr)
+		{
+			throw std::logic_error("Builder already consumed");
+		}
+
+		auto h = std::move(*m_ProductPtr);
+		m_ProductPtr.reset();
+		return h;
 	}
 
 	Builder& AddBasisSet(std::string name, BasisSet::Gaussian::Detail::BasisSetImpl<Semantics> definition)
 	{
-		if (m_ProductPtr->m_Data.find(name) != m_ProductPtr->m_Data.end())
+		if (m_ProductPtr == nullptr)
 		{
-			throw std::logic_error("A basis set with same name already exist in the basis set library");
+			throw std::logic_error("Builder already consumed");
 		}
 
-		m_ProductPtr->m_Data[std::move(name)] = std::move(definition);
+		if (m_ProductPtr->m_Data.find(name) != m_ProductPtr->m_Data.end())
+		{
+			throw std::logic_error("A basis set with the same name already exists");
+		}
+
+		m_ProductPtr->m_Data.emplace(std::move(name), std::move(definition));
 		return *this;
 	}
 
