@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "ElectronicSubShell.hpp"
+#include "ElectronicSubshell.hpp"
 #include <algorithm>
 #include <array>
 
@@ -14,7 +14,7 @@ namespace SecChem
 	{
 	public:
 		static constexpr int MaxPrincipalQuantumNumber = 7;  // Periodic table only reach 7-th period for now
-		static constexpr ElectronicSubShell MaxElectronShell{MaxPrincipalQuantumNumber, MaxPrincipalQuantumNumber - 1};
+		static constexpr ElectronicSubshell MaxElectronShell{MaxPrincipalQuantumNumber, MaxPrincipalQuantumNumber - 1};
 
 		AtomicElectronConfiguration() = default;
 
@@ -37,7 +37,7 @@ namespace SecChem
 
 				while (azimuthalTimesTwo >= 0)
 				{
-					m_ElectronCounts[ElectronicSubShell(principalMinusOneTimesTwo / 2 + 1, azimuthalTimesTwo / 2)
+					m_ElectronCounts[ElectronicSubshell(principalMinusOneTimesTwo / 2 + 1, azimuthalTimesTwo / 2)
 					                         .UnderlyingId()] =
 					        electronCount < (azimuthalTimesTwo + 1) * 2 ? electronCount : (azimuthalTimesTwo + 1) * 2;
 
@@ -54,7 +54,7 @@ namespace SecChem
 			throw std::runtime_error("Loop limit reach while generating electron configuration");
 		}
 
-		AtomicElectronConfiguration(const std::initializer_list<std::pair<ElectronicSubShell, int>>& config)
+		AtomicElectronConfiguration(const std::initializer_list<std::pair<ElectronicSubshell, int>>& config)
 		{
 			for (const auto& [subShell, electronCount] : config)
 			{
@@ -86,17 +86,17 @@ namespace SecChem
 			return !(*this == other);
 		}
 
-		constexpr int operator[](const ElectronicSubShell shell) const
+		constexpr int operator[](const ElectronicSubshell shell) const
 		{
 			return m_ElectronCounts[shell.UnderlyingId()];
 		}
 
-		constexpr void MoveElectron(const ElectronicSubShell source, const ElectronicSubShell destination)
+		constexpr void MoveElectron(const ElectronicSubshell source, const ElectronicSubshell destination)
 		{
 			MoveElectrons(source, destination, 1);
 		}
 
-		constexpr void MoveElectrons(const ElectronicSubShell source, const ElectronicSubShell destination, int amount)
+		constexpr void MoveElectrons(const ElectronicSubshell source, const ElectronicSubshell destination, int amount)
 		{
 			amount = std::min(m_ElectronCounts[source.UnderlyingId()], amount);
 			amount = std::min(destination.Capacity() - m_ElectronCounts[destination.UnderlyingId()], amount);
@@ -112,7 +112,7 @@ namespace SecChem
 
 		friend std::ostream& operator<<(std::ostream& os, const AtomicElectronConfiguration& config)
 		{
-			os << ElectronicSubShell(0) << '(' << config.m_ElectronCounts[0]
+			os << ElectronicSubshell(0) << '(' << config.m_ElectronCounts[0]
 			   << ") ";  // NOTE: We always prints 1s shell
 
 			// NOTE: `i` starts from 1 as 1s shell was printed earlier
@@ -120,7 +120,7 @@ namespace SecChem
 			{
 				if (const auto n = config.m_ElectronCounts[i]; n > 0)
 				{
-					os << ElectronicSubShell(i) << '(' << n << ") ";
+					os << ElectronicSubshell(i) << '(' << n << ") ";
 				}
 			}
 

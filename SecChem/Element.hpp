@@ -557,7 +557,7 @@ namespace SecChem
 			return m_Id == Id::Lr ? 1 : CharacteristicOrbitalAzimuthalQuantumNumber(AtomicNumber());
 		}
 
-		constexpr ElectronicSubShell CharacteristicShell() const
+		constexpr ElectronicSubshell CharacteristicShell() const
 		{
 			if (const int l = CharacteristicOrbitalAzimuthalQuantumNumber(); l == 0 || l == 1)
 			{
@@ -629,12 +629,12 @@ namespace SecChem
 		}
 
 		// 103Lr was located at f-block but have outermost shell of 7p.
-		constexpr ElectronicSubShell OuterMostShell() const
+		constexpr ElectronicSubshell OuterMostShell() const
 		{
 			return OuterMostShell(AtomicNumber());
 		}
 
-		CONSTEXPR23 ElectronicSubShell MadelungOuterMostShell() const
+		CONSTEXPR23 ElectronicSubshell MadelungOuterMostShell() const
 		{
 			return MadelungOuterMostShell(AtomicNumber());
 		}
@@ -652,7 +652,7 @@ namespace SecChem
 		static constexpr double SlaterEffectiveCoreCharge(
 		        const Element element,
 		        const AtomicElectronConfiguration& electronConfig,
-		        const ElectronicSubShell outerMostShell = AtomicElectronConfiguration::MaxElectronShell)
+		        const ElectronicSubshell outerMostShell = AtomicElectronConfiguration::MaxElectronShell)
 		{
 			return SlaterEffectiveCoreCharge(element.AtomicNumber(), electronConfig, outerMostShell);
 		}
@@ -843,12 +843,12 @@ namespace SecChem
 		}
 
 		// with 103Lr exception
-		static constexpr ElectronicSubShell OuterMostShell(const int atomicNumber)
+		static constexpr ElectronicSubshell OuterMostShell(const int atomicNumber)
 		{
 			return {Period(atomicNumber), IsFromPBlock(atomicNumber) || atomicNumber == 103 ? 1 : 0};
 		}
 
-		static constexpr ElectronicSubShell MadelungOuterMostShell(const int atomicNumber)
+		static constexpr ElectronicSubshell MadelungOuterMostShell(const int atomicNumber)
 		{
 			return {Period(atomicNumber), IsFromPBlock(atomicNumber) ? 1 : 0};
 		}
@@ -856,13 +856,13 @@ namespace SecChem
 		static constexpr double SlaterEffectiveCoreCharge(
 		        const int atomicNumber,
 		        const AtomicElectronConfiguration& electronConfig,
-		        ElectronicSubShell outerMostShell = AtomicElectronConfiguration::MaxElectronShell)
+		        ElectronicSubshell outerMostShell = AtomicElectronConfiguration::MaxElectronShell)
 		{
 			double screeningConst = 0;
 
 			while (electronConfig[outerMostShell] == 0 && outerMostShell.IsValid())
 			{
-				outerMostShell = ElectronicSubShell(outerMostShell.UnderlyingId() - 1);
+				outerMostShell = ElectronicSubshell(outerMostShell.UnderlyingId() - 1);
 			}
 
 			auto currentShell = outerMostShell;

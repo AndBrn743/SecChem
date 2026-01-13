@@ -2,7 +2,7 @@
 // Created by Andy on 11/22/2025.
 //
 
-#include <SecChem/ElectronicSubShell.hpp>
+#include <SecChem/ElectronicSubshell.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <sstream>
 
@@ -35,29 +35,29 @@ TEST_CASE("AzimuthalQuantumNumber basic properties", "[AzimuthalQuantumNumber]")
 	REQUIRE(l2.Label() == 'g');
 }
 
-TEST_CASE("ElectronicSubShell construction", "[ElectronicSubShell]")
+TEST_CASE("ElectronicSubshell construction", "[ElectronicSubshell]")
 {
-	ElectronicSubShell s1(1, AzimuthalQuantumNumber::S);
+	ElectronicSubshell s1(1, AzimuthalQuantumNumber::S);
 	REQUIRE(s1.PrincipalQuantumNumber() == 1);
 	REQUIRE(s1.SubshellLabel() == 's');
 	REQUIRE(s1.IsSharp());
 
-	ElectronicSubShell p2(2, 'p');
+	ElectronicSubshell p2(2, 'p');
 	REQUIRE(p2.PrincipalQuantumNumber() == 2);
 	REQUIRE(p2.SubshellLabel() == 'p');
 	REQUIRE(p2.IsPrincipal());
 
-	ElectronicSubShell d3(3, 2);  // ℓ=2
+	ElectronicSubshell d3(3, 2);  // ℓ=2
 	REQUIRE(d3.PrincipalQuantumNumber() == 3);
 	REQUIRE(d3.SubshellLabel() == 'd');
 	REQUIRE(d3.IsDiffuse());
 }
 
-TEST_CASE("ElectronicSubShell comparisons", "[ElectronicSubShell]")
+TEST_CASE("ElectronicSubshell comparisons", "[ElectronicSubshell]")
 {
-	ElectronicSubShell s1(1, 's');
-	ElectronicSubShell s2(2, 's');
-	ElectronicSubShell p2(2, 'p');
+	ElectronicSubshell s1(1, 's');
+	ElectronicSubshell s2(2, 's');
+	ElectronicSubshell p2(2, 'p');
 
 	REQUIRE(s1 < s2);
 	REQUIRE(s2 > s1);
@@ -67,9 +67,9 @@ TEST_CASE("ElectronicSubShell comparisons", "[ElectronicSubShell]")
 	REQUIRE((s1 == s1));
 }
 
-TEST_CASE("ElectronicSubShell increment/decrement", "[ElectronicSubShell]")
+TEST_CASE("ElectronicSubshell increment/decrement", "[ElectronicSubshell]")
 {
-	ElectronicSubShell shell(2, 's');  // 2s
+	ElectronicSubshell shell(2, 's');  // 2s
 	shell++;
 	REQUIRE(shell.PrincipalQuantumNumber() == 2);
 	REQUIRE(shell.SubshellLabel() == 'p');
@@ -87,14 +87,14 @@ TEST_CASE("ElectronicSubShell increment/decrement", "[ElectronicSubShell]")
 	REQUIRE(shell.SubshellLabel() == 's');
 }
 
-TEST_CASE("ElectronicSubShell string conversion and streams", "[ElectronicSubShell]")
+TEST_CASE("ElectronicSubshell string conversion and streams", "[ElectronicSubshell]")
 {
-	ElectronicSubShell s1(1, 's');
+	ElectronicSubshell s1(1, 's');
 	std::stringstream ss;
 	ss << s1;
 	REQUIRE(ss.str() == "1s");
 
-	ElectronicSubShell readShell;
+	ElectronicSubshell readShell;
 	ss >> readShell;
 	REQUIRE(readShell == s1);
 
@@ -102,20 +102,20 @@ TEST_CASE("ElectronicSubShell string conversion and streams", "[ElectronicSubShe
 	REQUIRE(s1.SubshellName() == "Sharp");
 }
 
-TEST_CASE("ElectronicSubShell Slater effective principal quantum number", "[ElectronicSubShell]")
+TEST_CASE("ElectronicSubshell Slater effective principal quantum number", "[ElectronicSubshell]")
 {
-	ElectronicSubShell s1(1, 's');
+	ElectronicSubshell s1(1, 's');
 	REQUIRE(s1.SlaterEffectivePrincipalQuantumNumber() == 1.0);
 
-	ElectronicSubShell n4f(4, 'f');
+	ElectronicSubshell n4f(4, 'f');
 	REQUIRE(n4f.SlaterEffectivePrincipalQuantumNumber() == 3.7);
 
-	ElectronicSubShell n7p(7, 'p');
+	ElectronicSubshell n7p(7, 'p');
 	REQUIRE(n7p.SlaterEffectivePrincipalQuantumNumber() == 4.3);
 }
 
-TEST_CASE("ElectronicSubShell validity", "[ElectronicSubShell]")
+TEST_CASE("ElectronicSubshell validity", "[ElectronicSubshell]")
 {
-	ElectronicSubShell valid(3, 'd');
+	ElectronicSubshell valid(3, 'd');
 	REQUIRE(valid.IsValid());
 }

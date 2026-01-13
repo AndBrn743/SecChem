@@ -175,40 +175,40 @@ namespace SecChem::BasisSet::Gaussian
 				for (const ElementaryBasisSet* basisPtr : basisAssignments)
 				{
 					auto& [referenceCount,
-					       primitiveSphericalSubShellSegTable,
-					       contractedSphericalSubShellSegTable,
-					       primitiveCartesianSubShellSegTable,
-					       contractedCartesianSubShellSegTable,
-					       primitiveSubShellCount,
-					       contractedSubShellCount,
+					       primitiveSphericalSubshellSegTable,
+					       contractedSphericalSubshellSegTable,
+					       primitiveCartesianSubshellSegTable,
+					       contractedCartesianSubshellSegTable,
+					       primitiveSubshellCount,
+					       contractedSubshellCount,
 					       principalQuantumNumberOffsetTable] = statistics[basisPtr];
 
 					referenceCount++;
 
 					if (referenceCount == 1)
 					{
-						primitiveSphericalSubShellSegTable = CreateSubShellSegmentationTableFor(
+						primitiveSphericalSubshellSegTable = CreateSubshellSegmentationTableFor(
 						        *basisPtr,
 						        [](const AngularMomentumBlock& amb) { return amb.PrimitiveSphericalOrbitalCount(); });
 
-						contractedSphericalSubShellSegTable = CreateSubShellSegmentationTableFor(
+						contractedSphericalSubshellSegTable = CreateSubshellSegmentationTableFor(
 						        *basisPtr,
 						        [](const AngularMomentumBlock& amb) { return amb.ContractedSphericalOrbitalCount(); });
 
-						primitiveCartesianSubShellSegTable = CreateSubShellSegmentationTableFor(
+						primitiveCartesianSubshellSegTable = CreateSubshellSegmentationTableFor(
 						        *basisPtr,
 						        [](const AngularMomentumBlock& amb) { return amb.PrimitiveCartesianOrbitalCount(); });
 
-						contractedCartesianSubShellSegTable = CreateSubShellSegmentationTableFor(
+						contractedCartesianSubshellSegTable = CreateSubshellSegmentationTableFor(
 						        *basisPtr,
 						        [](const AngularMomentumBlock& amb) { return amb.ContractedCartesianOrbitalCount(); });
 
-						primitiveSubShellCount = ranges::accumulate(basisPtr->AngularMomentumBlocks,
+						primitiveSubshellCount = ranges::accumulate(basisPtr->AngularMomentumBlocks,
 						                                            Eigen::Index{0},
 						                                            std::plus<>{},
 						                                            &AngularMomentumBlock::PrimitiveShellCount);
 
-						contractedSubShellCount = ranges::accumulate(basisPtr->AngularMomentumBlocks,
+						contractedSubshellCount = ranges::accumulate(basisPtr->AngularMomentumBlocks,
 						                                             Eigen::Index{0},
 						                                             std::plus<>{},
 						                                             &AngularMomentumBlock::ContractedShellCount);
@@ -221,7 +221,7 @@ namespace SecChem::BasisSet::Gaussian
 			}
 
 			template <Detail::MolecularBasisSet::Contraction C, Detail::MolecularBasisSet::Representation R>
-			const auto& SubShellSegmentationTable() const noexcept
+			const auto& SubshellSegmentationTable() const noexcept
 			{
 				static_assert((C == Detail::MolecularBasisSet::Contraction::Contracted
 				               || C == Detail::MolecularBasisSet::Contraction::Primitive)
@@ -232,52 +232,52 @@ namespace SecChem::BasisSet::Gaussian
 				{
 					if constexpr (R == Detail::MolecularBasisSet::Representation::Cartesian)
 					{
-						return ContractedCartesianSubShellSegmentationTable;
+						return ContractedCartesianSubshellSegmentationTable;
 					}
 					else
 					{
-						return ContractedSphericalSubShellSegmentationTable;
+						return ContractedSphericalSubshellSegmentationTable;
 					}
 				}
 				else
 				{
 					if constexpr (R == Detail::MolecularBasisSet::Representation::Cartesian)
 					{
-						return PrimitiveCartesianSubShellSegmentationTable;
+						return PrimitiveCartesianSubshellSegmentationTable;
 					}
 					else
 					{
-						return PrimitiveSphericalSubShellSegmentationTable;
+						return PrimitiveSphericalSubshellSegmentationTable;
 					}
 				}
 			}
 
 
 			template <Detail::MolecularBasisSet::Contraction C>
-			const auto& SubShellCount() const noexcept
+			const auto& SubshellCount() const noexcept
 			{
 				static_assert(C == Detail::MolecularBasisSet::Contraction::Contracted
 				              || C == Detail::MolecularBasisSet::Contraction::Primitive);
 
-				return C == Detail::MolecularBasisSet::Contraction::Contracted ? ContractedSubShellCount
-				                                                               : PrimitiveSubShellCount;
+				return C == Detail::MolecularBasisSet::Contraction::Contracted ? ContractedSubshellCount
+				                                                               : PrimitiveSubshellCount;
 			}
 
 			Eigen::Index ReferenceCount;
-			std::vector<Eigen::Index> PrimitiveSphericalSubShellSegmentationTable;
-			std::vector<Eigen::Index> ContractedSphericalSubShellSegmentationTable;
-			std::vector<Eigen::Index> PrimitiveCartesianSubShellSegmentationTable;
-			std::vector<Eigen::Index> ContractedCartesianSubShellSegmentationTable;
-			Eigen::Index PrimitiveSubShellCount;
-			Eigen::Index ContractedSubShellCount;
+			std::vector<Eigen::Index> PrimitiveSphericalSubshellSegmentationTable;
+			std::vector<Eigen::Index> ContractedSphericalSubshellSegmentationTable;
+			std::vector<Eigen::Index> PrimitiveCartesianSubshellSegmentationTable;
+			std::vector<Eigen::Index> ContractedCartesianSubshellSegmentationTable;
+			Eigen::Index PrimitiveSubshellCount;
+			Eigen::Index ContractedSubshellCount;
 			std::vector<int> PrincipalQuantumNumberOffsetTable;
 		};
 
-		using SubShellSegmentationTableOfEachElementaryBasis =
+		using SubshellSegmentationTableOfEachElementaryBasis =
 		        std::vector<std::pair<const ElementaryBasisSet*, std::vector<Eigen::Index>>>;
 
 		template <typename OrbitalCounter>
-		static std::vector<Eigen::Index> CreateSubShellSegmentationTableFor(const ElementaryBasisSet& basis,
+		static std::vector<Eigen::Index> CreateSubshellSegmentationTableFor(const ElementaryBasisSet& basis,
 		                                                                    OrbitalCounter orbitalCountOf)
 		{
 			const auto segCount = basis.AngularMomentumBlocks.back().AngularMomentum().Value() + 1;
@@ -420,14 +420,14 @@ namespace SecChem::BasisSet::Gaussian
 				                           cr_BasisSet.OrbitalSegmentationTable<C, R>()[atomIndex + 1]);
 			}
 
-			auto OrbitalsFrom(const Atom& atom, const ElectronicSubShell shell) const
+			auto OrbitalsFrom(const Atom& atom, const ElectronicSubshell shell) const
 			{
 				const auto atomIndex = cr_BasisSet.m_Molecule.IndexOf(atom);
 				const auto atomicOffset = cr_BasisSet.OrbitalSegmentationTable<C, R>()[atomIndex];
 				const ElementaryBasisSet* basisPtr = cr_BasisSet.m_BasisAssignments[atomIndex];
 				const auto azimuthalShellOffset =
 				        cr_BasisSet.m_ComputedElementaryBasisInfoTable.at(basisPtr)
-				                .template SubShellSegmentationTable<C, R>()[shell.AzimuthalQuantumNumber().Value()];
+				                .template SubshellSegmentationTable<C, R>()[shell.AzimuthalQuantumNumber().Value()];
 				const auto magneticQuantumNumberCount = R == Representation::Spherical
 				                                                ? shell.MagneticQuantumNumberCount()
 				                                                : shell.CartesianMagneticQuantumNumberCount();
@@ -454,20 +454,20 @@ namespace SecChem::BasisSet::Gaussian
 				return cr_BasisSet.m_Molecule[AtomIndexFromOrbital(orbitalIndex)];
 			}
 
-			ElectronicSubShell AtomicSubshellFromOrbital(const Eigen::Index orbitalIndex) const noexcept
+			ElectronicSubshell AtomicSubshellFromOrbital(const Eigen::Index orbitalIndex) const noexcept
 			{
 				return AtomicSubshellFromOrbital(orbitalIndex, AtomIndexFromOrbital(orbitalIndex));
 			}
 
-			std::pair<const Atom&, ElectronicSubShell> AtomAndSubshellFromOrbital(
+			std::pair<const Atom&, ElectronicSubshell> AtomAndSubshellFromOrbital(
 			        const Eigen::Index orbitalIndex) const noexcept
 			{
 				const auto atomIndex = AtomIndexFromOrbital(orbitalIndex);
-				return std::pair<const Atom&, ElectronicSubShell>{Molecule()[atomIndex],
+				return std::pair<const Atom&, ElectronicSubshell>{Molecule()[atomIndex],
 				                                                  AtomicSubshellFromOrbital(orbitalIndex, atomIndex)};
 			}
 
-			std::pair<Eigen::Index, ElectronicSubShell> AtomIndexAndSubshellFromOrbital(
+			std::pair<Eigen::Index, ElectronicSubshell> AtomIndexAndSubshellFromOrbital(
 			        const Eigen::Index orbitalIndex) const noexcept
 			{
 				const auto atomIndex = AtomIndexFromOrbital(orbitalIndex);
@@ -502,7 +502,7 @@ namespace SecChem::BasisSet::Gaussian
 			template <typename VectorLike>
 			auto OrbitalSegmentOf(Eigen::MatrixBase<VectorLike>& vector,
 			                      const Atom& atom,
-			                      const ElectronicSubShell shell) const
+			                      const ElectronicSubshell shell) const
 			{
 				auto desc = OrbitalSegmentDescriptionOf(cr_BasisSet.m_Molecule.IndexOf(atom), shell);
 				return vector.segment(desc.First, desc.Count);
@@ -512,7 +512,7 @@ namespace SecChem::BasisSet::Gaussian
 			template <typename VectorLike>
 			auto OrbitalSegmentOf(const Eigen::MatrixBase<VectorLike>& vector,
 			                      const Atom& atom,
-			                      const ElectronicSubShell shell) const
+			                      const ElectronicSubshell shell) const
 			{
 				auto desc = OrbitalSegmentDescriptionOf(cr_BasisSet.m_Molecule.IndexOf(atom), shell);
 				return vector.segment(desc.First, desc.Count);
@@ -522,7 +522,7 @@ namespace SecChem::BasisSet::Gaussian
 			template <typename VectorLike>
 			auto OrbitalSegmentOf(Eigen::MatrixBase<VectorLike>&& vector,
 			                      const Atom& atom,
-			                      const ElectronicSubShell shell) const
+			                      const ElectronicSubshell shell) const
 			{
 				auto desc = OrbitalSegmentDescriptionOf(cr_BasisSet.m_Molecule.IndexOf(atom), shell);
 				return vector.segment(desc.First, desc.Count).eval();
@@ -530,14 +530,14 @@ namespace SecChem::BasisSet::Gaussian
 
 
 		private:
-			ElectronicSubShell AtomicSubshellFromOrbital(const Eigen::Index orbitalIndex,
+			ElectronicSubshell AtomicSubshellFromOrbital(const Eigen::Index orbitalIndex,
 			                                             const Eigen::Index atomIndex) const noexcept
 			{
 				const auto atomicOffset = cr_BasisSet.OrbitalSegmentationTable<C, R>()[atomIndex];
 				const ElementaryBasisSet* basisPtr = cr_BasisSet.m_BasisAssignments[atomIndex];
 
 				const auto& subshellSegTable =
-				        cr_BasisSet.m_ComputedElementaryBasisInfoTable.at(basisPtr).template SubShellSegmentationTable<C, R>();
+				        cr_BasisSet.m_ComputedElementaryBasisInfoTable.at(basisPtr).template SubshellSegmentationTable<C, R>();
 				assert(subshellSegTable.size() >= 2);
 				const auto segIterator = std::prev(std::upper_bound(
 				        std::next(subshellSegTable.cbegin()), subshellSegTable.cend(), orbitalIndex - atomicOffset));
@@ -550,7 +550,7 @@ namespace SecChem::BasisSet::Gaussian
 				        angularMomentum.MinPrincipalQuantumNumber()
 				        + static_cast<int>(orbitalIndex - *segIterator - atomicOffset) / magneticQuantumNumberCount;
 
-				return ElectronicSubShell{principalQuantumNumber, angularMomentum};
+				return ElectronicSubshell{principalQuantumNumber, angularMomentum};
 			}
 
 			OrbitalSegmentDescription OrbitalSegmentDescriptionOf(const std::size_t atomIndex) const
@@ -561,13 +561,13 @@ namespace SecChem::BasisSet::Gaussian
 			}
 
 			OrbitalSegmentDescription OrbitalSegmentDescriptionOf(const std::size_t atomIndex,
-			                                                      const ElectronicSubShell shell) const
+			                                                      const ElectronicSubshell shell) const
 			{
 				const auto atomicOffset = cr_BasisSet.OrbitalSegmentationTable<C, R>()[atomIndex];
 				const ElementaryBasisSet* basisPtr = cr_BasisSet.m_BasisAssignments[atomIndex];
 				const auto azimuthalShellOffset =
 				        cr_BasisSet.m_ComputedElementaryBasisInfoTable.at(basisPtr)
-				                .template SubShellSegmentationTable<C, R>()[shell.AzimuthalQuantumNumber().Value()];
+				                .template SubshellSegmentationTable<C, R>()[shell.AzimuthalQuantumNumber().Value()];
 				const auto sphericalMagneticQuantumNumberCount = R == Representation::Spherical
 				                                                         ? shell.MagneticQuantumNumberCount()
 				                                                         : shell.CartesianMagneticQuantumNumberCount();
@@ -613,7 +613,7 @@ namespace SecChem::BasisSet::Gaussian
 				        [](const Eigen::Index acc, const auto& kv)
 				        {
 					        const auto& info = std::get<1>(kv);
-					        return acc + info.ReferenceCount * info.template SubShellCount<Contraction::Primitive>();
+					        return acc + info.ReferenceCount * info.template SubshellCount<Contraction::Primitive>();
 				        });
 			}
 
@@ -676,7 +676,7 @@ namespace SecChem::BasisSet::Gaussian
 				        [](const Eigen::Index acc, const auto& kv)
 				        {
 					        const auto& info = std::get<1>(kv);
-					        return acc + info.ReferenceCount * info.template SubShellCount<Contraction::Contracted>();
+					        return acc + info.ReferenceCount * info.template SubshellCount<Contraction::Contracted>();
 				        });
 			}
 

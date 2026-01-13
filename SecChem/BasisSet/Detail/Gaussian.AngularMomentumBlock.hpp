@@ -41,7 +41,7 @@ namespace SecChem::BasisSet::Gaussian
 
 			return ranges::views::iota(0 + n0, static_cast<int>(PrimitiveShellCount()) + n0)
 				   | ranges::views::transform([l](const int n)
-											  { return ElectronicSubShell{n, l}; });
+											  { return ElectronicSubshell{n, l}; });
 		}
 
 		Eigen::Index ContractedShellCount() const noexcept
@@ -56,7 +56,7 @@ namespace SecChem::BasisSet::Gaussian
 
 			return ranges::views::iota(0 + n0, static_cast<int>(ContractedShellCount()) + n0)
 			       | ranges::views::transform([l](const int n)
-			                                  { return ElectronicSubShell{n, l}; });
+			                                  { return ElectronicSubshell{n, l}; });
 		}
 
 		Eigen::Index PrimitiveCartesianOrbitalCount() const noexcept

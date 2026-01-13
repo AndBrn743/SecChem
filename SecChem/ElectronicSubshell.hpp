@@ -9,12 +9,12 @@
 
 namespace SecChem
 {
-	class ElectronicSubShell
+	class ElectronicSubshell
 	{
 	public:
-		ElectronicSubShell() = default;
+		ElectronicSubshell() = default;
 
-		constexpr ElectronicSubShell(const int principalQuantumNumber,
+		constexpr ElectronicSubshell(const int principalQuantumNumber,
 		                             const AzimuthalQuantumNumber azimuthalQuantumNumber)
 		    : m_Id(GenerateId(principalQuantumNumber, azimuthalQuantumNumber))
 		{
@@ -23,7 +23,7 @@ namespace SecChem
 			       && "Invalid principal-azimuthal quantum number combination");
 		}
 
-		constexpr ElectronicSubShell(const int principalQuantumNumber, const int azimuthalQuantumNumber)
+		constexpr ElectronicSubshell(const int principalQuantumNumber, const int azimuthalQuantumNumber)
 		    : m_Id(GenerateId(principalQuantumNumber, SecChem::AzimuthalQuantumNumber(azimuthalQuantumNumber)))
 		{
 			assert(principalQuantumNumber >= 1 && "Principal quantum number shall not less than 1");
@@ -32,7 +32,7 @@ namespace SecChem
 			       && "Invalid principal-azimuthal quantum number combination");
 		}
 
-		constexpr ElectronicSubShell(const int principalQuantumNumber, const char subshellLabel)
+		constexpr ElectronicSubshell(const int principalQuantumNumber, const char subshellLabel)
 		    : m_Id(GenerateId(principalQuantumNumber, SecChem::AzimuthalQuantumNumber(subshellLabel)))
 		{
 			assert(principalQuantumNumber >= 1 && "Principal quantum number shall not less than 1");
@@ -40,7 +40,7 @@ namespace SecChem
 			       && "Invalid principal-azimuthal quantum number combination");
 		}
 
-		explicit constexpr ElectronicSubShell(const int id) : m_Id(id)
+		explicit constexpr ElectronicSubshell(const int id) : m_Id(id)
 		{
 			/* NO CODE */
 		}
@@ -72,51 +72,51 @@ namespace SecChem
 			return std::to_string(PrincipalQuantumNumber()) + SubshellLabel();
 		}
 
-		friend std::ostream& operator<<(std::ostream& os, const ElectronicSubShell shell)
+		friend std::ostream& operator<<(std::ostream& os, const ElectronicSubshell shell)
 		{
 			return os << shell.ToString();
 		}
 
-		friend std::istream& operator>>(std::istream& is, ElectronicSubShell& out_shell)
+		friend std::istream& operator>>(std::istream& is, ElectronicSubshell& out_shell)
 		{
 			int n = 0;
 			SecChem::AzimuthalQuantumNumber l;
 			is >> n >> l;
-			out_shell = ElectronicSubShell(n, l);
+			out_shell = ElectronicSubshell(n, l);
 			return is;
 		}
 
-		friend constexpr bool operator<(const ElectronicSubShell lhs, const ElectronicSubShell rhs)
+		friend constexpr bool operator<(const ElectronicSubshell lhs, const ElectronicSubshell rhs)
 		{
 			return lhs.m_Id < rhs.m_Id;
 		}
 
-		friend constexpr bool operator>(const ElectronicSubShell lhs, const ElectronicSubShell rhs)
+		friend constexpr bool operator>(const ElectronicSubshell lhs, const ElectronicSubshell rhs)
 		{
 			return lhs.m_Id > rhs.m_Id;
 		}
 
-		friend constexpr bool operator<=(const ElectronicSubShell lhs, const ElectronicSubShell rhs)
+		friend constexpr bool operator<=(const ElectronicSubshell lhs, const ElectronicSubshell rhs)
 		{
 			return lhs.m_Id <= rhs.m_Id;
 		}
 
-		friend constexpr bool operator>=(const ElectronicSubShell lhs, const ElectronicSubShell rhs)
+		friend constexpr bool operator>=(const ElectronicSubshell lhs, const ElectronicSubshell rhs)
 		{
 			return lhs.m_Id >= rhs.m_Id;
 		}
 
-		friend constexpr bool operator==(const ElectronicSubShell lhs, const ElectronicSubShell rhs)
+		friend constexpr bool operator==(const ElectronicSubshell lhs, const ElectronicSubshell rhs)
 		{
 			return lhs.m_Id == rhs.m_Id;
 		}
 
-		friend constexpr bool operator!=(const ElectronicSubShell lhs, const ElectronicSubShell rhs)
+		friend constexpr bool operator!=(const ElectronicSubshell lhs, const ElectronicSubshell rhs)
 		{
 			return lhs.m_Id != rhs.m_Id;
 		}
 
-		constexpr ElectronicSubShell& operator++()
+		constexpr ElectronicSubshell& operator++()
 		{
 			/*
 			 1s
@@ -147,7 +147,7 @@ namespace SecChem
 			return *this;
 		}
 
-		ElectronicSubShell operator++(int)
+		ElectronicSubshell operator++(int)
 		{
 			// ReSharper disable once CppLocalVariableMayBeConst
 			auto tmp = *this;
@@ -155,7 +155,7 @@ namespace SecChem
 			return tmp;
 		}
 
-		constexpr ElectronicSubShell& operator--()
+		constexpr ElectronicSubshell& operator--()
 		{
 			do
 			{
@@ -164,7 +164,7 @@ namespace SecChem
 			return *this;
 		}
 
-		ElectronicSubShell operator--(int)
+		ElectronicSubshell operator--(int)
 		{
 			// ReSharper disable once CppLocalVariableMayBeConst
 			auto tmp = *this;
@@ -268,23 +268,23 @@ namespace SecChem
 	};
 
 
-	constexpr ElectronicSubShell operator""_Sharp(const unsigned long long principalQuantumNumber)
+	constexpr ElectronicSubshell operator""_Sharp(const unsigned long long principalQuantumNumber)
 	{
-		return ElectronicSubShell{static_cast<int>(principalQuantumNumber), 0};
+		return ElectronicSubshell{static_cast<int>(principalQuantumNumber), 0};
 	}
 
-	constexpr ElectronicSubShell operator""_Principal(const unsigned long long principalQuantumNumber)
+	constexpr ElectronicSubshell operator""_Principal(const unsigned long long principalQuantumNumber)
 	{
-		return ElectronicSubShell{static_cast<int>(principalQuantumNumber), 1};
+		return ElectronicSubshell{static_cast<int>(principalQuantumNumber), 1};
 	}
 
-	constexpr ElectronicSubShell operator""_Diffuse(const unsigned long long principalQuantumNumber)
+	constexpr ElectronicSubshell operator""_Diffuse(const unsigned long long principalQuantumNumber)
 	{
-		return ElectronicSubShell{static_cast<int>(principalQuantumNumber), 2};
+		return ElectronicSubshell{static_cast<int>(principalQuantumNumber), 2};
 	}
 
-	constexpr ElectronicSubShell operator""_Fundamental(const unsigned long long principalQuantumNumber)
+	constexpr ElectronicSubshell operator""_Fundamental(const unsigned long long principalQuantumNumber)
 	{
-		return ElectronicSubShell{static_cast<int>(principalQuantumNumber), 3};
+		return ElectronicSubshell{static_cast<int>(principalQuantumNumber), 3};
 	}
 }  // namespace SecChem

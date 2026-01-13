@@ -11,37 +11,37 @@ using namespace SecChem;
 TEST_CASE("AtomicElectronConfiguration filling", "[AtomicElectronConfiguration]") {
     SECTION("Hydrogen (1 electron)") {
         AtomicElectronConfiguration config(1);
-        REQUIRE(config[ElectronicSubShell(1,0)] == 1); // 1s
-        REQUIRE(config[ElectronicSubShell(2,0)] == 0); // 2s
+        REQUIRE(config[ElectronicSubshell(1,0)] == 1); // 1s
+        REQUIRE(config[ElectronicSubshell(2,0)] == 0); // 2s
     }
 
     SECTION("Helium (2 electrons)") {
         AtomicElectronConfiguration config(2);
-        REQUIRE(config[ElectronicSubShell(1,0)] == 2); // 1s
+        REQUIRE(config[ElectronicSubshell(1,0)] == 2); // 1s
     }
 
     SECTION("Lithium (3 electrons)") {
         AtomicElectronConfiguration config(3);
-        REQUIRE(config[ElectronicSubShell(1,0)] == 2); // 1s
-        REQUIRE(config[ElectronicSubShell(2,0)] == 1); // 2s
+        REQUIRE(config[ElectronicSubshell(1,0)] == 2); // 1s
+        REQUIRE(config[ElectronicSubshell(2,0)] == 1); // 2s
     }
 
     SECTION("Carbon (6 electrons)") {
         AtomicElectronConfiguration config(6);
-        REQUIRE(config[ElectronicSubShell(1,0)] == 2); // 1s
-        REQUIRE(config[ElectronicSubShell(2,0)] == 2); // 2s
-        REQUIRE(config[ElectronicSubShell(2,1)] == 2); // 2p
+        REQUIRE(config[ElectronicSubshell(1,0)] == 2); // 1s
+        REQUIRE(config[ElectronicSubshell(2,0)] == 2); // 2s
+        REQUIRE(config[ElectronicSubshell(2,1)] == 2); // 2p
     }
 
     SECTION("Oxygen (8 electrons)") {
         AtomicElectronConfiguration config(8);
-        REQUIRE(config[ElectronicSubShell(2,1)] == 4); // 2p partially filled
+        REQUIRE(config[ElectronicSubshell(2,1)] == 4); // 2p partially filled
     }
 
     SECTION("Moving electrons") {
         AtomicElectronConfiguration config(6);
-        auto src = ElectronicSubShell(2,0); // 2s
-        auto dst = ElectronicSubShell(2,1); // 2p
+        auto src = ElectronicSubshell(2,0); // 2s
+        auto dst = ElectronicSubshell(2,1); // 2p
 
         int beforeSrc = config[src];
         int beforeDst = config[dst];

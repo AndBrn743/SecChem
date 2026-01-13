@@ -680,7 +680,7 @@ H 1.1 0 0
 
 		for (const Atom& atom : molecule)
 		{
-			for (const ElectronicSubShell shell : basis.Contracted().SubshellsOf(atom))
+			for (const ElectronicSubshell shell : basis.Contracted().SubshellsOf(atom))
 			{
 				*chargeIterator = 0.5 * atom.Element().ElectronConfiguration()[shell];
 

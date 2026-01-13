@@ -18,7 +18,7 @@ using Catch::Matchers::WithinRel;
 #include <SecChem/BasisSet/Gaussian.hpp>
 using namespace SecChem::BasisSet::Gaussian;
 using SecChem::AzimuthalQuantumNumber;
-using SecChem::ElectronicSubShell;
+using SecChem::ElectronicSubshell;
 
 static ContractedRadialOrbitalSet MakeSimpleContractedSet(const Eigen::Index primitiveCount,
                                                           const Eigen::Index contractedCount)
@@ -58,14 +58,14 @@ TEST_CASE("AngularMomentumBlock basic construction without ECP", "[AngularMoment
 
 	const auto primitiveShells = block.PrimitiveShells();
 	REQUIRE(primitiveShells.size() == 3);
-	REQUIRE(primitiveShells[0] == ElectronicSubShell{2, 1});
-	REQUIRE(primitiveShells[1] == ElectronicSubShell{3, 1});
-	REQUIRE(primitiveShells[2] == ElectronicSubShell{4, 1});
+	REQUIRE(primitiveShells[0] == ElectronicSubshell{2, 1});
+	REQUIRE(primitiveShells[1] == ElectronicSubshell{3, 1});
+	REQUIRE(primitiveShells[2] == ElectronicSubshell{4, 1});
 
 	const auto contractedShells = block.ContractedShells();
 	REQUIRE(contractedShells.size() == 2);
-	REQUIRE(contractedShells[0] == ElectronicSubShell{2, 1});
-	REQUIRE(contractedShells[1] == ElectronicSubShell{3, 1});
+	REQUIRE(contractedShells[0] == ElectronicSubshell{2, 1});
+	REQUIRE(contractedShells[1] == ElectronicSubshell{3, 1});
 }
 
 TEST_CASE("AngularMomentumBlock construction with ECP", "[AngularMomentumBlock]")
