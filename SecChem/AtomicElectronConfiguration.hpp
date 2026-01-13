@@ -56,15 +56,15 @@ namespace SecChem
 
 		AtomicElectronConfiguration(const std::initializer_list<std::pair<ElectronicSubshell, int>>& config)
 		{
-			for (const auto& [subShell, electronCount] : config)
+			for (const auto& [subshell, electronCount] : config)
 			{
-				if (electronCount < 0 || electronCount > subShell.Capacity())
+				if (electronCount < 0 || electronCount > subshell.Capacity())
 				{
 					throw std::runtime_error(
 					        "Electron count was negative or excess the capacity of electronic subshell");
 				}
 
-				m_ElectronCounts[subShell.UnderlyingId()] = electronCount;
+				m_ElectronCounts[subshell.UnderlyingId()] = electronCount;
 			}
 		}
 
