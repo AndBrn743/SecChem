@@ -5,6 +5,8 @@
 
 #include <Eigen/Dense>
 #include <cinttypes>
+#include <stdexcept>
+#include <string>
 
 #include "Utility/IEquatableWithTolerance.hpp"
 
@@ -165,21 +167,26 @@ namespace SecChem
 			return static_cast<bool>(m_Tags & AtomTag::Frozen);
 		}
 
-		double DistanceTo(const Atom other) const noexcept
+		double DistanceTo(const Atom& other) const noexcept
 		{
 			return (m_Position - other.m_Position).norm();
 		}
 
-		void RemoveTags(const AtomTag tags) noexcept
+		constexpr void RemoveTags(const AtomTag tags) noexcept
 		{
 			m_Tags = m_Tags & ~tags;
+		}
+
+		constexpr AtomTag Tags() const noexcept
+		{
+			return m_Tags;
 		}
 
 		void AddTags(const AtomTag tags)
 		{
 			if (!IsValid(tags))
 			{
-				throw std::invalid_argument("Atom tag " + std::to_string(static_cast<int>(m_Tags)) + " is invalid");
+				throw std::invalid_argument("Atom tag " + std::to_string(static_cast<int>(tags)) + " is invalid");
 			}
 
 			if (IsWithThomasFermiFiniteNuclear() && static_cast<bool>(tags & AtomTag::GaussianFiniteNuclear))
