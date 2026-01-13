@@ -367,6 +367,12 @@ namespace SecChem
 		}
 
 
+		/// <summary>
+		/// Parses an element from a string, auto-detecting whether it's a symbol or name.
+		/// Heuristic: strings of length ≤2 are treated as symbols (e.g., "H", "He").
+		/// Longer strings are treated as element names (case-insensitive).
+		/// </summary>
+		/// <remarks>Element symbol placeholder, e.g., "Uut", are not supported</remarks>
 		static Element ToElement(const std::string& identifier) noexcept
 		{
 			if (identifier.size() <= 2)
@@ -378,12 +384,25 @@ namespace SecChem
 		}
 
 
+		/// <summary>
+		/// Returns the electron configuration following the Madelung (n+l) filling order.
+		/// This represents the theoretical order orbitals are filled, ignoring transition metal exceptions.
+		/// Use for general cases where you need the systematic filling order.
+		/// </summary>
 		CONSTEXPR23 const AtomicElectronConfiguration& MadelungElectronConfiguration() const
 		{
 			return MadelungElectronConfigurations()[static_cast<int>(m_Id)];
 		}
 
 
+		/// <summary>
+		/// Returns the ground-state electron configuration with known exceptions.
+		/// This includes the actual observed configuration, accounting for:
+		/// - Cr (24), Cu (29): 3d/4s exceptions
+		/// - Nb (41), Mo (42), Tc (43), Ru (44), Rh (45), Pd (46), Ag (47): 4d/5s exceptions
+		/// - Pt (78), Au (79): 5d/6s exceptions
+		/// - Lanthanide and actinide exceptions
+		/// </summary>
 		CONSTEXPR23 const AtomicElectronConfiguration& ElectronConfiguration() const
 		{
 			return ElectronConfigurations()[static_cast<int>(m_Id)];
@@ -464,6 +483,13 @@ namespace SecChem
 			return Group() == 18;
 		}
 
+		/// <summary>
+		/// Checks if this element belongs to Group VIII (the iron-group triads in the d-block).
+		/// These are vertical groups of three transition metals with similar chemical properties:
+		/// Group 8: Fe, Ru, Hs
+		/// Group 9: Co, Rh, Mt
+		/// Group 10: Ni, Pd, Ds
+		/// </summary>
 		constexpr bool IsFromViiiGroup() const
 		{
 			switch (AtomicNumber())
@@ -496,11 +522,21 @@ namespace SecChem
 			return AtomicNumber() >= 89 && AtomicNumber() <= 103;
 		}
 
+		/// <summary>
+		/// Checks if this element is a transition metal (d-block element).
+		/// Excludes Lu (71) and Lr (103) which are d-block in position but have f-block-like properties.
+		/// Transition metals are characterized by partially filled d-subshells in their ground state.
+		/// </summary>
 		constexpr bool IsTransitionMetal() const
 		{
 			return IsFromDBlock() && AtomicNumber() != 71 && AtomicNumber() != 103;
 		}
 
+		/// <summary>
+		/// Checks if this element is a "basic metal" (also called post-transition metal).
+		/// These are metallic elements in the p-block that are softer and have lower melting points than transition
+		/// metals. Includes: Al, Ga, In, Sn, Tl, Pb, Bi, and elements 113-116 (Nh, Fl, Mc, Lv).
+		/// </summary>
 		constexpr bool IsBasicMetal() const
 		{
 			switch (AtomicNumber())
@@ -518,6 +554,11 @@ namespace SecChem
 			}
 		}
 
+		/// <summary>
+		/// Checks if this element is a metalloid (elements with properties between metals and nonmetals).
+		/// Includes: B, Si, Ge, As, Sb, Te, At (Z=5, 14, 32, 33, 51, 52, 84).
+		/// Metalloids have electrical conductivity intermediate between metals and nonmetals.
+		/// </summary>
 		constexpr bool IsMetalloid() const
 		{
 			switch (AtomicNumber())
@@ -535,6 +576,11 @@ namespace SecChem
 			}
 		}
 
+		/// <summary>
+		/// Checks if this element is a nonmetal (elements lacking metallic properties).
+		/// Includes: C, N, O, P, S, Se (Z=6, 7, 8, 15, 16, 34) in the p-block.
+		/// Nonmetals are poor conductors and tend to gain electrons in chemical reactions.
+		/// </summary>
 		constexpr bool IsNonmetal() const
 		{
 			switch (AtomicNumber())
@@ -551,12 +597,24 @@ namespace SecChem
 			}
 		}
 
-		// with 103Lr exception
+		/// <summary>
+		/// Returns the azimuthal quantum number (l) of the element's characteristic (differentiating) orbital.
+		/// This is the orbital that distinguishes the element's electron configuration from the previous noble gas.
+		/// For most elements, follows the Madelung rule. Lawrencium (Lr, Z=103) is an exception (uses p-block instead
+		/// of d-block). Returns: 0=s, 1=p, 2=d, 3=f for the characteristic orbital.
+		/// </summary>
 		constexpr int CharacteristicOrbitalAzimuthalQuantumNumber() const
 		{
 			return m_Id == Id::Lr ? 1 : CharacteristicOrbitalAzimuthalQuantumNumber(AtomicNumber());
 		}
 
+		/// <summary>
+		/// Returns the characteristic (valence) subshell for this element.
+		/// The subshell identifies the principal quantum number (n) and azimuthal quantum number (l)
+		/// of the orbital that differentiates this element from previous elements.
+		/// For s and p orbitals (l=0,1): uses the element's period.
+		/// For d, f, g orbitals (l≥2): principal quantum number is period - (l - 1).
+		/// </summary>
 		constexpr ElectronicSubshell CharacteristicShell() const
 		{
 			if (const int l = CharacteristicOrbitalAzimuthalQuantumNumber(); l == 0 || l == 1)
@@ -569,31 +627,57 @@ namespace SecChem
 			}
 		}
 
+		/// <summary>
+		/// Checks if this element is in the s-block (Groups 1-2, plus H and He).
+		/// S-block elements have their outermost electrons in s-orbitals (l=0).
+		/// </summary>
 		constexpr bool IsFromSBlock() const
 		{
 			return IsFromSBlock(AtomicNumber());
 		}
 
+		/// <summary>
+		/// Checks if this element is in the p-block (Groups 13-18).
+		/// P-block elements have their outermost electrons in p-orbitals (l=1).
+		/// </summary>
 		constexpr bool IsFromPBlock() const
 		{
 			return IsFromPBlock(AtomicNumber());
 		}
 
+		/// <summary>
+		/// Checks if this element is in the d-block (Groups 3-12, transition metals).
+		/// D-block elements have their outermost electrons in d-orbitals (l=2).
+		/// </summary>
 		constexpr bool IsFromDBlock() const
 		{
 			return IsFromDBlock(AtomicNumber());
 		}
 
+		/// <summary>
+		/// Checks if this element is in the f-block (lanthanides and actinides).
+		/// F-block elements have their outermost electrons in f-orbitals (l=3).
+		/// </summary>
 		constexpr bool IsFromFBlock() const
 		{
 			return IsFromFBlock(AtomicNumber());
 		}
 
+		/// <summary>
+		/// Returns the noble gas at the end of this element's period.
+		/// Useful for obtaining the previous noble gas for electron configuration notation.
+		/// </summary>
 		constexpr Element NobleGasFromPeriod() const
 		{
 			return NobleGasFromPeriod(Period());
 		}
 
+		/// <summary>
+		/// Returns the noble gas element at the end of the specified period.
+		/// Period 1: He (2), Period 2: Ne (10), Period 3: Ar (18), Period 4: Kr (36),
+		/// Period 5: Xe (54), Period 6: Rn (86), Period 7: Og (118).
+		/// Returns Element(0) (neutron) for invalid periods.
+		/// </summary>
 		static constexpr Element NobleGasFromPeriod(const int period)
 		{
 			switch (period)
@@ -628,27 +712,53 @@ namespace SecChem
 			return MostAbundantIsotopeNuclearRadiusOf(static_cast<int>(m_Id));
 		}
 
-		// 103Lr was located at f-block but have outermost shell of 7p.
+		/// <summary>
+		/// Returns the outermost (valence) subshell with Lr exception handled.
+		/// For Lawrencium (Lr, Z=103), returns 7p despite being in f-block position.
+		/// For other p-block elements, returns the highest energy p-orbital.
+		/// For all other elements, returns the highest s-orbital.
+		/// </summary>
 		constexpr ElectronicSubshell OuterMostShell() const
 		{
 			return OuterMostShell(AtomicNumber());
 		}
 
+		/// <summary>
+		/// Returns the outermost subshell following Madelung filling order, without exceptions.
+		/// Always returns p-orbital for p-block, s-orbital for all other blocks.
+		/// Use when you need the systematic filling order rather than observed configuration.
+		/// </summary>
 		CONSTEXPR23 ElectronicSubshell MadelungOuterMostShell() const
 		{
 			return MadelungOuterMostShell(AtomicNumber());
 		}
 
+		/// <summary>
+		/// Returns the Slater effective core charge (Z*) using Madelung filling order.
+		/// This approximates the net positive charge experienced by valence electrons.
+		/// Uses the systematic (n+l) order without transition metal exceptions.
+		/// Formula: Z* = Z - σ, where σ is the screening constant from Slater's rules.
+		/// </summary>
 		CONSTEXPR23 double MadelungSlaterEffectiveCoreCharge() const
 		{
 			return MadelungSlaterEffectiveCoreCharges()[AtomicNumber()];
 		}
 
+		/// <summary>
+		/// Returns the Slater effective core charge (Z*) using observed ground-state configuration.
+		/// This approximates the net positive charge experienced by valence electrons.
+		/// Accounts for transition metal exceptions (Cr, Cu, Nb, Mo, etc.).
+		/// More accurate for chemical calculations than MadelungSlaterEffectiveCoreCharge().
+		/// </summary>
 		CONSTEXPR23 double SlaterEffectiveCoreCharge() const
 		{
 			return SlaterEffectiveCoreCharges()[AtomicNumber()];
 		}
 
+		/// <summary>
+		/// Convenience overload for calculating Slater effective core charge from an Element.
+		/// Delegates to the int-based implementation with the element's atomic number.
+		/// </summary>
 		static constexpr double SlaterEffectiveCoreCharge(
 		        const Element element,
 		        const AtomicElectronConfiguration& electronConfig,
@@ -657,7 +767,12 @@ namespace SecChem
 			return SlaterEffectiveCoreCharge(element.AtomicNumber(), electronConfig, outerMostShell);
 		}
 
-		// should we include this?
+		/// <summary>
+		/// Calculates empirical atomic radius using Ghosh's 2008 correlation formula.
+		/// Returns radius in Bohr units. Reference: doi:10.1016/j.theochem.2008.06.020
+		/// Formula: r = n²/Z*, where n is effective principal quantum number and Z* is effective core charge.
+		/// Uses observed configuration for Z=55-102 (Cs to No), Madelung otherwise.
+		/// </summary>
 		CONSTEXPR23 double Ghosh2008AtomicRadius() const
 		{
 			// Equation taken from 10.1016/j.theochem.2008.06.020
@@ -667,7 +782,12 @@ namespace SecChem
 			return n * n / z;
 		}
 
-		// should we include this?
+		/// <summary>
+		/// Calculates empirical atomic radius using Ghosh's 2002 correlation formula.
+		/// Returns radius in Bohr units. Reference: doi:10.3390/i3020087
+		/// Formula: r = n·period/Z*, where n is effective principal quantum number and Z* is effective core charge.
+		/// Uses observed configuration for Z=55-102 (Cs to No), Madelung otherwise.
+		/// </summary>
 		CONSTEXPR23 double Ghosh2002AtomicRadius() const
 		{
 			// Equation taken from 10.3390/i3020087
@@ -677,7 +797,13 @@ namespace SecChem
 			return n * Period() / z;
 		}
 
-		// should we include this?
+		/// <summary>
+		/// Calculates chemical hardness (η) using Ghosh's 2009 empirical correlation.
+		/// Reference: doi:10.1002/qua.22202
+		/// Formula: η = a·(7.2 / r_Å) + b, where r_Å is Ghosh2008 atomic radius in Angstroms.
+		/// Parameters a and b are period-dependent fitted constants.
+		/// Only valid for periods 1-7. Throws std::runtime_error for invalid periods.
+		/// </summary>
 		CONSTEXPR23 double Ghosh2009AtomicChemicalHardness() const
 		{
 			// Parameters taken from  10.1002/qua.22202
@@ -853,6 +979,15 @@ namespace SecChem
 			return {Period(atomicNumber), IsFromPBlock(atomicNumber) ? 1 : 0};
 		}
 
+		/// <summary>
+		/// Calculates Slater effective core charge (Z*) using Slater's empirical rules.
+		/// Z* = Z - σ, where σ is the screening constant calculated from electron contributions.
+		/// Screening rules (by orbital type):
+		/// - s-orbital: 0.35 per other electron in same n, 0.35 for n-1 same-l, then full shell contribution
+		/// - p-orbital: 0.35 per other electron in same n, then full shell contribution
+		/// - d/f orbitals: 1.00 per other electron in same shell, then varying contributions
+		/// Each electron contributes less to shielding depending on its orbital and distance.
+		/// </summary>
 		static constexpr double SlaterEffectiveCoreCharge(
 		        const int atomicNumber,
 		        const AtomicElectronConfiguration& electronConfig,
@@ -986,14 +1121,13 @@ namespace SecChem
 		        267.122,       268.126,     269.128,   270.133,    269.1336,  277.154,    282.166,   282.169,
 		        286.179,       286.182,     290.192,   290.196,    293.205,   294.211,    295.216};
 
-		/// When atomic number was less than 110, radii are taken from Visscher-Dyall (in a.u.)
-		/// Visscher and Dyall, At. Data and Nucl. Data Tables 67, 207 (1997). And
-		/// `r = 0.57 + 0.836 * A^1/3` (in fm), where the isotope mass number A is determined by Z
-		/// according to the relationship `A(Z) = 0.004467 * Z^2 + 2.163 * Z - 1.168` for Z >= 110.
-		/// See Appendix A in D. Andrae, Phys. Rep. 336, 414 (2000). and D. Andrae, Nuclear charge
-		/// density distributions in quantum chemistry, in Relativistic Electronic Structure Theory,
-		/// Part 1: Fundamentals, P. Schwerdtfeger Ed., Theoretical and Computational Chemistry,
-		/// Vol. 11, Elsevier, 2002.
+		/// <summary>
+		/// Returns the nuclear radius of the element's most abundant isotope (in atomic units).
+		/// For Z &lt; 110: experimental data from Visscher &amp; Dyall, At. Data and Nucl. Data Tables 67, 207 (1997).
+		/// For Z ≥ 110: calculated using r = 0.57 + 0.836·A^(1/3) (in fm), converted to atomic units.
+		/// The mass number A is approximated as A(Z) = 0.004467·Z² + 2.163·Z - 1.168 for Z ≥ 110.
+		/// References: D. Andrae, Phys. Rep. 336, 414 (2000); Andrae in Relativistic Electronic Structure Theory, 2002.
+		/// </summary>
 		static double MostAbundantIsotopeNuclearRadiusOf(const int atomicNumber) noexcept
 		{
 			static std::array<double, 119> MostAbundantIsotopeNuclearRadii = []
