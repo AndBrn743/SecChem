@@ -464,7 +464,7 @@ private:
 
 static const SecChem::BasisSet::Gaussian::SharedBasisSetLibrary& Library();
 
-TEST_CASE("BasisSetLibrary sanity", "[basis][library]")
+TEST_CASE("BasisSetLibrary sanity", "[MolecularBasisSet][Library]")
 {
 	using namespace SecChem;
 	const auto& lib = Library();
@@ -486,7 +486,7 @@ TEST_CASE("BasisSetLibrary sanity", "[basis][library]")
 	REQUIRE(lib["example-basis"][Element::Ne].AngularMomentumBlocks[0].HasSemiLocalEcp());
 }
 
-TEST_CASE("MolecularBasisSet build succeeds", "[basis][builder]")
+TEST_CASE("MolecularBasisSet build succeeds", "[MolecularBasisSet][Builder]")
 {
 	using namespace SecChem;
 
@@ -700,7 +700,7 @@ H 1.1 0 0
 	}
 }
 
-TEST_CASE("Atom tags are preserved", "[basis][Parser]")
+TEST_CASE("Atom tags are preserved", "[MolecularBasisSet][Parser]")
 {
 	using namespace SecChem;
 
@@ -719,7 +719,7 @@ Ne 1 1 1 basis="example-basis")");
 	REQUIRE(atomC.HasGaussianFiniteNuclear());
 }
 
-TEST_CASE("Basis assignment precedence is respected", "[basis][assignment]")
+TEST_CASE("Basis assignment precedence is respected", "[MolecularBasisSet][Assignment]")
 {
 	using namespace SecChem;
 	const auto mbs = SecChem::Builder<BasisSet::Gaussian::MolecularBasisSet>{Library()}
@@ -753,7 +753,7 @@ Ne 1 1 1 basis="example-basis")");
 	REQUIRE_THROWS_AS(mbs.ElementaryBasisAt(-1), std::out_of_range);
 }
 
-TEST_CASE("ECP-only angular momentum blocks are preserved", "[basis][ecp]")
+TEST_CASE("ECP-only angular momentum blocks are preserved", "[MolecularBasisSet][ECP]")
 {
 	const auto mbs = SecChem::Builder<SecChem::BasisSet::Gaussian::MolecularBasisSet>{Library()}
 	                         .SetOrOverwriteGlobalDefaultBasisSetTo("def2-SVP")
@@ -766,7 +766,7 @@ TEST_CASE("ECP-only angular momentum blocks are preserved", "[basis][ecp]")
 	REQUIRE_FALSE(mbs.ElementaryBasisAt(0).AngularMomentumBlocks[1].HasOrbital());
 }
 
-TEST_CASE("Elementary default basis cannot be set before global default", "[basis][builder][negative]")
+TEST_CASE("Elementary default basis cannot be set before global default", "[MolecularBasisSet][Builder][Negative]")
 {
 	auto builder = SecChem::Builder<SecChem::BasisSet::Gaussian::MolecularBasisSet>{Library()};
 	builder.SetOrOverwriteGlobalDefaultBasisSetTo("def2-SVP");
@@ -775,14 +775,14 @@ TEST_CASE("Elementary default basis cannot be set before global default", "[basi
 	                  std::runtime_error);
 }
 
-TEST_CASE("Setting non-existent global default basis throws", "[basis][builder][negative]")
+TEST_CASE("Setting non-existent global default basis throws", "[MolecularBasisSet][Builder][Negative]")
 {
 	auto builder = SecChem::Builder<SecChem::BasisSet::Gaussian::MolecularBasisSet>{Library()};
 
 	REQUIRE_THROWS_AS(builder.SetOrOverwriteGlobalDefaultBasisSetTo("3-21G"), std::runtime_error);
 }
 
-TEST_CASE("Setting non-existent elementary default basis throws", "[basis][builder][negative]")
+TEST_CASE("Setting non-existent elementary default basis throws", "[MolecularBasisSet][Builder][Negative]")
 {
 	auto builder = SecChem::Builder<SecChem::BasisSet::Gaussian::MolecularBasisSet>{Library()};
 	builder.SetOrOverwriteGlobalDefaultBasisSetTo("def2-SVP");
@@ -791,7 +791,7 @@ TEST_CASE("Setting non-existent elementary default basis throws", "[basis][build
 	                  std::runtime_error);
 }
 
-TEST_CASE("Elementary default basis lacking element throws", "[basis][builder][negative]")
+TEST_CASE("Elementary default basis lacking element throws", "[MolecularBasisSet][Builder][Negative]")
 {
 	auto builder = SecChem::Builder<SecChem::BasisSet::Gaussian::MolecularBasisSet>{Library()};
 
@@ -802,7 +802,7 @@ TEST_CASE("Elementary default basis lacking element throws", "[basis][builder][n
 	                  std::runtime_error);
 }
 
-TEST_CASE("Per-atom basis override with unknown basis throws", "[basis][Parser][negative]")
+TEST_CASE("Per-atom basis override with unknown basis throws", "[MolecularBasisSet][Parser][Negative]")
 {
 	auto builder = SecChem::Builder<SecChem::BasisSet::Gaussian::MolecularBasisSet>{Library()}
 	                       .SetOrOverwriteGlobalDefaultBasisSetTo("def2-SVP");
@@ -810,7 +810,7 @@ TEST_CASE("Per-atom basis override with unknown basis throws", "[basis][Parser][
 	REQUIRE_THROWS_AS(builder.BuildWith(MolecularInputInterpreter{}, R"(H 0 0 0 basis="3-21G")"), std::runtime_error);
 }
 
-TEST_CASE("Per-atom basis override lacking element throws", "[basis][Parser][negative]")
+TEST_CASE("Per-atom basis override lacking element throws", "[MolecularBasisSet][Parser][Negative]")
 {
 	auto builder = SecChem::Builder<SecChem::BasisSet::Gaussian::MolecularBasisSet>{Library()}
 	                       .SetOrOverwriteGlobalDefaultBasisSetTo("def2-SVP");
@@ -820,7 +820,7 @@ TEST_CASE("Per-atom basis override lacking element throws", "[basis][Parser][neg
 	                  std::runtime_error);
 }
 
-TEST_CASE("Missing basis assignment throws when no default is set", "[basis][negative]")
+TEST_CASE("Missing basis assignment throws when no default is set", "[MolecularBasisSet][Negative]")
 {
 	auto builder = SecChem::Builder<SecChem::BasisSet::Gaussian::MolecularBasisSet>{Library()};
 
