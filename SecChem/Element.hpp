@@ -373,7 +373,7 @@ namespace SecChem
 		/// Longer strings are treated as element names (case-insensitive).
 		/// </summary>
 		/// <remarks>Element symbol placeholder, e.g., "Uut", are not supported</remarks>
-		static Element ToElement(const std::string& identifier) noexcept
+		static Element ToElement(const std::string& identifier)
 		{
 			if (identifier.size() <= 2)
 			{
