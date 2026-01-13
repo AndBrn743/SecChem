@@ -749,6 +749,16 @@ namespace SecChem
 			return lhs.AtomicNumber() > rhs.AtomicNumber();
 		}
 
+		friend constexpr bool operator<=(const Element lhs, const Element rhs)
+		{
+			return lhs.AtomicNumber() <= rhs.AtomicNumber();
+		}
+
+		friend constexpr bool operator>=(const Element lhs, const Element rhs)
+		{
+			return lhs.AtomicNumber() >= rhs.AtomicNumber();
+		}
+
 		friend constexpr bool operator==(const Element lhs, const Element rhs)
 		{
 			return lhs.AtomicNumber() == rhs.AtomicNumber();
