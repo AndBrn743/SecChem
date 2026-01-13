@@ -341,43 +341,29 @@ namespace SecChem
 
 		static Element Name2Element(const std::string& identifier)
 		{
-			for (int i = 0; i < PeriodicTableElementCount; i++)
-			{
-				if (SecUtility::IsCaseInsensitiveStringEqual(identifier, NameOfElement(i)))
-				{
-					return Element(i);
-				}
-			}
-
-			throw std::runtime_error("Could not find symbol \"" + identifier + "\"");
+			return FindElementByPredicate(
+			        0,
+			        [&](const int i) { return SecUtility::IsCaseInsensitiveStringEqual(identifier, NameOfElement(i)); },
+			        "Could not find name \"" + identifier + "\"");
 		}
 
 
 		static Element Symbol2Element(const std::string& identifier)
 		{
-			for (int i = 0; i < PeriodicTableElementCount; i++)
-			{
-				if (identifier == SymbolOfElement(i))
-				{
-					return Element(i);
-				}
-			}
-
-			throw std::runtime_error("Could not find symbol \"" + identifier + "\"");
+			return FindElementByPredicate(
+			        0,
+			        [&](const int i) { return identifier == SymbolOfElement(i); },
+			        "Could not find symbol \"" + identifier + "\"");
 		}
 
 
 		static Element FuzzySymbol2Element(const std::string& identifier)
 		{
-			for (int i = 1; i < PeriodicTableElementCount; i++)
-			{
-				if (SecUtility::IsCaseInsensitiveStringEqual(identifier, SymbolOfElement(i)))
-				{
-					return Element(i);
-				}
-			}
-
-			throw std::runtime_error("Could not find case insensitive symbol \"" + identifier + "\"");
+			return FindElementByPredicate(
+			        1,
+			        [&](const int i)
+			        { return SecUtility::IsCaseInsensitiveStringEqual(identifier, SymbolOfElement(i)); },
+			        "Could not find case insensitive symbol \"" + identifier + "\"");
 		}
 
 
@@ -775,6 +761,22 @@ namespace SecChem
 
 
 	private:
+		template <typename Predicate>
+		static Element FindElementByPredicate(const int startIndex,
+		                                      const Predicate& predicate,
+		                                      const std::string& errorMessage)
+		{
+			for (int i = startIndex; i < PeriodicTableElementCount; i++)
+			{
+				if (predicate(i))
+				{
+					return Element(i);
+				}
+			}
+
+			throw std::runtime_error(errorMessage);
+		}
+
 		static constexpr int Period(const int atomicNumber)
 		{
 			if (atomicNumber <= 0)
