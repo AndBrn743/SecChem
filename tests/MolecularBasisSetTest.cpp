@@ -716,7 +716,7 @@ Ne 1 1 1 basis="example-basis")");
 	const auto& atomC = mbs.Molecule()[0];
 
 	REQUIRE(atomC.IsFrozen());
-	REQUIRE(atomC.IsWithGaussianFiniteNuclear());
+	REQUIRE(atomC.HasGaussianFiniteNuclear());
 }
 
 TEST_CASE("Basis assignment precedence is respected", "[basis][assignment]")

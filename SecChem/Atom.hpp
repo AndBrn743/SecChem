@@ -147,17 +147,17 @@ namespace SecChem
 			return m_NuclearRadius;
 		}
 
-		constexpr bool IsWithGaussianFiniteNuclear() const noexcept
+		constexpr bool HasGaussianFiniteNuclear() const noexcept
 		{
 			return static_cast<bool>(m_Tags & AtomTag::GaussianFiniteNuclear);
 		}
 
-		constexpr bool IsWithThomasFermiFiniteNuclear() const noexcept
+		constexpr bool HasThomasFermiFiniteNuclear() const noexcept
 		{
 			return static_cast<bool>(m_Tags & AtomTag::ThomasFermiFiniteNuclear);
 		}
 
-		constexpr bool IsWithFiniteNuclear() const noexcept
+		constexpr bool HasFiniteNuclear() const noexcept
 		{
 			return static_cast<bool>(m_Tags & (AtomTag::GaussianFiniteNuclear | AtomTag::ThomasFermiFiniteNuclear));
 		}
@@ -189,11 +189,11 @@ namespace SecChem
 				throw std::invalid_argument("Atom tag " + std::to_string(static_cast<int>(tags)) + " is invalid");
 			}
 
-			if (IsWithThomasFermiFiniteNuclear() && static_cast<bool>(tags & AtomTag::GaussianFiniteNuclear))
+			if (HasThomasFermiFiniteNuclear() && static_cast<bool>(tags & AtomTag::GaussianFiniteNuclear))
 			{
 				RemoveTags(AtomTag::ThomasFermiFiniteNuclear);
 			}
-			else if (IsWithGaussianFiniteNuclear() && static_cast<bool>(tags & AtomTag::ThomasFermiFiniteNuclear))
+			else if (HasGaussianFiniteNuclear() && static_cast<bool>(tags & AtomTag::ThomasFermiFiniteNuclear))
 			{
 				RemoveTags(AtomTag::GaussianFiniteNuclear);
 			}

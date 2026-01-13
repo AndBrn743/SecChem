@@ -19,7 +19,7 @@ TEST_CASE("Atom: basic construction", "[Atom]")
 	REQUIRE(atom.Position().isApprox(pos));
 	REQUIRE(atom.Mass() == SecChem::Element{SecChem::Element::H}.Mass());
 
-	REQUIRE_FALSE(atom.IsWithFiniteNuclear());
+	REQUIRE_FALSE(atom.HasFiniteNuclear());
 	REQUIRE_FALSE(atom.IsFrozen());
 }
 
@@ -28,12 +28,12 @@ TEST_CASE("Atom: finite nuclear model tags are mutually exclusive", "[Atom][Atom
 	Atom atom{Element::C, Eigen::Vector3d::Zero()};
 
 	atom.AddTags(AtomTag::GaussianFiniteNuclear);
-	REQUIRE(atom.IsWithGaussianFiniteNuclear());
-	REQUIRE_FALSE(atom.IsWithThomasFermiFiniteNuclear());
+	REQUIRE(atom.HasGaussianFiniteNuclear());
+	REQUIRE_FALSE(atom.HasThomasFermiFiniteNuclear());
 
 	atom.AddTags(AtomTag::ThomasFermiFiniteNuclear);
-	REQUIRE_FALSE(atom.IsWithGaussianFiniteNuclear());
-	REQUIRE(atom.IsWithThomasFermiFiniteNuclear());
+	REQUIRE_FALSE(atom.HasGaussianFiniteNuclear());
+	REQUIRE(atom.HasThomasFermiFiniteNuclear());
 }
 
 TEST_CASE("Atom: invalid tag combination throws", "[Atom][AtomTag]")
