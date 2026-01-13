@@ -7,7 +7,7 @@
 
 using namespace SecChem;
 
-TEST_CASE("Element convertion and basic properties", "CHEMISTRY")
+TEST_CASE("Element: basic construction and default neutron", "[Element][Construction]")
 {
 	const Element neutron;  // should default to neutron
 	CHECK(neutron.Symbol() == "n");
@@ -47,7 +47,7 @@ TEST_CASE("Element convertion and basic properties", "CHEMISTRY")
 	CHECK_FALSE(Element(Element::Au).IsLanthanide());
 }
 
-TEST_CASE("Element's generated properties", "CHEMISTRY")
+TEST_CASE("Element: electron configuration generation", "[Element][ElectronConfiguration]")
 {
 	const Element gold = Element::Au;
 	CHECK(gold.ElectronConfiguration()
@@ -83,7 +83,7 @@ TEST_CASE("Element's generated properties", "CHEMISTRY")
 	CHECK(gold.MadelungElectronConfiguration() == AtomicElectronConfiguration(gold.AtomicNumber()));
 }
 
-TEST_CASE("Element: Basic atomic number behavior")
+TEST_CASE("Element: atomic number behavior", "[Element][Construction]")
 {
 	Element h(1);
 	Element og(118);
@@ -92,7 +92,7 @@ TEST_CASE("Element: Basic atomic number behavior")
 	REQUIRE(og.AtomicNumber() == 118);
 }
 
-TEST_CASE("Element: Block classification correct for common elements")
+TEST_CASE("Element: block classification for common elements", "[Element][BlockClassification]")
 {
 	Element h(1);    // 1s1
 	Element c(6);    // 2p2
@@ -116,7 +116,7 @@ TEST_CASE("Element: Block classification correct for common elements")
 	REQUIRE(ce.CharacteristicOrbitalAzimuthalQuantumNumber() == 3);
 }
 
-TEST_CASE("Element: Outermost shell principal quantum number")
+TEST_CASE("Element: outermost shell principal quantum number", "[Element][OuterShell]")
 {
 	REQUIRE(Element(1).OuterMostShell() == 1_Sharp);        // H: 1s1
 	REQUIRE(Element(10).OuterMostShell() == 2_Principal);   // Ne: 2p6
@@ -127,7 +127,7 @@ TEST_CASE("Element: Outermost shell principal quantum number")
 	REQUIRE(Element(118).OuterMostShell() == 7_Principal);  // Og: 7p6 (expected)
 }
 
-TEST_CASE("Element: Special-case Lawrencium Z=103")
+TEST_CASE("Element: Lawrencium Z=103 special case", "[Element][Lanthanides][Actinides]")
 {
 	Element lr(103);
 
@@ -145,7 +145,7 @@ TEST_CASE("Element: Special-case Lawrencium Z=103")
 	REQUIRE(lr.OuterMostShell() == 7_Principal);  // 7p1 is the valence
 }
 
-TEST_CASE("Element: Light elements cross-check")
+TEST_CASE("Element: light elements azimuthal quantum numbers", "[Element][QuantumNumber]")
 {
 	struct Case
 	{
@@ -172,7 +172,7 @@ TEST_CASE("Element: Light elements cross-check")
 	}
 }
 
-TEST_CASE("Element: First-row transition metals (d-block)")
+TEST_CASE("Element: first-row transition metals d-block", "[Element][TransitionMetals]")
 {
 	// 21–30: Sc → Zn
 	for (int Z = 21; Z <= 30; ++Z)
@@ -183,7 +183,7 @@ TEST_CASE("Element: First-row transition metals (d-block)")
 	}
 }
 
-TEST_CASE("Element: Lanthanides (f-block)")
+TEST_CASE("Element: lanthanides f-block", "[Element][Lanthanides]")
 {
 	// 57–71: La -> Lu
 

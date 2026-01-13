@@ -66,62 +66,40 @@ endif ()
 include(CTest)
 include(Catch)
 
-add_executable(PolyfillFlatMapTest PolyfillFlatMapTest.cpp)
-target_link_libraries(PolyfillFlatMapTest PRIVATE Catch2::Catch2WithMain SecChem)
-add_test(NAME PolyfillFlatMapTest COMMAND PolyfillFlatMapTest)
+# Helper function to create test executable and register with CTest
+function(add_secchem_test test_name source_file)
+    add_executable(${test_name} ${source_file})
+    target_link_libraries(${test_name} PRIVATE Catch2::Catch2WithMain SecChem)
 
-add_executable(AzimuthalQuantumNumberTest AzimuthalQuantumNumberTest.cpp)
-target_link_libraries(AzimuthalQuantumNumberTest PRIVATE Catch2::Catch2WithMain SecChem)
-add_test(NAME AzimuthalQuantumNumberTest COMMAND AzimuthalQuantumNumberTest)
+    # For tests that need BSE JSON parser
+    if("${test_name}" STREQUAL "BasisParserTest" OR "${test_name}" STREQUAL "MolecularBasisSetTest")
+        target_link_libraries(${test_name} PRIVATE BseJsonParser)
+    endif()
 
-add_executable(ElectronicSubShellTest ElectronicSubShellTest.cpp)
-target_link_libraries(ElectronicSubShellTest PRIVATE Catch2::Catch2WithMain SecChem)
-add_test(NAME ElectronicSubShellTest COMMAND ElectronicSubShellTest)
+    catch_discover_tests(${test_name})
+endfunction()
 
-add_executable(AtomicElectronConfigurationTest AtomicElectronConfigurationTest.cpp)
-target_link_libraries(AtomicElectronConfigurationTest PRIVATE Catch2::Catch2WithMain SecChem)
-add_test(NAME AtomicElectronConfigurationTest COMMAND AtomicElectronConfigurationTest)
+# Polyfill tests
+add_secchem_test(PolyfillFlatMapTest PolyfillFlatMapTest.cpp)
 
-add_executable(ElementTest ElementTest.cpp)
-target_link_libraries(ElementTest PRIVATE Catch2::Catch2WithMain SecChem)
-add_test(NAME ElementTest COMMAND ElementTest)
+# Quantum chemistry type tests
+add_secchem_test(AzimuthalQuantumNumberTest AzimuthalQuantumNumberTest.cpp)
+add_secchem_test(ElectronicSubShellTest ElectronicSubShellTest.cpp)
+add_secchem_test(AtomicElectronConfigurationTest AtomicElectronConfigurationTest.cpp)
 
-add_executable(AtomTest AtomTest.cpp)
-target_link_libraries(AtomTest PRIVATE Catch2::Catch2WithMain SecChem)
-add_test(NAME AtomTest COMMAND AtomTest)
+# Core chemistry tests
+add_secchem_test(ElementTest ElementTest.cpp)
+add_secchem_test(AtomTest AtomTest.cpp)
+add_secchem_test(MoleculeTest MoleculeTest.cpp)
 
-add_executable(MoleculeTest MoleculeTest.cpp)
-target_link_libraries(MoleculeTest PRIVATE Catch2::Catch2WithMain SecChem)
-add_test(NAME MoleculeTest COMMAND MoleculeTest)
+# Geometry/input parsing tests
+add_secchem_test(InternalCoordinateLineParseTest InternalCoordinateLineParseTest.cpp)
+add_secchem_test(GeometryInputTest GeometryInputTest.cpp)
 
-add_executable(InternalCoordinateLineParseTest InternalCoordinateLineParseTest.cpp)
-target_link_libraries(InternalCoordinateLineParseTest PRIVATE Catch2::Catch2WithMain SecChem)
-add_test(NAME InternalCoordinateLineParseTest COMMAND InternalCoordinateLineParseTest)
-
-add_executable(GeometryInputTest GeometryInputTest.cpp)
-target_link_libraries(GeometryInputTest PRIVATE Catch2::Catch2WithMain SecChem)
-add_test(NAME GeometryInputTest COMMAND GeometryInputTest)
-
-add_executable(ContractedRadialOrbitalSetTest ContractedRadialOrbitalSetTest.cpp)
-target_link_libraries(ContractedRadialOrbitalSetTest PRIVATE Catch2::Catch2WithMain SecChem)
-add_test(NAME ContractedRadialOrbitalSetTest COMMAND ContractedRadialOrbitalSetTest)
-
-add_executable(SemiLocalEcpTest SemiLocalEcpTest.cpp)
-target_link_libraries(SemiLocalEcpTest PRIVATE Catch2::Catch2WithMain SecChem)
-add_test(NAME SemiLocalEcpTest COMMAND SemiLocalEcpTest)
-
-add_executable(AngularMomentumBlockTest AngularMomentumBlockTest.cpp)
-target_link_libraries(AngularMomentumBlockTest PRIVATE Catch2::Catch2WithMain SecChem)
-add_test(NAME AngularMomentumBlockTest COMMAND AngularMomentumBlockTest)
-
-add_executable(BasisSetTest BasisSetTest.cpp)
-target_link_libraries(BasisSetTest PRIVATE Catch2::Catch2WithMain SecChem)
-add_test(NAME BasisSetTest COMMAND BasisSetTest)
-
-add_executable(BasisParserTest BasisParserTest.cpp)
-target_link_libraries(BasisParserTest PRIVATE Catch2::Catch2WithMain SecChem BseJsonParser)
-add_test(NAME BasisParserTest COMMAND BasisParserTest)
-
-add_executable(MolecularBasisSetTest MolecularBasisSetTest.cpp)
-target_link_libraries(MolecularBasisSetTest PRIVATE Catch2::Catch2WithMain SecChem BseJsonParser)
-add_test(NAME MolecularBasisSetTest COMMAND MolecularBasisSetTest)
+# Basis set tests
+add_secchem_test(ContractedRadialOrbitalSetTest ContractedRadialOrbitalSetTest.cpp)
+add_secchem_test(SemiLocalEcpTest SemiLocalEcpTest.cpp)
+add_secchem_test(AngularMomentumBlockTest AngularMomentumBlockTest.cpp)
+add_secchem_test(BasisSetTest BasisSetTest.cpp)
+add_secchem_test(BasisParserTest BasisParserTest.cpp)
+add_secchem_test(MolecularBasisSetTest MolecularBasisSetTest.cpp)

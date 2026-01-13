@@ -9,7 +9,7 @@
 
 using namespace SecChem;
 
-TEST_CASE("Molecule basic construction and AtomCount", "[molecule]")
+TEST_CASE("Molecule: basic construction and AtomCount", "[Molecule][Construction]")
 {
 	Molecule mol{Atom{Element::H, Eigen::Vector3d{0, 0, 0}},
 	             Atom{Element::O, Eigen::Vector3d{0, 0, 1}},
@@ -18,7 +18,7 @@ TEST_CASE("Molecule basic construction and AtomCount", "[molecule]")
 	REQUIRE(mol.AtomCount() == 3);
 }
 
-TEST_CASE("Molecule operator[] matches iteration order", "[molecule]")
+TEST_CASE("Molecule: operator[] matches iteration order", "[Molecule][Iteration]")
 {
 	Molecule mol{Atom{Element::C, Eigen::Vector3d{0, 0, 0}},
 	             Atom{Element::H, Eigen::Vector3d{1, 0, 0}},
@@ -34,7 +34,7 @@ TEST_CASE("Molecule operator[] matches iteration order", "[molecule]")
 	REQUIRE(i == mol.AtomCount());
 }
 
-TEST_CASE("IndexOf returns correct index for referenced atom", "[molecule]")
+TEST_CASE("Molecule: IndexOf returns correct index for referenced atom", "[Molecule][IndexOf]")
 {
 	Molecule mol{Atom{Element::N, Eigen::Vector3d{0, 0, 0}},
 	             Atom{Element::H, Eigen::Vector3d{0, 0, 1}},
@@ -45,7 +45,7 @@ TEST_CASE("IndexOf returns correct index for referenced atom", "[molecule]")
 	REQUIRE(mol.IndexOf(a) == 2);
 }
 
-TEST_CASE("IndexOf finds value-equal atom not belonging to molecule", "[molecule]")
+TEST_CASE("Molecule: IndexOf finds value-equal atom not belonging to molecule", "[Molecule][IndexOf]")
 {
 	Molecule mol{Atom{Element::He, Eigen::Vector3d{0, 0, 0}}};
 
@@ -54,7 +54,7 @@ TEST_CASE("IndexOf finds value-equal atom not belonging to molecule", "[molecule
 	REQUIRE(mol.IndexOf(external) == 0);
 }
 
-TEST_CASE("IndexOf throws when atom is not found", "[molecule]")
+TEST_CASE("Molecule: IndexOf throws when atom is not found", "[Molecule][IndexOf][Exception]")
 {
 	Molecule mol{Atom{Element::Li, Eigen::Vector3d{0, 0, 0}}};
 
@@ -63,7 +63,7 @@ TEST_CASE("IndexOf throws when atom is not found", "[molecule]")
 	REQUIRE_THROWS_AS(mol.IndexOf(external), std::out_of_range);
 }
 
-TEST_CASE("IndexOfUnchecked works for contained atoms", "[molecule]")
+TEST_CASE("Molecule: IndexOfUnchecked works for contained atoms", "[Molecule][IndexOf][Unchecked]")
 {
 	Molecule mol{Atom{Element::C, Eigen::Vector3d{0, 0, 0}}, Atom{Element::O, Eigen::Vector3d{0, 0, 1}}};
 
@@ -71,7 +71,7 @@ TEST_CASE("IndexOfUnchecked works for contained atoms", "[molecule]")
 	REQUIRE(mol.IndexOfUnchecked(atom) == 1);  // We intentionally do not test UB cases — unchecked means unchecked
 }
 
-TEST_CASE("Contains detects both identity and value equality", "[molecule]")
+TEST_CASE("Molecule: Contains detects both identity and value equality", "[Molecule][Contains]")
 {
 	Molecule mol{Atom{Element::Ne, Eigen::Vector3d{0, 0, 0}}};
 
@@ -84,7 +84,7 @@ TEST_CASE("Contains detects both identity and value equality", "[molecule]")
 	REQUIRE_FALSE(mol.Contains(other));
 }
 
-TEST_CASE("SharedMolecule preserves atom identity", "[shared_molecule]")
+TEST_CASE("Molecule: SharedMolecule preserves atom identity", "[Molecule][SharedMolecule]")
 {
 	Molecule mol{Atom{Element::Fe, Eigen::Vector3d{0, 0, 0}}, Atom{Element::Fe, Eigen::Vector3d{0, 0, 2}}};
 
@@ -98,7 +98,7 @@ TEST_CASE("SharedMolecule preserves atom identity", "[shared_molecule]")
 	REQUIRE(shared.IndexOf(b0) == 0);
 }
 
-TEST_CASE("Mass and nuclear charge are additive", "[molecule]")
+TEST_CASE("Molecule: Mass and nuclear charge are additive", "[Molecule][Properties]")
 {
 	Molecule mol{Atom{Element::H, Eigen::Vector3d{0, 0, 0}}, Atom{Element::H, Eigen::Vector3d{0, 0, 1}}};
 
@@ -106,7 +106,7 @@ TEST_CASE("Mass and nuclear charge are additive", "[molecule]")
 	REQUIRE(mol.Mass() > 0.0);
 }
 
-TEST_CASE("NuclearRepulsionEnergy is positive and symmetric", "[molecule]")
+TEST_CASE("Molecule: NuclearRepulsionEnergy is positive and symmetric", "[Molecule][Energy]")
 {
 	Molecule mol{Atom{Element::H, Eigen::Vector3d{0, 0, 0}}, Atom{Element::H, Eigen::Vector3d{0, 0, 1}}};
 

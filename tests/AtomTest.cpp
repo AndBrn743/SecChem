@@ -10,7 +10,7 @@
 
 using namespace SecChem;
 
-TEST_CASE("Atom: basic construction", "[Atom]")
+TEST_CASE("Atom: basic construction", "[Atom][Construction]")
 {
 	const Eigen::Vector3d pos{1.0, 2.0, 3.0};
 	Atom atom{Element::H, pos};
@@ -23,7 +23,7 @@ TEST_CASE("Atom: basic construction", "[Atom]")
 	REQUIRE_FALSE(atom.IsFrozen());
 }
 
-TEST_CASE("Atom: finite nuclear model tags are mutually exclusive", "[Atom][AtomTag]")
+TEST_CASE("Atom: finite nuclear model tags are mutually exclusive", "[Atom][AtomTag][FiniteNuclear]")
 {
 	Atom atom{Element::C, Eigen::Vector3d::Zero()};
 
@@ -36,14 +36,14 @@ TEST_CASE("Atom: finite nuclear model tags are mutually exclusive", "[Atom][Atom
 	REQUIRE(atom.HasThomasFermiFiniteNuclear());
 }
 
-TEST_CASE("Atom: invalid tag combination throws", "[Atom][AtomTag]")
+TEST_CASE("Atom: invalid tag combination throws", "[Atom][AtomTag][Validation]")
 {
 	const auto invalidTags = AtomTag::GaussianFiniteNuclear | AtomTag::ThomasFermiFiniteNuclear;
 
 	REQUIRE_THROWS_AS(SecChem::Atom(SecChem::Element::H, Eigen::Vector3d::Zero(), invalidTags), std::invalid_argument);
 }
 
-TEST_CASE("Atom: DistanceTo computes Euclidean distance", "[Atom]")
+TEST_CASE("Atom: DistanceTo computes Euclidean distance", "[Atom][Distance]")
 {
 	Atom a{Element::H, Eigen::Vector3d{0.0, 0.0, 0.0}};
 
@@ -52,7 +52,7 @@ TEST_CASE("Atom: DistanceTo computes Euclidean distance", "[Atom]")
 	REQUIRE(a.DistanceTo(b) == Catch::Approx(3.0));
 }
 
-TEST_CASE("Atom: custom mass and nuclear radius factories", "[Atom]")
+TEST_CASE("Atom: custom mass and nuclear radius factories", "[Atom][Construction][Factory]")
 {
 	const Eigen::Vector3d pos{0.1, 0.2, 0.3};
 
@@ -64,7 +64,7 @@ TEST_CASE("Atom: custom mass and nuclear radius factories", "[Atom]")
 	REQUIRE(atom.NuclearRadius() == Catch::Approx(0.42));
 }
 
-TEST_CASE("Atom: exact equality", "[Atom][Equality]")
+TEST_CASE("Atom: exact equality", "[Atom][Equality][Exact]")
 {
 	const Eigen::Vector3d pos{1.0, 1.0, 1.0};
 
@@ -75,7 +75,7 @@ TEST_CASE("Atom: exact equality", "[Atom][Equality]")
 	REQUIRE_FALSE(a != b);
 }
 
-TEST_CASE("Atom: tolerance-based equality (position)", "[Atom][Equality]")
+TEST_CASE("Atom: tolerance-based equality (position)", "[Atom][Equality][Tolerance]")
 {
 	Atom a{Element::C, Eigen::Vector3d{1.0, 1.0, 1.0}};
 
@@ -85,7 +85,7 @@ TEST_CASE("Atom: tolerance-based equality (position)", "[Atom][Equality]")
 	REQUIRE(a.EqualsTo(b, 1e-12));
 }
 
-TEST_CASE("Atom: tag mismatch breaks equality", "[Atom][Equality]")
+TEST_CASE("Atom: tag mismatch breaks equality", "[Atom][Equality][Tags]")
 {
 	Atom a{Element::H, Eigen::Vector3d::Zero()};
 
@@ -95,7 +95,7 @@ TEST_CASE("Atom: tag mismatch breaks equality", "[Atom][Equality]")
 	REQUIRE(a != b);
 }
 
-TEST_CASE("Atom: different elements are never equal", "[Atom][Equality]")
+TEST_CASE("Atom: different elements are never equal", "[Atom][Equality][CrossElement]")
 {
 	Atom h{Element::H, Eigen::Vector3d::Zero()};
 

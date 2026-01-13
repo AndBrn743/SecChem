@@ -16,7 +16,7 @@ using namespace SecUtility::UnitOfMeasurement;
 static constexpr auto Bohr2Bohr = [](const double l) { return l; };
 
 
-TEST_CASE("ParseBasicZMatrixLine basic cases", "[ZMatrixParser]")
+TEST_CASE("ParseBasicZMatrixLine basic cases", "[InternalCoordinate][Parser][ZMatrix]")
 {
 	std::vector<Atom> atoms;
 
@@ -96,7 +96,7 @@ TEST_CASE("ParseBasicZMatrixLine basic cases", "[ZMatrixParser]")
 	}
 }
 
-TEST_CASE("ParseBasicZMatrixLine negative tests", "[ZMatrixParser]")
+TEST_CASE("ParseBasicZMatrixLine negative tests", "[InternalCoordinate][Parser][ZMatrix]")
 {
 	SECTION("Too few tokens for first atom")
 	{
@@ -127,7 +127,7 @@ TEST_CASE("ParseBasicZMatrixLine negative tests", "[ZMatrixParser]")
 	}
 }
 
-TEST_CASE("Parse full Z-matrix input", "[ZMatrixParser][integration]")
+TEST_CASE("Parse full Z-matrix input", "[InternalCoordinate][Parser][ZMatrix][integration]")
 {
 	std::vector<std::string> zMatrixLines = {
 	        "C",                       // first atom
@@ -183,7 +183,7 @@ TEST_CASE("Parse full Z-matrix input", "[ZMatrixParser][integration]")
 	        == Catch::Approx(Degree2Radian(104.5)).epsilon(1e-3));
 }
 
-TEST_CASE("Parse full Z-matrix input 2", "[ZMatrixParser][integration]")
+TEST_CASE("Parse full Z-matrix input 2", "[InternalCoordinate][Parser][ZMatrix][integration]")
 {
 	std::vector<std::string> zMatrixLines = {
 	        "C",                      // first atom
@@ -239,7 +239,7 @@ TEST_CASE("Parse full Z-matrix input 2", "[ZMatrixParser][integration]")
 	        == Catch::Approx(Degree2Radian(104.5)).epsilon(1e-3));
 }
 
-TEST_CASE("Parse full Z-matrix input 3", "[ZMatrixParser][integration]")
+TEST_CASE("Parse full Z-matrix input 3", "[InternalCoordinate][Parser][ZMatrix][integration]")
 {
 	std::vector<std::string> zMatrixLines = {
 	        "C",                       // first atom

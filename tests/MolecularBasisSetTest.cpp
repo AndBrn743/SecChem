@@ -222,7 +222,7 @@ namespace SecChem::Experimental
 	}
 }  // namespace SecChem::Experimental
 
-TEST_CASE("Experimental::BasisSetLibrary sanity")
+TEST_CASE("Experimental::BasisSetLibrary sanity", "[MolecularBasisSet][Experimental]")
 {
 	using namespace SecChem::Experimental;
 
@@ -700,7 +700,7 @@ H 1.1 0 0
 	}
 }
 
-TEST_CASE("Atom tags are preserved", "[basis][parser]")
+TEST_CASE("Atom tags are preserved", "[basis][Parser]")
 {
 	using namespace SecChem;
 
@@ -802,7 +802,7 @@ TEST_CASE("Elementary default basis lacking element throws", "[basis][builder][n
 	                  std::runtime_error);
 }
 
-TEST_CASE("Per-atom basis override with unknown basis throws", "[basis][parser][negative]")
+TEST_CASE("Per-atom basis override with unknown basis throws", "[basis][Parser][negative]")
 {
 	auto builder = SecChem::Builder<SecChem::BasisSet::Gaussian::MolecularBasisSet>{Library()}
 	                       .SetOrOverwriteGlobalDefaultBasisSetTo("def2-SVP");
@@ -810,7 +810,7 @@ TEST_CASE("Per-atom basis override with unknown basis throws", "[basis][parser][
 	REQUIRE_THROWS_AS(builder.BuildWith(MolecularInputInterpreter{}, R"(H 0 0 0 basis="3-21G")"), std::runtime_error);
 }
 
-TEST_CASE("Per-atom basis override lacking element throws", "[basis][parser][negative]")
+TEST_CASE("Per-atom basis override lacking element throws", "[basis][Parser][negative]")
 {
 	auto builder = SecChem::Builder<SecChem::BasisSet::Gaussian::MolecularBasisSet>{Library()}
 	                       .SetOrOverwriteGlobalDefaultBasisSetTo("def2-SVP");
@@ -827,7 +827,7 @@ TEST_CASE("Missing basis assignment throws when no default is set", "[basis][neg
 	REQUIRE_THROWS_AS(builder.BuildWith(MolecularInputInterpreter{}, R"(H 0 0 0)"), std::runtime_error);
 }
 
-TEST_CASE("Invalid atom line format throws", "[parser][negative]")
+TEST_CASE("Invalid atom line format throws", "[Parser][negative]")
 {
 	auto builder = SecChem::Builder<SecChem::BasisSet::Gaussian::MolecularBasisSet>{Library()}
 	                       .SetOrOverwriteGlobalDefaultBasisSetTo("def2-SVP");
@@ -837,7 +837,7 @@ TEST_CASE("Invalid atom line format throws", "[parser][negative]")
 	                  std::runtime_error);
 }
 
-TEST_CASE("Unknown element symbol throws", "[parser][negative]")
+TEST_CASE("Unknown element symbol throws", "[Parser][negative]")
 {
 	auto builder = SecChem::Builder<SecChem::BasisSet::Gaussian::MolecularBasisSet>{Library()}
 	                       .SetOrOverwriteGlobalDefaultBasisSetTo("def2-SVP");

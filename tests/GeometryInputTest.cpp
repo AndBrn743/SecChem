@@ -17,7 +17,7 @@ using SecChem::Element;
 using namespace SecChem::Geometry::Input;
 namespace UnitOfMeasurement = SecUtility::UnitOfMeasurement;
 
-TEST_CASE("ParseBasicCartesianCoordinateLine: Valid single atom", "[geometry][parser]")
+TEST_CASE("ParseBasicCartesianCoordinateLine: Valid single atom", "[Geometry][Parser]")
 {
 	const std::vector<std::string> tokens = {"H", "0.0", "0.0", "0.0"};
 	const auto result = ParseBasicCartesianCoordinateLine(tokens, UnitOfMeasurement::Angstrom2BohrRadius);
@@ -28,7 +28,7 @@ TEST_CASE("ParseBasicCartesianCoordinateLine: Valid single atom", "[geometry][pa
 	CHECK(result.Position.z() == Approx(0.0));
 }
 
-TEST_CASE("ParseBasicCartesianCoordinateLine: Valid atom with non-zero position", "[geometry][parser]")
+TEST_CASE("ParseBasicCartesianCoordinateLine: Valid atom with non-zero position", "[Geometry][Parser]")
 {
 	const std::vector<std::string> tokens = {"C", "1.0", "2.0", "3.0"};
 	const auto result = ParseBasicCartesianCoordinateLine(tokens, UnitOfMeasurement::Angstrom2BohrRadius);
@@ -41,7 +41,7 @@ TEST_CASE("ParseBasicCartesianCoordinateLine: Valid atom with non-zero position"
 	CHECK(result.Position.z() == Approx(3.0 * angstrom2bohr));
 }
 
-TEST_CASE("ParseBasicCartesianCoordinateLine: Various elements", "[geometry][parser]")
+TEST_CASE("ParseBasicCartesianCoordinateLine: Various elements", "[Geometry][Parser]")
 {
 	SECTION("Oxygen")
 	{
@@ -72,7 +72,7 @@ TEST_CASE("ParseBasicCartesianCoordinateLine: Various elements", "[geometry][par
 	}
 }
 
-TEST_CASE("ParseBasicCartesianCoordinateLine: Negative coordinates", "[geometry][parser]")
+TEST_CASE("ParseBasicCartesianCoordinateLine: Negative coordinates", "[Geometry][Parser]")
 {
 	const std::vector<std::string> tokens = {"H", "-1.0", "-2.0", "-3.0"};
 	const auto result = ParseBasicCartesianCoordinateLine(tokens, UnitOfMeasurement::Angstrom2BohrRadius);
@@ -84,7 +84,7 @@ TEST_CASE("ParseBasicCartesianCoordinateLine: Negative coordinates", "[geometry]
 	CHECK(result.Position.z() == Approx(-3.0 * angstrom2bohr));
 }
 
-TEST_CASE("ParseBasicCartesianCoordinateLine: Scientific notation", "[geometry][parser]")
+TEST_CASE("ParseBasicCartesianCoordinateLine: Scientific notation", "[Geometry][Parser]")
 {
 	const std::vector<std::string> tokens = {"H", "1.0e-10", "2.0e-5", "3.0e5"};
 	const auto result = ParseBasicCartesianCoordinateLine(tokens, UnitOfMeasurement::Angstrom2BohrRadius);
@@ -95,7 +95,7 @@ TEST_CASE("ParseBasicCartesianCoordinateLine: Scientific notation", "[geometry][
 	CHECK(result.Position.z() == Approx(3.0e5 * 1.8897261254578281));
 }
 
-TEST_CASE("ParseBasicCartesianCoordinateLine: Token iterator overload", "[geometry][parser]")
+TEST_CASE("ParseBasicCartesianCoordinateLine: Token iterator overload", "[Geometry][Parser]")
 {
 	const std::vector<std::string> tokens = {"C", "1.0", "2.0", "3.0"};
 	const auto result = ParseBasicCartesianCoordinateLine(tokens.begin(), UnitOfMeasurement::Angstrom2BohrRadius);
@@ -107,7 +107,7 @@ TEST_CASE("ParseBasicCartesianCoordinateLine: Token iterator overload", "[geomet
 	CHECK(result.Position.z() == Approx(3.0 * angstrom2bohr));
 }
 
-TEST_CASE("ParseBasicCartesianCoordinateLine: Different length units", "[geometry][parser]")
+TEST_CASE("ParseBasicCartesianCoordinateLine: Different length units", "[Geometry][Parser]")
 {
 	const std::vector<std::string> tokens = {"H", "1.0", "2.0", "3.0"};
 
@@ -131,7 +131,7 @@ TEST_CASE("ParseBasicCartesianCoordinateLine: Different length units", "[geometr
 // Negative tests
 //--------------------------------------------------------------------------------------------------------------------//
 
-TEST_CASE("ParseBasicCartesianCoordinateLine: Wrong number of tokens - too few", "[geometry][parser][negative]")
+TEST_CASE("ParseBasicCartesianCoordinateLine: Wrong number of tokens - too few", "[Geometry][Parser][negative]")
 {
 	SECTION("Empty token list")
 	{
@@ -162,14 +162,14 @@ TEST_CASE("ParseBasicCartesianCoordinateLine: Wrong number of tokens - too few",
 	}
 }
 
-TEST_CASE("ParseBasicCartesianCoordinateLine: Wrong number of tokens - too many", "[geometry][parser][negative]")
+TEST_CASE("ParseBasicCartesianCoordinateLine: Wrong number of tokens - too many", "[Geometry][Parser][negative]")
 {
 	const std::vector<std::string> tokens = {"H", "0.0", "0.0", "0.0", "extra"};
 	REQUIRE_THROWS_AS(ParseBasicCartesianCoordinateLine(tokens, UnitOfMeasurement::Angstrom2BohrRadius),
 	                  std::runtime_error);
 }
 
-TEST_CASE("ParseBasicCartesianCoordinateLine: Invalid element symbol", "[geometry][parser][negative]")
+TEST_CASE("ParseBasicCartesianCoordinateLine: Invalid element symbol", "[Geometry][Parser][negative]")
 {
 	SECTION("Completely invalid symbol")
 	{
@@ -193,7 +193,7 @@ TEST_CASE("ParseBasicCartesianCoordinateLine: Invalid element symbol", "[geometr
 	}
 }
 
-TEST_CASE("ParseBasicCartesianCoordinateLine: Invalid coordinate values", "[geometry][parser][negative]")
+TEST_CASE("ParseBasicCartesianCoordinateLine: Invalid coordinate values", "[Geometry][Parser][negative]")
 {
 	SECTION("Non-numeric coordinate")
 	{
@@ -210,7 +210,7 @@ TEST_CASE("ParseBasicCartesianCoordinateLine: Invalid coordinate values", "[geom
 	}
 }
 
-TEST_CASE("ParseBasicCartesianCoordinateLine: Error message contains token count", "[geometry][parser][negative]")
+TEST_CASE("ParseBasicCartesianCoordinateLine: Error message contains token count", "[Geometry][Parser][negative]")
 {
 	const std::vector<std::string> tokens = {"H", "1.0", "2.0"};  // Only 2 coordinates
 	try
@@ -227,7 +227,7 @@ TEST_CASE("ParseBasicCartesianCoordinateLine: Error message contains token count
 	}
 }
 
-TEST_CASE("ParseBasicCartesianCoordinateLine: Case sensitivity", "[geometry][parser]")
+TEST_CASE("ParseBasicCartesianCoordinateLine: Case sensitivity", "[Geometry][Parser]")
 {
 	// Valid capitalization
 	const std::vector<std::string> tokens1 = {"C", "0.0", "0.0", "0.0"};
@@ -240,7 +240,7 @@ TEST_CASE("ParseBasicCartesianCoordinateLine: Case sensitivity", "[geometry][par
 	                  std::runtime_error);
 }
 
-TEST_CASE("ParseBasicCartesianCoordinateLine: Special element symbols", "[geometry][parser]")
+TEST_CASE("ParseBasicCartesianCoordinateLine: Special element symbols", "[Geometry][Parser]")
 {
 	SECTION("Two-letter symbols - first capital, second lowercase")
 	{
@@ -264,7 +264,7 @@ TEST_CASE("ParseBasicCartesianCoordinateLine: Special element symbols", "[geomet
 	}
 }
 
-TEST_CASE("ParseBasicCartesianCoordinateLine: Whitespace in tokens", "[geometry][parser]")
+TEST_CASE("ParseBasicCartesianCoordinateLine: Whitespace in tokens", "[Geometry][Parser]")
 {
 	// This test verifies that tokens with spaces are handled correctly
 	// In practice, the tokenization should happen before calling this function

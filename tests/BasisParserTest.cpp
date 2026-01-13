@@ -11,7 +11,7 @@
 using namespace SecChem;
 using namespace SecChem::BasisSet::Gaussian;
 
-TEST_CASE("Sample parser should able to parse sample BSE JSON")
+TEST_CASE("Sample parser should able to parse sample BSE JSON", "[BasisParser][BSE][JSON]")
 {
 	std::string sample = R"(
 {

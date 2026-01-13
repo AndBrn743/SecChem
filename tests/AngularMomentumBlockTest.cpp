@@ -172,7 +172,7 @@ TEST_CASE("ExponentSet and ContractionSets are forwarded correctly", "[AngularMo
 	REQUIRE(block.ContractionSets().isApprox(contractions));
 }
 
-TEST_CASE("AngularMomentumBlock::Concat should work")
+TEST_CASE("AngularMomentumBlock::Concat should work", "[AngularMomentumBlock][Concat]")
 {
 	const auto crs0 = MakeSimpleContractedSet(6, 3);
 	const auto crs1 = MakeSimpleContractedSet(3, 2);
@@ -248,13 +248,13 @@ TEST_CASE("AngularMomentumBlock::Concat should work")
 	}
 }
 
-TEST_CASE("AngularMomentumBlock::Concat should throw on empty input range")
+TEST_CASE("AngularMomentumBlock::Concat should throw on empty input range", "[AngularMomentumBlock][Concat][Exception]")
 {
 	std::initializer_list<AngularMomentumBlock> ambs = {};
 	REQUIRE_THROWS(AngularMomentumBlock::Concat(ambs.begin(), ambs.end()));
 }
 
-TEST_CASE("AngularMomentumBlock::Concat should refuse concat blocks of different angular momentum")
+TEST_CASE("AngularMomentumBlock::Concat should refuse concat blocks of different angular momentum", "[AngularMomentumBlock][Concat][Validation]")
 {
 	const auto crs0 = MakeSimpleContractedSet(6, 3);
 	const auto crs1 = MakeSimpleContractedSet(3, 2);
