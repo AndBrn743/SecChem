@@ -24,6 +24,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Clean build directory
+        run: rm -rf build
+
       - name: Configure CMake
         run: |
           cmake -S . -B build \
@@ -49,6 +52,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Clean build directory
+        run: rm -rf build
+
       - name: Configure CMake
         run: |
           cmake -S . -B build \
@@ -73,6 +79,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Clean build directory
+        run: rm -rf build
 
       - name: Configure CMake
         run: |
@@ -100,6 +109,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Clean build directory
+        run: rm -rf build
 
       - name: Configure CMake
         run: |
@@ -131,6 +143,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Clean build directory
+        run: rm -rf build
 
       - name: Configure CMake with coverage
         run: |
