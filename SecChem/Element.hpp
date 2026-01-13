@@ -6,12 +6,13 @@
 #include "AtomicElectronConfiguration.hpp"
 #include "AzimuthalQuantumNumber.hpp"
 #include <cassert>
-#include <cstring>
-#include <iostream>
-#include <string>
 #include <cmath>
-#include <string_view>
+#include <cstring>
 #include <exception>
+#include <iostream>
+#include <stdexcept>
+#include <string>
+#include <string_view>
 
 
 #if !defined(CONSTEXPR23)
@@ -308,13 +309,13 @@ namespace SecChem
 			return static_cast<int>(m_Id);
 		}
 
-		std::string_view Name() const
+		constexpr std::string_view Name() const
 		{
 			return NameOfElement(AtomicNumber());
 		}
 
 
-		std::string_view Symbol() const
+		constexpr std::string_view Symbol() const
 		{
 			return SymbolOfElement(AtomicNumber());
 		}
@@ -326,7 +327,7 @@ namespace SecChem
 		}
 
 
-		std::string_view ToStringView() const
+		constexpr std::string_view ToStringView() const
 		{
 			return Symbol();
 		}
@@ -403,7 +404,7 @@ namespace SecChem
 		}
 
 
-		friend std::istream& operator>>(std::istream& is, Element& out_element) noexcept
+		friend std::istream& operator>>(std::istream& is, Element& out_element)
 		{
 			std::string symbol;
 			is >> symbol;
@@ -888,12 +889,8 @@ namespace SecChem
 				AdvanceToNextShell();
 			}
 
-			if (outerMostShell.AzimuthalQuantumNumber().Value() >= 4)
-			{
-				std::cerr << "Unsupported element for evaluate Slater effective core charge" << std::endl;
-				std::terminate();
-			}
-
+			assert(outerMostShell.AzimuthalQuantumNumber().Value() < 4
+			       && "Unsupported element for evaluate Slater effective core charge");
 
 			while (currentShell.IsValid())
 			{
