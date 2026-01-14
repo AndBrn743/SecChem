@@ -79,8 +79,9 @@ function(add_secchem_test test_name source_file)
     catch_discover_tests(${test_name})
 endfunction()
 
-# Polyfill tests
+# Utility tests
 add_secchem_test(PolyfillFlatMapTest PolyfillFlatMapTest.cpp)
+add_secchem_test(ProcessTest ProcessTest.cpp)
 
 # Quantum chemistry type tests
 add_secchem_test(AzimuthalQuantumNumberTest AzimuthalQuantumNumberTest.cpp)
