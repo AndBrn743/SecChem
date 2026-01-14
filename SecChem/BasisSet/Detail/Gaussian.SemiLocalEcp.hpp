@@ -61,8 +61,8 @@ namespace SecChem::BasisSet::Gaussian
 			return m_Data(index, 2);
 		}
 
-		template <typename InputIterator, typename Getter>
-		static SemiLocalEcp Concat(InputIterator begin, const InputIterator end, const Getter get)
+		template <typename ForwardIterator, typename Getter>
+		static SemiLocalEcp Concat(const ForwardIterator begin, const ForwardIterator end, const Getter get)
 		{
 			if (begin == end)
 			{
@@ -81,24 +81,25 @@ namespace SecChem::BasisSet::Gaussian
 			                                                              { return acc + get(ecp).m_Data.rows(); }),
 			                                              3);
 
-			for (Eigen::Index offset = 0; begin != end; ++begin)
+			auto it = begin;
+			for (Eigen::Index offset = 0; it != end; ++it)
 			{
-				data.middleRows(offset, get(*begin).m_Data.rows()) = get(*begin).m_Data;
-				offset += get(*begin).m_Data.rows();
+				data.middleRows(offset, get(*it).m_Data.rows()) = get(*it).m_Data;
+				offset += get(*it).m_Data.rows();
 			}
 
 			return SemiLocalEcp{std::move(data)};
 		}
 
-		template <typename InputIterator>
-		static SemiLocalEcp Concat(InputIterator begin, const InputIterator end)
+		template <typename ForwardIterator>
+		static SemiLocalEcp Concat(const ForwardIterator begin, const ForwardIterator end)
 		{
 			return Concat(begin, end, [](auto&& item) -> decltype(auto) { return std::forward<decltype(item)>(item); });
 		}
 
-		template <typename InputIterator, typename Getter>
-		static std::optional<SemiLocalEcp> ConcatNullable(InputIterator begin,
-		                                                  const InputIterator end,
+		template <typename ForwardIterator, typename Getter>
+		static std::optional<SemiLocalEcp> ConcatNullable(ForwardIterator begin,
+		                                                  const ForwardIterator end,
 		                                                  const Getter get)
 		{
 			if (begin == end)
@@ -130,11 +131,12 @@ namespace SecChem::BasisSet::Gaussian
 
 			Eigen::Matrix<Scalar, Eigen::Dynamic, 3> data(totalTermCount, 3);
 
-			for (Eigen::Index offset = 0; begin != end; ++begin)
+			auto it = begin;
+			for (Eigen::Index offset = 0; it != end; ++it)
 			{
-				if (get(*begin).has_value())
+				if (get(*it).has_value())
 				{
-					decltype(auto) ecpData = get(*begin).value().m_Data;
+					decltype(auto) ecpData = get(*it).value().m_Data;
 					data.middleRows(offset, ecpData.rows()) = ecpData;
 					offset += ecpData.rows();
 				}
@@ -143,8 +145,8 @@ namespace SecChem::BasisSet::Gaussian
 			return SemiLocalEcp{std::move(data)};
 		}
 
-		template <typename InputIterator>
-		static std::optional<SemiLocalEcp> ConcatNullable(InputIterator begin, const InputIterator end)
+		template <typename ForwardIterator>
+		static std::optional<SemiLocalEcp> ConcatNullable(ForwardIterator begin, const ForwardIterator end)
 		{
 			return ConcatNullable(
 			        begin, end, [](auto&& item) -> decltype(auto) { return std::forward<decltype(item)>(item); });
