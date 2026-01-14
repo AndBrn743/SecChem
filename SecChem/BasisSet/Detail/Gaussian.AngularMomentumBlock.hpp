@@ -179,20 +179,20 @@ namespace SecChem::BasisSet::Gaussian
 		      m_SegmentationTable{{0, 0},
 		                          {m_NullableContractedRadialOrbitalSet.value().PrimitiveShellCount(),
 		                           m_NullableContractedRadialOrbitalSet.value().ContractedShellCount()}},
-		      m_NullableSemiLocalEcp(std::move(ecp))
+		      m_SemiLocalEcp(std::move(ecp))
 		{
 			/* NO CODE */
 		}
 
 		AngularMomentumBlock(const AzimuthalQuantumNumber angularMomentum, std::nullopt_t, SemiLocalEcp ecp)
-		    : Base(angularMomentum), m_NullableSemiLocalEcp(std::move(ecp))
+		    : Base(angularMomentum), m_SemiLocalEcp(std::move(ecp))
 		{
 			/* NO CODE */
 		}
 
 		AngularMomentumBlock& AddOrOverrideSemiLocalEcp(SemiLocalEcp ecp)
 		{
-			m_NullableSemiLocalEcp = std::move(ecp);
+			m_SemiLocalEcp = std::move(ecp);
 			return *this;
 		}
 
@@ -213,20 +213,14 @@ namespace SecChem::BasisSet::Gaussian
 
 		bool HasSemiLocalEcp() const noexcept
 		{
-			return m_NullableSemiLocalEcp.has_value();
+			return m_SemiLocalEcp.TermCount() > 0;
 		}
 
 		// GCC require elaborated type specifier
 		// ReSharper disable once CppRedundantElaboratedTypeSpecifier
-		const class SemiLocalEcp& SemiLocalEcp() const
+		const class SemiLocalEcp& SemiLocalEcp() const noexcept
 		{
-			if (!m_NullableSemiLocalEcp.has_value())
-			{
-				throw std::logic_error("AngularMomentumBlock::SemiLocalEcp() called without a SemiLocalEcp present. "
-				                       "Use HasSemiLocalEcp() to check availability.");
-			}
-
-			return m_NullableSemiLocalEcp.value();
+			return m_SemiLocalEcp;
 		}
 
 		// GCC require elaborated type specifier
@@ -267,8 +261,8 @@ namespace SecChem::BasisSet::Gaussian
 			// clang-format off
 			auto crs = ContractedRadialOrbitalSet::ConcatNullable(
 					begin, end, [get](const auto& block) -> const auto& { return get(block).m_NullableContractedRadialOrbitalSet; });
-			auto ecp = SemiLocalEcp::ConcatNullable(
-					begin, end, [get](const auto& block) -> const auto& { return get(block).m_NullableSemiLocalEcp; });
+			auto ecp = SemiLocalEcp::Concat(
+					begin, end, [get](const auto& block) -> const auto& { return get(block).m_SemiLocalEcp; });
 			auto segTable = ConcatSegmentationTable(
 					begin, end, [get](const auto& block) -> const auto& { return get(block).m_SegmentationTable; });
 			// clang-format on
@@ -318,22 +312,21 @@ namespace SecChem::BasisSet::Gaussian
 		AngularMomentumBlock(const AzimuthalQuantumNumber angularMomentum,
 		                     std::optional<Gaussian::ContractedRadialOrbitalSet> nullableContractedRadialOrbitalSet,
 		                     std::vector<std::pair<Eigen::Index, Eigen::Index>> segmentationTable,
-		                     std::optional<Gaussian::SemiLocalEcp> nullableSemiLocalEcp)
+		                     Gaussian::SemiLocalEcp semiLocalEcp)
 		    : Base(angularMomentum),
 		      m_NullableContractedRadialOrbitalSet(std::move(nullableContractedRadialOrbitalSet)),
-		      m_SegmentationTable(std::move(segmentationTable)), m_NullableSemiLocalEcp(std::move(nullableSemiLocalEcp))
+		      m_SegmentationTable(std::move(segmentationTable)), m_SemiLocalEcp(std::move(semiLocalEcp))
 		{
 			/* NO CODE */
 		}
 
 		bool EqualsTo_Impl(const AngularMomentumBlock& other, const SecChem::Scalar tolerance) const noexcept
 		{
-			return m_NullableSemiLocalEcp.has_value() == other.m_NullableSemiLocalEcp.has_value()
-			       && m_NullableContractedRadialOrbitalSet.has_value()
-			                  == other.m_NullableContractedRadialOrbitalSet.has_value()
+			return m_NullableContractedRadialOrbitalSet.has_value()
+			               == other.m_NullableContractedRadialOrbitalSet.has_value()
 			       && (!m_NullableContractedRadialOrbitalSet.has_value()
 			           || static_cast<const Base&>(*this).EqualsTo(other, tolerance))
-			       && (!m_NullableSemiLocalEcp.has_value() || SemiLocalEcp().EqualsTo(other.SemiLocalEcp(), tolerance));
+			       && m_SemiLocalEcp.EqualsTo(other.m_SemiLocalEcp, tolerance);
 		}
 
 		/* CRTP OVERRIDE */ const Eigen::VectorXd& ExponentSet_Impl() const noexcept
@@ -404,6 +397,6 @@ namespace SecChem::BasisSet::Gaussian
 
 		std::optional<Gaussian::ContractedRadialOrbitalSet> m_NullableContractedRadialOrbitalSet = std::nullopt;
 		SegmentationTable m_SegmentationTable = {};
-		std::optional<Gaussian::SemiLocalEcp> m_NullableSemiLocalEcp = std::nullopt;
+		Gaussian::SemiLocalEcp m_SemiLocalEcp = {};
 	};
 }  // namespace SecChem::BasisSet::Gaussian

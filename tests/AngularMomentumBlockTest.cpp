@@ -80,18 +80,6 @@ TEST_CASE("AngularMomentumBlock construction with ECP", "[AngularMomentumBlock]"
 	REQUIRE(block.HasSemiLocalEcp());
 }
 
-TEST_CASE("SemiLocalEcp() throws if no ECP is present", "[AngularMomentumBlock][ECP]")
-{
-	AzimuthalQuantumNumber l{0};
-	auto crs = MakeSimpleContractedSet(1, 1);
-
-	AngularMomentumBlock block{l, crs};
-
-	REQUIRE(block.HasOrbital());
-	REQUIRE_FALSE(block.HasSemiLocalEcp());
-	REQUIRE_THROWS_AS(block.SemiLocalEcp(), std::logic_error);
-}
-
 TEST_CASE("SemiLocalEcp() returns reference when present", "[AngularMomentumBlock][ECP]")
 {
 	AzimuthalQuantumNumber l{0};

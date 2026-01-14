@@ -15,6 +15,8 @@ namespace SecChem::BasisSet::Gaussian
 	public:
 		static constexpr Scalar ZeroTolerance = 1e-15;
 
+		constexpr SemiLocalEcp() noexcept = default;
+
 		template <typename CoefficientSet, typename RExponentSet, typename GaussianExponentSet>
 		SemiLocalEcp(const CoefficientSet& coefficientSet,
 		             const RExponentSet& rExponentSet,
@@ -174,11 +176,6 @@ namespace SecChem::BasisSet::Gaussian
 		template <typename C, typename R, typename G>
 		static void ValidateInput(const C& c, const R& r, const G& g)
 		{
-			if (c.size() == 0)
-			{
-				throw std::invalid_argument("SemiLocalEcp: empty coefficient set");
-			}
-
 			if (c.size() != r.size() || c.size() != g.size())
 			{
 				throw std::invalid_argument("SemiLocalEcp: size mismatch");
@@ -202,7 +199,8 @@ namespace SecChem::BasisSet::Gaussian
 
 		bool EqualsTo_Impl(const SemiLocalEcp& other, const Scalar tolerance = ZeroTolerance) const noexcept
 		{
-			return m_Data.rows() == other.m_Data.rows() && (m_Data - other.m_Data).cwiseAbs().maxCoeff() <= tolerance;
+			return m_Data.rows() == other.m_Data.rows()
+			       && (m_Data.size() == 0 || (m_Data - other.m_Data).cwiseAbs().maxCoeff() <= tolerance);
 		}
 
 		Eigen::Matrix<Scalar, Eigen::Dynamic, 3> m_Data;

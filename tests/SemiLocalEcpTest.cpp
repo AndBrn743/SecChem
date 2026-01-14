@@ -138,15 +138,29 @@ TEST_CASE("SemiLocalEcp handles large and negative values", "[SemiLocalEcp][nume
 	CHECK_THAT(ecp.GaussianExponent(0), WithinRel(1e-6, 1e-14));
 }
 
-TEST_CASE("SemiLocalEcp rejects empty coefficient set", "[SemiLocalEcp][invalid]")
+TEST_CASE("SemiLocalEcp accepts empty coefficient set", "[SemiLocalEcp]")
 {
 	Eigen::VectorXd coefficients(0);
 	Eigen::VectorXd rExponents(0);
 	Eigen::VectorXd gaussianExponents(0);
 
-	REQUIRE_THROWS_MATCHES(SemiLocalEcp(coefficients, rExponents, gaussianExponents),
-	                       std::invalid_argument,
-	                       MessageMatches(ContainsSubstring("empty")));
+	SemiLocalEcp ecp(coefficients, rExponents, gaussianExponents);
+
+	REQUIRE(ecp.TermCount() == 0);
+}
+
+TEST_CASE("null SemiLocalEcp equal to each other", "[SemiLocalEcp]")
+{
+	Eigen::VectorXd coefficients(0);
+	Eigen::VectorXd rExponents(0);
+	Eigen::VectorXd gaussianExponents(0);
+
+	SemiLocalEcp ecp(coefficients, rExponents, gaussianExponents);
+	SemiLocalEcp ecp2{};
+
+	REQUIRE(ecp.TermCount() == 0);
+	REQUIRE(ecp2.TermCount() == 0);
+	REQUIRE(ecp == ecp2);
 }
 
 TEST_CASE("SemiLocalEcp rejects size mismatch", "[SemiLocalEcp][invalid]")
@@ -345,63 +359,3 @@ TEST_CASE("SemiLocalEcp::Concat should work with single item range", "[SemiLocal
 	REQUIRE(ecp == ecpExampleA);
 }
 
-TEST_CASE("SemiLocalEcp::ConcatNullable should work", "[SemiLocalEcp]")
-{
-	{
-		auto ecps = {std::optional{ecpExampleA}, std::optional{ecpExampleB}};
-		auto nullableEcp = SemiLocalEcp::ConcatNullable(ecps.begin(), ecps.end());
-
-		REQUIRE(nullableEcp.has_value());
-		const auto& ecp = nullableEcp.value();
-
-		REQUIRE(ecp.Coefficients().size() == 5);
-		REQUIRE(ecp.Coefficients().head(3) == ecpExampleA.Coefficients());
-		REQUIRE(ecp.Coefficients().tail(2) == ecpExampleB.Coefficients());
-		REQUIRE(ecp.RExponents().head(3) == ecpExampleA.RExponents());
-		REQUIRE(ecp.RExponents().tail(2) == ecpExampleB.RExponents());
-		REQUIRE(ecp.GaussianExponents().head(3) == ecpExampleA.GaussianExponents());
-		REQUIRE(ecp.GaussianExponents().tail(2) == ecpExampleB.GaussianExponents());
-	}
-	{
-		std::initializer_list<std::optional<SemiLocalEcp>> ecps = {std::optional{ecpExampleA}, std::nullopt};
-		auto nullableEcp = SemiLocalEcp::ConcatNullable(ecps.begin(), ecps.end());
-
-		REQUIRE(nullableEcp.has_value());
-		const auto& ecp = nullableEcp.value();
-		REQUIRE(ecp == ecpExampleA);
-	}
-	{
-		std::initializer_list<std::optional<SemiLocalEcp>> ecps = {std::nullopt, std::nullopt};
-		auto nullableEcp = SemiLocalEcp::ConcatNullable(ecps.begin(), ecps.end());
-
-		REQUIRE_FALSE(nullableEcp.has_value());
-	}
-}
-
-TEST_CASE("SemiLocalEcp::ConcatNullable should return std::nullopt with empty input range", "[SemiLocalEcp]")
-{
-	{
-		std::initializer_list<std::optional<SemiLocalEcp>> ecps = {};
-		auto nullableEcp = SemiLocalEcp::ConcatNullable(ecps.begin(), ecps.end());
-
-		REQUIRE_FALSE(nullableEcp.has_value());
-	}
-}
-
-TEST_CASE("SemiLocalEcp::ConcatNullable should work with single item range", "[SemiLocalEcp]")
-{
-	{
-		std::initializer_list<std::optional<SemiLocalEcp>> ecps = {std::optional{ecpExampleA}};
-		auto nullableEcp = SemiLocalEcp::ConcatNullable(ecps.begin(), ecps.end());
-
-		REQUIRE(nullableEcp.has_value());
-		const auto& ecp = nullableEcp.value();
-		REQUIRE(ecp == ecpExampleA);
-	}
-	{
-		std::initializer_list<std::optional<SemiLocalEcp>> ecps = {std::nullopt};
-		auto nullableEcp = SemiLocalEcp::ConcatNullable(ecps.begin(), ecps.end());
-
-		REQUIRE_FALSE(nullableEcp.has_value());
-	}
-}
