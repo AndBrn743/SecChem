@@ -201,7 +201,7 @@ namespace SecChem::BasisSet::Gaussian
 		AngularMomentumBlock& AddOrOverrideContractedRadialOrbitalSet(
 		        ContractedRadialOrbitalSet contractedRadialOrbitalSet)
 		{
-			m_NullableContractedRadialOrbitalSet = contractedRadialOrbitalSet;
+			m_NullableContractedRadialOrbitalSet = std::move(contractedRadialOrbitalSet);
 			m_SegmentationTable = {{0, 0},
 			                       {m_NullableContractedRadialOrbitalSet.value().PrimitiveShellCount(),
 			                        m_NullableContractedRadialOrbitalSet.value().ContractedShellCount()}};
