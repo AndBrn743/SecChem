@@ -40,8 +40,7 @@ namespace SecChem::BasisSet::Gaussian
 			const auto n0 = l.MinPrincipalQuantumNumber() + principalQuantumNumberOffset;
 
 			return ranges::views::iota(0 + n0, static_cast<int>(PrimitiveShellCount()) + n0)
-				   | ranges::views::transform([l](const int n)
-											  { return ElectronicSubshell{n, l}; });
+			       | ranges::views::transform([l](const int n) { return ElectronicSubshell{n, l}; });
 		}
 
 		Eigen::Index ContractedShellCount() const noexcept
@@ -55,8 +54,7 @@ namespace SecChem::BasisSet::Gaussian
 			const auto n0 = l.MinPrincipalQuantumNumber() + principalQuantumNumberOffset;
 
 			return ranges::views::iota(0 + n0, static_cast<int>(ContractedShellCount()) + n0)
-			       | ranges::views::transform([l](const int n)
-			                                  { return ElectronicSubshell{n, l}; });
+			       | ranges::views::transform([l](const int n) { return ElectronicSubshell{n, l}; });
 		}
 
 		Eigen::Index PrimitiveCartesianOrbitalCount() const noexcept
@@ -239,8 +237,12 @@ namespace SecChem::BasisSet::Gaussian
 			return m_NullableContractedRadialOrbitalSet.value();
 		}
 
-		template <typename InputIterator, typename Getter>
-		static AngularMomentumBlock Concat(InputIterator begin, const InputIterator end, Getter get)
+		/// <summary>
+		/// Concatenates multiple AngularMomentumBlock instances.
+		/// Throws std::runtime_error if the input range is empty or if blocks have different angular momenta.
+		/// </summary>
+		template <typename ForwardIterator, typename Getter>
+		static AngularMomentumBlock Concat(ForwardIterator begin, const ForwardIterator end, Getter get)
 		{
 			if (begin == end)
 			{
@@ -274,8 +276,12 @@ namespace SecChem::BasisSet::Gaussian
 			return {azimuthalQuantumNumber, std::move(crs), std::move(segTable), std::move(ecp)};
 		}
 
-		template <typename InputIterator>
-		static AngularMomentumBlock Concat(InputIterator begin, const InputIterator end)
+		/// <summary>
+		/// Concatenates multiple AngularMomentumBlock instances.
+		/// Throws std::runtime_error if the input range is empty or if blocks have different angular momenta.
+		/// </summary>
+		template <typename ForwardIterator>
+		static AngularMomentumBlock Concat(ForwardIterator begin, const ForwardIterator end)
 		{
 			return Concat(begin, end, [](auto&& item) -> decltype(auto) { return std::forward<decltype(item)>(item); });
 		}
@@ -353,7 +359,8 @@ namespace SecChem::BasisSet::Gaussian
 		template <typename InputIterator, typename Getter>
 		static SegmentationTable ConcatSegmentationTable(const InputIterator begin, const InputIterator end, Getter get)
 		{
-			static_assert(std::is_lvalue_reference_v<decltype(get(*begin))>);
+			static_assert(std::is_lvalue_reference_v<decltype(get(*begin))>,
+			              "Getter must return a reference type (lvalue reference)");
 			const auto segmentCount = std::accumulate(begin,
 			                                          end,
 			                                          std::size_t{1},  // start from 1, not 0
