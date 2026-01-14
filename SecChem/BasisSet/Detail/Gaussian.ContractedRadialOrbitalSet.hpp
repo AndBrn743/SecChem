@@ -60,7 +60,7 @@ namespace SecChem::BasisSet::Gaussian
 
 		ContractedRadialOrbitalSet(Eigen::VectorXd exponentSet, Eigen::MatrixXd contractionSets)
 		    : m_ExponentSet(std::move(exponentSet)), m_ContractionSets(std::move(contractionSets)),
-		      m_ContractionSetViewDescriptions(BuildContractionSetViewDescriptions(m_ExponentSet, m_ContractionSets))
+		      m_ContractionSetViewDescriptions(BuildContractionSetViewDescriptions(m_ContractionSets))
 		{
 			ValidateInput();
 		}
@@ -97,8 +97,8 @@ namespace SecChem::BasisSet::Gaussian
 			return m_ContractionSets.row(index);
 		}
 
-		template <typename InputIterator, typename Getter>
-		static ContractedRadialOrbitalSet Concat(InputIterator begin, const InputIterator end, Getter get)
+		template <typename ForwardIterator, typename Getter>
+		static ContractedRadialOrbitalSet Concat(ForwardIterator begin, const ForwardIterator end, Getter get)
 		{
 			if (begin == end)
 			{
@@ -139,15 +139,15 @@ namespace SecChem::BasisSet::Gaussian
 			return {std::move(exponentSet), std::move(contractionSets)};
 		}
 
-		template <typename InputIterator>
-		static ContractedRadialOrbitalSet Concat(InputIterator begin, const InputIterator end)
+		template <typename ForwardIterator>
+		static ContractedRadialOrbitalSet Concat(ForwardIterator begin, const ForwardIterator end)
 		{
 			return Concat(begin, end, [](auto&& item) -> decltype(auto) { return std::forward<decltype(item)>(item); });
 		}
 
-		template <typename InputIterator, typename Getter>
-		static std::optional<ContractedRadialOrbitalSet> ConcatNullable(InputIterator begin,
-		                                                                const InputIterator end,
+		template <typename ForwardIterator, typename Getter>
+		static std::optional<ContractedRadialOrbitalSet> ConcatNullable(ForwardIterator begin,
+		                                                                const ForwardIterator end,
 		                                                                Getter get)
 		{
 			if (begin == end)
@@ -204,8 +204,9 @@ namespace SecChem::BasisSet::Gaussian
 			return ContractedRadialOrbitalSet{std::move(exponentSet), std::move(contractionSets)};
 		}
 
-		template <typename InputIterator>
-		static std::optional<ContractedRadialOrbitalSet> ConcatNullable(InputIterator begin, const InputIterator end)
+		template <typename ForwardIterator>
+		static std::optional<ContractedRadialOrbitalSet> ConcatNullable(ForwardIterator begin,
+		                                                                const ForwardIterator end)
 		{
 			return ConcatNullable(
 			        begin, end, [](auto&& item) -> decltype(auto) { return std::forward<decltype(item)>(item); });
@@ -213,10 +214,10 @@ namespace SecChem::BasisSet::Gaussian
 
 	private:
 		static std::vector<ContractionSetViewDescription> BuildContractionSetViewDescriptions(
-		        const Eigen::VectorXd& exponentSet, const Eigen::MatrixXd& contractionSets)
+		        const Eigen::MatrixXd& contractionSets)
 		{
 			std::vector<ContractionSetViewDescription> descriptions;
-			descriptions.reserve(exponentSet.size());
+			descriptions.reserve(contractionSets.cols());
 
 			for (Eigen::Index i = 0; i < contractionSets.cols(); i++)
 			{
@@ -226,7 +227,7 @@ namespace SecChem::BasisSet::Gaussian
 				                               [](const Scalar c) { return std::abs(c) >= ZeroTolerance; });
 				if (head == contractionSet.end())
 				{
-					throw std::runtime_error("Contraction coefficients from a contraction set is all zero");
+					throw std::runtime_error("Contraction coefficients from a contraction set are all zero");
 				}
 
 				const auto tail = std::find_if(std::reverse_iterator(contractionSet.end()),
