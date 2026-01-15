@@ -187,8 +187,8 @@ jobs:
           lcov --list coverage.info
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
-          file: build/coverage.info
+          files: build/coverage.info
           fail_ci_if_error: false
           verbose: true
