@@ -3,6 +3,7 @@
 [![CI](https://github.com/AndBrn743/SecChem/actions/workflows/linux.yml/badge.svg?branch=master)](https://github.com/AndBrn743/SecChem/actions)
 [![CI](https://github.com/AndBrn743/SecChem/actions/workflows/windows.yml/badge.svg?branch=master)](https://github.com/AndBrn743/SecChem/actions)
 [![CI](https://github.com/AndBrn743/SecChem/actions/workflows/macos.yml/badge.svg?branch=master)](https://github.com/AndBrn743/SecChem/actions)
+[![codecov](https://codecov.io/gh/AndBrn743/SecChem/branch/master/graph/badge.svg)](https://codecov.io/gh/AndBrn743/SecChem)
 
 **SecChem** is a C++17 chemistry *infrastructure* library that provides core data structures and parsers for
 representing **molecules** and **Gaussian-type basis sets**, intended to be reused by quantum chemistry (QC)
