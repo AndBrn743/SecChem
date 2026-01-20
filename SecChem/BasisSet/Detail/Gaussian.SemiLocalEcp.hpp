@@ -99,60 +99,6 @@ namespace SecChem::BasisSet::Gaussian
 			return Concat(begin, end, [](auto&& item) -> decltype(auto) { return std::forward<decltype(item)>(item); });
 		}
 
-		template <typename ForwardIterator, typename Getter>
-		static std::optional<SemiLocalEcp> ConcatNullable(ForwardIterator begin,
-		                                                  const ForwardIterator end,
-		                                                  const Getter get)
-		{
-			if (begin == end)
-			{
-				return std::nullopt;
-			}
-
-			if (std::distance(begin, end) == 1)
-			{
-				return get(*begin);
-			}
-
-			const auto totalTermCount = std::accumulate(begin,
-			                                            end,
-			                                            Eigen::Index{0},
-			                                            [get](const Eigen::Index acc, const auto& ecp)
-			                                            {
-				                                            if (!get(ecp).has_value())
-				                                            {
-					                                            return acc;
-				                                            }
-				                                            return acc + get(ecp).value().m_Data.rows();
-			                                            });
-
-			if (totalTermCount == 0)
-			{
-				return std::nullopt;
-			}
-
-			Eigen::Matrix<Scalar, Eigen::Dynamic, 3> data(totalTermCount, 3);
-
-			auto it = begin;
-			for (Eigen::Index offset = 0; it != end; ++it)
-			{
-				if (get(*it).has_value())
-				{
-					decltype(auto) ecpData = get(*it).value().m_Data;
-					data.middleRows(offset, ecpData.rows()) = ecpData;
-					offset += ecpData.rows();
-				}
-			}
-
-			return SemiLocalEcp{std::move(data)};
-		}
-
-		template <typename ForwardIterator>
-		static std::optional<SemiLocalEcp> ConcatNullable(ForwardIterator begin, const ForwardIterator end)
-		{
-			return ConcatNullable(
-			        begin, end, [](auto&& item) -> decltype(auto) { return std::forward<decltype(item)>(item); });
-		}
 
 	private:
 		explicit SemiLocalEcp(Eigen::Matrix<Scalar, Eigen::Dynamic, 3> data) : m_Data(std::move(data))
