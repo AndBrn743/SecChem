@@ -182,9 +182,7 @@ TEST_CASE("SemiLocalEcp rejects size mismatch", "[SemiLocalEcp][invalid]")
 TEST_CASE("SemiLocalEcp rejects non-vector coefficient input", "[SemiLocalEcp][invalid]")
 {
 	Eigen::MatrixXd coefficients(2, 2);
-	coefficients <<
-		1.0, 2.0,
-		3.0, 4.0;
+	coefficients << 1.0, 2.0, 3.0, 4.0;
 
 	Eigen::VectorXd rExponents(4);
 	rExponents << 0.1, 0.2, 0.3, 0.4;
@@ -203,9 +201,7 @@ TEST_CASE("SemiLocalEcp rejects non-vector r-exponent input", "[SemiLocalEcp][in
 	coefficients << 1.0, -1.0;
 
 	Eigen::MatrixXd rExponents(2, 2);
-	rExponents <<
-		0.5, 1.5,
-		2.5, 3.5;
+	rExponents << 0.5, 1.5, 2.5, 3.5;
 
 	Eigen::VectorXd gaussianExponents(4);
 	gaussianExponents << 1.0, 2.0, 3.0, 4.0;
@@ -224,9 +220,7 @@ TEST_CASE("SemiLocalEcp rejects non-vector gaussian exponent input", "[SemiLocal
 	rExponents << 1.0, 2.0;
 
 	Eigen::MatrixXd gaussianExponents(2, 2);
-	gaussianExponents <<
-		0.1, 0.2,
-		0.3, 0.4;
+	gaussianExponents << 0.1, 0.2, 0.3, 0.4;
 
 	REQUIRE_THROWS_MATCHES(SemiLocalEcp(coefficients, rExponents, gaussianExponents),
 	                       std::invalid_argument,
@@ -236,9 +230,7 @@ TEST_CASE("SemiLocalEcp rejects non-vector gaussian exponent input", "[SemiLocal
 TEST_CASE("SemiLocalEcp rejects multiple simultaneous input errors", "[SemiLocalEcp][invalid]")
 {
 	Eigen::MatrixXd coefficients(2, 2);
-	coefficients <<
-		1.0, 2.0,
-		3.0, 4.0;
+	coefficients << 1.0, 2.0, 3.0, 4.0;
 
 	Eigen::VectorXd rExponents(3);
 	rExponents << 0.1, 0.2, 0.3;
@@ -334,16 +326,33 @@ static const auto ecpExampleB = []
 
 TEST_CASE("SemiLocalEcp::Concat should work", "[SemiLocalEcp]")
 {
-	auto ecps = {ecpExampleA, ecpExampleB};
-	auto ecp = SemiLocalEcp::Concat(ecps.begin(), ecps.end());
+	const std::array ecps = {ecpExampleA, ecpExampleB};
 
-	REQUIRE(ecp.Coefficients().size() == 5);
-	REQUIRE(ecp.Coefficients().head(3) == ecpExampleA.Coefficients());
-	REQUIRE(ecp.Coefficients().tail(2) == ecpExampleB.Coefficients());
-	REQUIRE(ecp.RExponents().head(3) == ecpExampleA.RExponents());
-	REQUIRE(ecp.RExponents().tail(2) == ecpExampleB.RExponents());
-	REQUIRE(ecp.GaussianExponents().head(3) == ecpExampleA.GaussianExponents());
-	REQUIRE(ecp.GaussianExponents().tail(2) == ecpExampleB.GaussianExponents());
+	SECTION("Concat iterable")
+	{
+		auto ecp = SemiLocalEcp::Concat(ecps.begin(), ecps.end());
+
+		REQUIRE(ecp.Coefficients().size() == 5);
+		REQUIRE(ecp.Coefficients().head(3) == ecpExampleA.Coefficients());
+		REQUIRE(ecp.Coefficients().tail(2) == ecpExampleB.Coefficients());
+		REQUIRE(ecp.RExponents().head(3) == ecpExampleA.RExponents());
+		REQUIRE(ecp.RExponents().tail(2) == ecpExampleB.RExponents());
+		REQUIRE(ecp.GaussianExponents().head(3) == ecpExampleA.GaussianExponents());
+		REQUIRE(ecp.GaussianExponents().tail(2) == ecpExampleB.GaussianExponents());
+	}
+
+	SECTION("Concat items")
+	{
+		auto ecp = SemiLocalEcp::Concat(ecps[0], ecps[1]);
+
+		REQUIRE(ecp.Coefficients().size() == 5);
+		REQUIRE(ecp.Coefficients().head(3) == ecpExampleA.Coefficients());
+		REQUIRE(ecp.Coefficients().tail(2) == ecpExampleB.Coefficients());
+		REQUIRE(ecp.RExponents().head(3) == ecpExampleA.RExponents());
+		REQUIRE(ecp.RExponents().tail(2) == ecpExampleB.RExponents());
+		REQUIRE(ecp.GaussianExponents().head(3) == ecpExampleA.GaussianExponents());
+		REQUIRE(ecp.GaussianExponents().tail(2) == ecpExampleB.GaussianExponents());
+	}
 }
 
 TEST_CASE("SemiLocalEcp::Concat should throw with empty input range", "[SemiLocalEcp]")
@@ -354,8 +363,17 @@ TEST_CASE("SemiLocalEcp::Concat should throw with empty input range", "[SemiLoca
 
 TEST_CASE("SemiLocalEcp::Concat should work with single item range", "[SemiLocalEcp]")
 {
-	auto ecps = {ecpExampleA};
-	auto ecp = SemiLocalEcp::Concat(ecps.begin(), ecps.end());
-	REQUIRE(ecp == ecpExampleA);
-}
+	const std::array ecps = {ecpExampleA};
 
+	SECTION("Concat iterable")
+	{
+		auto ecp = SemiLocalEcp::Concat(ecps.begin(), ecps.end());
+		REQUIRE(ecp == ecpExampleA);
+	}
+
+	SECTION("Concat item")
+	{
+		auto ecp = SemiLocalEcp::Concat(ecps[0]);
+		REQUIRE(ecp == ecpExampleA);
+	}
+}

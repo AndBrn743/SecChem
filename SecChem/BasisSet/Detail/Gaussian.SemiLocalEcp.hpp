@@ -64,7 +64,9 @@ namespace SecChem::BasisSet::Gaussian
 		}
 
 		template <typename ForwardIterator, typename Getter>
-		static SemiLocalEcp Concat(const ForwardIterator begin, const ForwardIterator end, const Getter get)
+		static std::enable_if_t<!std::is_same_v<std::decay_t<decltype(*std::declval<ForwardIterator>())>, void>,
+		                        SemiLocalEcp>
+		Concat(const ForwardIterator begin, const ForwardIterator end, const Getter get)
 		{
 			if (begin == end)
 			{
@@ -94,11 +96,32 @@ namespace SecChem::BasisSet::Gaussian
 		}
 
 		template <typename ForwardIterator>
-		static SemiLocalEcp Concat(const ForwardIterator begin, const ForwardIterator end)
+		static std::enable_if_t<!std::is_same_v<std::decay_t<decltype(*std::declval<ForwardIterator>())>, void>,
+		                        SemiLocalEcp>
+		Concat(const ForwardIterator begin, const ForwardIterator end)
 		{
 			return Concat(begin, end, [](auto&& item) -> decltype(auto) { return std::forward<decltype(item)>(item); });
 		}
 
+		template <typename... Sets>
+		static std::enable_if_t<(std::is_same_v<std::decay_t<Sets>, SemiLocalEcp> && ...), SemiLocalEcp> Concat(
+		        const Sets&... sets)
+		{
+			static_assert(sizeof...(Sets) > 0);
+			const std::initializer_list<std::reference_wrapper<const SemiLocalEcp>> list = {std::ref(sets)...};
+
+			if constexpr (sizeof...(Sets) == 1)
+			{
+				return list.begin()->get();
+			}
+			else
+			{
+				return Concat(std::begin(list),
+				              std::end(list),
+				              [](const std::reference_wrapper<const SemiLocalEcp> ref) -> const SemiLocalEcp&
+				              { return ref.get(); });
+			}
+		}
 
 	private:
 		explicit SemiLocalEcp(Eigen::Matrix<Scalar, Eigen::Dynamic, 3> data) : m_Data(std::move(data))
