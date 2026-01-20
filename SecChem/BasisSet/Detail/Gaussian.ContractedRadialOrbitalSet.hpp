@@ -58,11 +58,15 @@ namespace SecChem::BasisSet::Gaussian
 			const Eigen::Map<const Eigen::VectorX<Scalar>> m_Contractions;
 		};
 
+		ContractedRadialOrbitalSet() noexcept = default;
+
 		ContractedRadialOrbitalSet(Eigen::VectorXd exponentSet, Eigen::MatrixXd contractionSets)
 		    : m_ExponentSet(std::move(exponentSet)), m_ContractionSets(std::move(contractionSets)),
-		      m_ContractionSetViewDescriptions(BuildContractionSetViewDescriptions(m_ContractionSets))
+		      m_ContractionSetViewDescriptions(
+		              (ValidateInput(), BuildContractionSetViewDescriptions(m_ContractionSets)))
+		//                            ^ this is a comma operator
 		{
-			ValidateInput();
+			/* NO CODE */
 		}
 
 		const Eigen::VectorXd& ExponentSet() const noexcept
@@ -102,7 +106,7 @@ namespace SecChem::BasisSet::Gaussian
 		{
 			if (begin == end)
 			{
-				throw std::runtime_error("ContractedRadialOrbitalSet: input range is empty");
+				return {};
 			}
 
 			if (std::distance(begin, end) == 1)
@@ -145,73 +149,6 @@ namespace SecChem::BasisSet::Gaussian
 			return Concat(begin, end, [](auto&& item) -> decltype(auto) { return std::forward<decltype(item)>(item); });
 		}
 
-		template <typename ForwardIterator, typename Getter>
-		static std::optional<ContractedRadialOrbitalSet> ConcatNullable(ForwardIterator begin,
-		                                                                const ForwardIterator end,
-		                                                                Getter get)
-		{
-			if (begin == end)
-			{
-				return std::nullopt;
-			}
-
-			if (std::distance(begin, end) == 1)
-			{
-				return get(*begin);
-			}
-
-			using IndexPair = std::pair<Eigen::Index, Eigen::Index>;
-			const auto dimensions =
-			        std::accumulate(begin,
-			                        end,
-			                        IndexPair{0, 0},
-			                        [get](const IndexPair& acc, const auto& block)
-			                        {
-				                        if (!get(block).has_value())
-				                        {
-					                        return acc;
-				                        }
-				                        return IndexPair{acc.first + get(block).value().m_ContractionSets.rows(),
-				                                         acc.second + get(block).value().m_ContractionSets.cols()};
-			                        });
-
-			if (dimensions.first == 0 || dimensions.second == 0)
-			{
-				return std::nullopt;
-			}
-
-			Eigen::VectorX<Scalar> exponentSet = Eigen::VectorX<Scalar>::Zero(dimensions.first);
-			Eigen::MatrixX<Scalar> contractionSets = Eigen::MatrixX<Scalar>::Zero(dimensions.first, dimensions.second);
-
-			for (IndexPair offsets = {0, 0}; begin != end; ++begin)
-			{
-				if (!get(*begin).has_value())
-				{
-					continue;
-				}
-
-				decltype(auto) crs = get(*begin).value();
-
-				exponentSet.segment(offsets.first, crs.ExponentSet().size()) = crs.ExponentSet();
-				contractionSets.block(
-				        offsets.first, offsets.second, crs.ContractionSets().rows(), crs.ContractionSets().cols()) =
-				        crs.ContractionSets();
-
-				offsets.first += crs.ContractionSets().rows();
-				offsets.second += crs.ContractionSets().cols();
-			}
-
-			return ContractedRadialOrbitalSet{std::move(exponentSet), std::move(contractionSets)};
-		}
-
-		template <typename ForwardIterator>
-		static std::optional<ContractedRadialOrbitalSet> ConcatNullable(ForwardIterator begin,
-		                                                                const ForwardIterator end)
-		{
-			return ConcatNullable(
-			        begin, end, [](auto&& item) -> decltype(auto) { return std::forward<decltype(item)>(item); });
-		}
-
 	private:
 		static std::vector<ContractionSetViewDescription> BuildContractionSetViewDescriptions(
 		        const Eigen::MatrixXd& contractionSets)
@@ -242,19 +179,15 @@ namespace SecChem::BasisSet::Gaussian
 		// this method shall be called only from ctors
 		void ValidateInput() const
 		{
-			if (m_ExponentSet.size() == 0)
-			{
-				throw std::invalid_argument("ContractedRadialOrbitalSet: empty exponent set");
-			}
-
-			if (m_ContractionSets.size() == 0)
-			{
-				throw std::invalid_argument("ContractedRadialOrbitalSet: empty coefficient set");
-			}
-
 			if (m_ExponentSet.size() != m_ContractionSets.rows())
 			{
 				throw std::invalid_argument("ContractedRadialOrbitalSet: size mismatch");
+			}
+
+			if (m_ContractionSets.size() == 0 && m_ContractionSets.cols() != 0)
+			{
+				throw std::invalid_argument("For construct a empty/null ContractedRadialOrbitalSet, the input "
+				                            "`contractionSets` must be zero-by-zero");
 			}
 		}
 
@@ -265,11 +198,20 @@ namespace SecChem::BasisSet::Gaussian
 		bool EqualsTo_Impl(const ContractedRadialOrbitalSet& other,
 		                   const Scalar tolerance = ZeroTolerance) const noexcept
 		{
-			return m_ExponentSet.size() == other.m_ExponentSet.size()
-			       && m_ContractionSets.rows() == other.m_ContractionSets.rows()
-			       && m_ContractionSets.cols() == other.m_ContractionSets.cols()
-			       && (m_ExponentSet - other.m_ExponentSet).cwiseAbs().maxCoeff() <= tolerance
-			       && (m_ContractionSets - other.m_ContractionSets).cwiseAbs().maxCoeff() <= tolerance;
+			if (m_ExponentSet.size() != other.m_ExponentSet.size()
+			    || m_ContractionSets.cols() != other.m_ContractionSets.cols())
+			{
+				return false;
+			}
+
+			if (m_ExponentSet.size() == 0)
+			{
+				return true;
+			}
+
+			return (m_ExponentSet - other.m_ExponentSet).cwiseAbs().maxCoeff() <= tolerance
+			       && (m_ContractionSets.cols() == 0
+			           || (m_ContractionSets - other.m_ContractionSets).cwiseAbs().maxCoeff() <= tolerance);
 		}
 	};
 }  // namespace SecChem::BasisSet::Gaussian

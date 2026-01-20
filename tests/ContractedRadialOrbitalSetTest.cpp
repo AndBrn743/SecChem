@@ -2,8 +2,10 @@
 // Created by Andy on 12/25/2025.
 //
 
-#include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_exception.hpp>
+#include <catch2/matchers/catch_matchers_string.hpp>
 #include <catch2/catch_approx.hpp>
+#include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 
 #include <stdexcept>
@@ -33,6 +35,8 @@ TEST_CASE("ContractedRadialOrbitalSet: basic construction", "[ContractedRadialOr
     REQUIRE(set.ExponentSet().size() == 3);
     REQUIRE(set.ContractionSets().rows() == 3);
     REQUIRE(set.ContractionSets().cols() == 2);
+
+	REQUIRE_THROWS(ContractedRadialOrbitalSet(exponents, Eigen::MatrixXd::Random(4, 3)));
 }
 
 TEST_CASE("ContractionSetView trims leading and trailing zeros", "[ContractedRadialOrbitalSet]")
@@ -277,7 +281,7 @@ static ContractedRadialOrbitalSet MakeSimpleSet(const std::vector<double>& expon
 		e[i] = exponents[i];
 	}
 
-	return ContractedRadialOrbitalSet(e, contractions);
+	return {e, contractions};
 }
 
 TEST_CASE("ContractedRadialOrbitalSet::operator== exact equality")
@@ -380,6 +384,7 @@ TEST_CASE("ContractedRadialOrbitalSet::EqualsTo is order-sensitive")
 	auto b = MakeSimpleSet({2.0, 1.0}, c);
 
 	REQUIRE_FALSE(a.EqualsTo(b, 1e-6));
+	REQUIRE_FALSE(b.EqualsTo(a, 1e-6));
 }
 
 TEST_CASE("ContractedRadialOrbitalSet::Concat should work")
@@ -421,96 +426,73 @@ TEST_CASE("ContractedRadialOrbitalSet::Concat should work on range of single set
 	REQUIRE(a.ContractionSets() == c0);
 }
 
-TEST_CASE("ContractedRadialOrbitalSet::Concat should throw on empty input range")
+TEST_CASE("ContractedRadialOrbitalSet::Concat shan't throw on empty input range")
 {
 	std::vector<ContractedRadialOrbitalSet> sets;
-	REQUIRE_THROWS(ContractedRadialOrbitalSet::Concat(sets.begin(), sets.end()));
+	const auto c = ContractedRadialOrbitalSet::Concat(sets.begin(), sets.end());
+	REQUIRE(c == ContractedRadialOrbitalSet{});
 }
 
-TEST_CASE("ContractedRadialOrbitalSet::ConcatNullable should work")
+TEST_CASE("Empty sets should be allowed")
 {
-	Eigen::MatrixXd c0(3, 2);
-	c0 << 1.0, 0.0,
-		 0.5, 0.3,
-		 0.0, 0.7;
-	Eigen::MatrixXd c1(2, 1);
-	c1 << 1.0, 0.5;
+	Eigen::VectorXd exponents0(0);
+	Eigen::MatrixXd contractions0(0, 0);
 
-	SECTION("Not-null + not-null")
-	{
-		std::array sets = {std::optional(MakeSimpleSet({1.0, 2.0, 3.0}, c0)), std::optional(MakeSimpleSet({1.5, 2.5}, c1))};
-		auto na = ContractedRadialOrbitalSet::ConcatNullable(sets.begin(), sets.end());
+	auto a = ContractedRadialOrbitalSet(exponents0, contractions0);
+	auto b = ContractedRadialOrbitalSet{};
 
-		REQUIRE(na.has_value());
-		const auto& a = na.value();
-		REQUIRE(a.ExponentSet().size() == 5);
-		REQUIRE(a.ContractionSets().rows() == 5);
-		REQUIRE(a.ContractedShellCount() == 3);
-
-		REQUIRE(a.ExponentSet().head(3) == Eigen::Vector3d{{1.0, 2.0, 3.0}});
-		REQUIRE(a.ExponentSet().tail(2) == Eigen::Vector2d{{1.5, 2.5}});
-		REQUIRE(a.ContractionSets().topLeftCorner(3, 2) == c0);
-		REQUIRE(a.ContractionSets().bottomRightCorner(2, 1) == c1);
-
-		REQUIRE(a.ContractionSets().topRightCorner(3, 1).norm() == 0);
-		REQUIRE(a.ContractionSets().bottomLeftCorner(2, 2).norm() == 0);
-	}
-	SECTION("null + not-null")
-	{
-		std::array<std::optional<ContractedRadialOrbitalSet>, 2> sets = {std::nullopt, std::optional(MakeSimpleSet({1.5, 2.5}, c1))};
-		auto na = ContractedRadialOrbitalSet::ConcatNullable(sets.begin(), sets.end());
-
-		REQUIRE(na.has_value());
-		const auto& a = na.value();
-		REQUIRE(a == MakeSimpleSet({1.5, 2.5}, c1));
-	}
-
-	SECTION("Not-null + null")
-	{
-		std::array<std::optional<ContractedRadialOrbitalSet>, 2> sets = {std::optional(MakeSimpleSet({1.0, 2.0, 3.0}, c0)), std::nullopt};
-		auto na = ContractedRadialOrbitalSet::ConcatNullable(sets.begin(), sets.end());
-
-		REQUIRE(na.has_value());
-		const auto& a = na.value();
-		REQUIRE(a == MakeSimpleSet({1.0, 2.0, 3.0}, c0));
-	}
-	SECTION("Null + null")
-	{
-		std::array<std::optional<ContractedRadialOrbitalSet>, 2> sets = {};
-		auto na = ContractedRadialOrbitalSet::ConcatNullable(sets.begin(), sets.end());
-
-		REQUIRE(!na.has_value());
-	}
+	Eigen::VectorXd exponents1(0);
+	Eigen::MatrixXd contractions1(0, 2);
+	REQUIRE_THROWS_MATCHES(ContractedRadialOrbitalSet(exponents1, contractions1), std::invalid_argument,
+		MessageMatches(Catch::Matchers::ContainsSubstring("must be zero-by-zero")));
 }
 
-TEST_CASE("ContractedRadialOrbitalSet::ConcatNullable should work on range of single set")
+TEST_CASE("Empty sets are equal")
 {
-	Eigen::MatrixXd c0(3, 2);
-	c0 << 1.0, 0.0,
-		  0.5, 0.3,
-		  0.0, 0.7;
+	Eigen::VectorXd exponents0(0);
+	Eigen::MatrixXd contractions0(0, 0);
 
-	SECTION("Not-null")
-	{
-		std::array sets = {std::optional(MakeSimpleSet({1.0, 2.0, 3.0}, c0))};
-		auto na = ContractedRadialOrbitalSet::ConcatNullable(sets.begin(), sets.end());
+	auto a = ContractedRadialOrbitalSet(exponents0, contractions0);
+	auto b = ContractedRadialOrbitalSet{};
 
-		REQUIRE(na.has_value());
-		const auto& a = na.value();
-		REQUIRE(a == MakeSimpleSet({1.0, 2.0, 3.0}, c0));
-	}
-	SECTION("Null")
-	{
-		std::array<std::optional<ContractedRadialOrbitalSet>, 2> sets = {std::nullopt};
-		auto na = ContractedRadialOrbitalSet::ConcatNullable(sets.begin(), sets.end());
-
-		REQUIRE(!na.has_value());
-	}
+	REQUIRE(a == b);
+	REQUIRE(a.PrimitiveShellCount() == 0);
+	REQUIRE(a.ContractedShellCount() == 0);
 }
 
-TEST_CASE("ContractedRadialOrbitalSet::ConcatNullable should not throw on empty input range")
+TEST_CASE("Empty vs non-empty sets are not equal")
 {
-	std::vector<std::optional<ContractedRadialOrbitalSet>> sets;
-	auto opt = ContractedRadialOrbitalSet::ConcatNullable(sets.begin(), sets.end());
-	REQUIRE(!opt.has_value());
+	ContractedRadialOrbitalSet empty = {};
+
+	// Non-empty set
+	Eigen::VectorXd exponents(3);
+	exponents << 1.0, 2.0, 3.0;
+
+	Eigen::MatrixXd contractions(3, 2);
+	contractions << 1.0, 0.0,
+	                 0.5, 0.3,
+	                 0.0, 0.7;
+
+	auto nonEmpty = ContractedRadialOrbitalSet(exponents, contractions);
+
+	REQUIRE(empty != nonEmpty);
+	REQUIRE(empty.PrimitiveShellCount() == 0);
+	REQUIRE(nonEmpty.PrimitiveShellCount() == 3);
+}
+
+TEST_CASE("Zero contraction sets are valid")
+{
+	Eigen::VectorXd exponents(3);
+	exponents << 1.0, 2.0, 3.0;
+
+	Eigen::MatrixXd contractions(3, 0);
+
+	REQUIRE_NOTHROW(ContractedRadialOrbitalSet(exponents, contractions));
+
+	auto set = ContractedRadialOrbitalSet(exponents, contractions);
+	REQUIRE(set.PrimitiveShellCount() == 3);
+	REQUIRE(set.ContractedShellCount() == 0);
+
+	auto set2 = ContractedRadialOrbitalSet(exponents, Eigen::MatrixXd::Random(3, 2));
+	REQUIRE(set != set2);
 }
