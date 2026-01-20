@@ -102,7 +102,9 @@ namespace SecChem::BasisSet::Gaussian
 		}
 
 		template <typename ForwardIterator, typename Getter>
-		static ContractedRadialOrbitalSet Concat(ForwardIterator begin, const ForwardIterator end, Getter get)
+		static std::enable_if_t<!std::is_same_v<std::decay_t<decltype(*std::declval<ForwardIterator>())>, void>,
+		                        ContractedRadialOrbitalSet>
+		Concat(ForwardIterator begin, const ForwardIterator end, Getter get)
 		{
 			if (begin == end)
 			{
@@ -144,9 +146,33 @@ namespace SecChem::BasisSet::Gaussian
 		}
 
 		template <typename ForwardIterator>
-		static ContractedRadialOrbitalSet Concat(ForwardIterator begin, const ForwardIterator end)
+		static std::enable_if_t<!std::is_same_v<std::decay_t<decltype(*std::declval<ForwardIterator>())>, void>,
+		                        ContractedRadialOrbitalSet>
+		Concat(ForwardIterator begin, const ForwardIterator end)
 		{
 			return Concat(begin, end, [](auto&& item) -> decltype(auto) { return std::forward<decltype(item)>(item); });
+		}
+
+		template <typename... Sets>
+		static std::enable_if_t<(std::is_same_v<std::decay_t<Sets>, ContractedRadialOrbitalSet> && ...),
+		                        ContractedRadialOrbitalSet>
+		Concat(const Sets&... sets)
+		{
+			static_assert(sizeof...(Sets) > 0);
+			const std::initializer_list<std::reference_wrapper<const ContractedRadialOrbitalSet>> list = {
+			        std::ref(sets)...};
+
+			if constexpr (sizeof...(Sets) == 1)
+			{
+				return list.begin()->get();
+			}
+			else
+			{
+				return Concat(std::begin(list),
+				              std::end(list),
+				              [](const std::reference_wrapper<const ContractedRadialOrbitalSet> ref)
+				                      -> const ContractedRadialOrbitalSet& { return ref.get(); });
+			}
 		}
 
 	private:

@@ -397,19 +397,40 @@ TEST_CASE("ContractedRadialOrbitalSet::Concat should work", "[ContractedRadialOr
 	c1 << 1.0, 0.5;
 
 	std::array sets = {MakeSimpleSet({1.0, 2.0, 3.0}, c0), MakeSimpleSet({1.5, 2.5}, c1)};
-	auto a = ContractedRadialOrbitalSet::Concat(sets.begin(), sets.end());
 
-	REQUIRE(a.ExponentSet().size() == 5);
-	REQUIRE(a.ContractionSets().rows() == 5);
-	REQUIRE(a.ContractedShellCount() == 3);
+	SECTION("Concat iterable")
+	{
+		auto a = ContractedRadialOrbitalSet::Concat(sets.begin(), sets.end());
 
-	REQUIRE(a.ExponentSet().head(3) == Eigen::Vector3d{{1.0, 2.0, 3.0}});
-	REQUIRE(a.ExponentSet().tail(2) == Eigen::Vector2d{{1.5, 2.5}});
-	REQUIRE(a.ContractionSets().topLeftCorner(3, 2) == c0);
-	REQUIRE(a.ContractionSets().bottomRightCorner(2, 1) == c1);
+		REQUIRE(a.ExponentSet().size() == 5);
+		REQUIRE(a.ContractionSets().rows() == 5);
+		REQUIRE(a.ContractedShellCount() == 3);
 
-	REQUIRE(a.ContractionSets().topRightCorner(3, 1).norm() == 0);
-	REQUIRE(a.ContractionSets().bottomLeftCorner(2, 2).norm() == 0);
+		REQUIRE(a.ExponentSet().head(3) == Eigen::Vector3d{{1.0, 2.0, 3.0}});
+		REQUIRE(a.ExponentSet().tail(2) == Eigen::Vector2d{{1.5, 2.5}});
+		REQUIRE(a.ContractionSets().topLeftCorner(3, 2) == c0);
+		REQUIRE(a.ContractionSets().bottomRightCorner(2, 1) == c1);
+
+		REQUIRE(a.ContractionSets().topRightCorner(3, 1).norm() == 0);
+		REQUIRE(a.ContractionSets().bottomLeftCorner(2, 2).norm() == 0);
+	}
+
+	SECTION("Concat items")
+	{
+		auto a = ContractedRadialOrbitalSet::Concat(sets[0], sets[1]);
+
+		REQUIRE(a.ExponentSet().size() == 5);
+		REQUIRE(a.ContractionSets().rows() == 5);
+		REQUIRE(a.ContractedShellCount() == 3);
+
+		REQUIRE(a.ExponentSet().head(3) == Eigen::Vector3d{{1.0, 2.0, 3.0}});
+		REQUIRE(a.ExponentSet().tail(2) == Eigen::Vector2d{{1.5, 2.5}});
+		REQUIRE(a.ContractionSets().topLeftCorner(3, 2) == c0);
+		REQUIRE(a.ContractionSets().bottomRightCorner(2, 1) == c1);
+
+		REQUIRE(a.ContractionSets().topRightCorner(3, 1).norm() == 0);
+		REQUIRE(a.ContractionSets().bottomLeftCorner(2, 2).norm() == 0);
+	}
 }
 
 TEST_CASE("ContractedRadialOrbitalSet::Concat should work on range of single set", "[ContractedRadialOrbitalSet]")
@@ -420,10 +441,20 @@ TEST_CASE("ContractedRadialOrbitalSet::Concat should work on range of single set
 		 0.0, 0.7;
 
 	std::array sets = {MakeSimpleSet({1.0, 2.0, 3.0}, c0)};
-	auto a = ContractedRadialOrbitalSet::Concat(sets.begin(), sets.end());
 
-	REQUIRE(a.ExponentSet() == Eigen::Vector3d{1.0, 2.0, 3.0});
-	REQUIRE(a.ContractionSets() == c0);
+	SECTION("Concat iterable")
+	{
+		auto a = ContractedRadialOrbitalSet::Concat(sets.begin(), sets.end());
+		REQUIRE(a.ExponentSet() == Eigen::Vector3d{1.0, 2.0, 3.0});
+		REQUIRE(a.ContractionSets() == c0);
+	}
+
+	SECTION("Concat item")
+	{
+		auto a = ContractedRadialOrbitalSet::Concat(sets[0]);
+		REQUIRE(a.ExponentSet() == Eigen::Vector3d{1.0, 2.0, 3.0});
+		REQUIRE(a.ContractionSets() == c0);
+	}
 }
 
 TEST_CASE("ContractedRadialOrbitalSet::Concat shan't throw on empty input range", "[ContractedRadialOrbitalSet]")
