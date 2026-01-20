@@ -284,7 +284,7 @@ static ContractedRadialOrbitalSet MakeSimpleSet(const std::vector<double>& expon
 	return {e, contractions};
 }
 
-TEST_CASE("ContractedRadialOrbitalSet::operator== exact equality")
+TEST_CASE("ContractedRadialOrbitalSet::operator== exact equality", "[ContractedRadialOrbitalSet]")
 {
 	Eigen::MatrixXd c(3, 2);
 	c << 1.0, 0.0,
@@ -301,7 +301,7 @@ TEST_CASE("ContractedRadialOrbitalSet::operator== exact equality")
 	REQUIRE_FALSE(a != a2);
 }
 
-TEST_CASE("ContractedRadialOrbitalSet::operator== detects exponent difference")
+TEST_CASE("ContractedRadialOrbitalSet::operator== detects exponent difference", "[ContractedRadialOrbitalSet]")
 {
 	Eigen::MatrixXd c = Eigen::MatrixXd::Identity(2, 1);
 
@@ -312,7 +312,7 @@ TEST_CASE("ContractedRadialOrbitalSet::operator== detects exponent difference")
 	REQUIRE_FALSE(a == b);
 }
 
-TEST_CASE("ContractedRadialOrbitalSet::operator== detects contraction difference")
+TEST_CASE("ContractedRadialOrbitalSet::operator== detects contraction difference", "[ContractedRadialOrbitalSet]")
 {
 	Eigen::MatrixXd c1(2, 1);
 	c1 << 1.0, 0.5;
@@ -326,7 +326,7 @@ TEST_CASE("ContractedRadialOrbitalSet::operator== detects contraction difference
 	REQUIRE(a != b);
 }
 
-TEST_CASE("ContractedRadialOrbitalSet::EqualsTo respects tolerance")
+TEST_CASE("ContractedRadialOrbitalSet::EqualsTo respects tolerance", "[ContractedRadialOrbitalSet]")
 {
 	Eigen::MatrixXd c1(3, 1);
 	c1 << 1.0, 0.5, 0.25;
@@ -341,7 +341,7 @@ TEST_CASE("ContractedRadialOrbitalSet::EqualsTo respects tolerance")
 	REQUIRE_FALSE(a.EqualsTo(b, 1e-12));
 }
 
-TEST_CASE("ContractedRadialOrbitalSet::EqualsTo detects shape mismatch")
+TEST_CASE("ContractedRadialOrbitalSet::EqualsTo detects shape mismatch", "[ContractedRadialOrbitalSet]")
 {
 	Eigen::MatrixXd c1(2, 1);
 	c1 << 1.0, 0.5;
@@ -357,7 +357,7 @@ TEST_CASE("ContractedRadialOrbitalSet::EqualsTo detects shape mismatch")
 	REQUIRE(a.NotEqualsTo(b, 1e-6));
 }
 
-TEST_CASE("ContractedRadialOrbitalSet::EqualsTo is strict with tolerance boundary")
+TEST_CASE("ContractedRadialOrbitalSet::EqualsTo is strict with tolerance boundary", "[ContractedRadialOrbitalSet]")
 {
 	static constexpr double Delta = 0.00390625;  // 2^(-8), it can be expressed exactly with binary float
 
@@ -375,7 +375,7 @@ TEST_CASE("ContractedRadialOrbitalSet::EqualsTo is strict with tolerance boundar
 	REQUIRE(a.EqualsTo(b, Delta + 2e-16));
 }
 
-TEST_CASE("ContractedRadialOrbitalSet::EqualsTo is order-sensitive")
+TEST_CASE("ContractedRadialOrbitalSet::EqualsTo is order-sensitive", "[ContractedRadialOrbitalSet]")
 {
 	Eigen::MatrixXd c(2, 1);
 	c << 1.0, 0.5;
@@ -387,7 +387,7 @@ TEST_CASE("ContractedRadialOrbitalSet::EqualsTo is order-sensitive")
 	REQUIRE_FALSE(b.EqualsTo(a, 1e-6));
 }
 
-TEST_CASE("ContractedRadialOrbitalSet::Concat should work")
+TEST_CASE("ContractedRadialOrbitalSet::Concat should work", "[ContractedRadialOrbitalSet]")
 {
 	Eigen::MatrixXd c0(3, 2);
 	c0 << 1.0, 0.0,
@@ -412,7 +412,7 @@ TEST_CASE("ContractedRadialOrbitalSet::Concat should work")
 	REQUIRE(a.ContractionSets().bottomLeftCorner(2, 2).norm() == 0);
 }
 
-TEST_CASE("ContractedRadialOrbitalSet::Concat should work on range of single set")
+TEST_CASE("ContractedRadialOrbitalSet::Concat should work on range of single set", "[ContractedRadialOrbitalSet]")
 {
 	Eigen::MatrixXd c0(3, 2);
 	c0 << 1.0, 0.0,
@@ -426,14 +426,14 @@ TEST_CASE("ContractedRadialOrbitalSet::Concat should work on range of single set
 	REQUIRE(a.ContractionSets() == c0);
 }
 
-TEST_CASE("ContractedRadialOrbitalSet::Concat shan't throw on empty input range")
+TEST_CASE("ContractedRadialOrbitalSet::Concat shan't throw on empty input range", "[ContractedRadialOrbitalSet]")
 {
 	std::vector<ContractedRadialOrbitalSet> sets;
 	const auto c = ContractedRadialOrbitalSet::Concat(sets.begin(), sets.end());
 	REQUIRE(c == ContractedRadialOrbitalSet{});
 }
 
-TEST_CASE("Empty sets should be allowed")
+TEST_CASE("Empty sets should be allowed", "[ContractedRadialOrbitalSet]")
 {
 	Eigen::VectorXd exponents0(0);
 	Eigen::MatrixXd contractions0(0, 0);
@@ -443,11 +443,12 @@ TEST_CASE("Empty sets should be allowed")
 
 	Eigen::VectorXd exponents1(0);
 	Eigen::MatrixXd contractions1(0, 2);
-	REQUIRE_THROWS_MATCHES(ContractedRadialOrbitalSet(exponents1, contractions1), std::invalid_argument,
+	REQUIRE_THROWS_MATCHES(ContractedRadialOrbitalSet
+		(exponents1, contractions1), std::invalid_argument,
 		MessageMatches(Catch::Matchers::ContainsSubstring("must be zero-by-zero")));
 }
 
-TEST_CASE("Empty sets are equal")
+TEST_CASE("Empty sets are equal", "[ContractedRadialOrbitalSet]")
 {
 	Eigen::VectorXd exponents0(0);
 	Eigen::MatrixXd contractions0(0, 0);
@@ -460,7 +461,7 @@ TEST_CASE("Empty sets are equal")
 	REQUIRE(a.ContractedShellCount() == 0);
 }
 
-TEST_CASE("Empty vs non-empty sets are not equal")
+TEST_CASE("Empty vs non-empty sets are not equal", "[ContractedRadialOrbitalSet]")
 {
 	ContractedRadialOrbitalSet empty = {};
 
@@ -480,7 +481,7 @@ TEST_CASE("Empty vs non-empty sets are not equal")
 	REQUIRE(nonEmpty.PrimitiveShellCount() == 3);
 }
 
-TEST_CASE("Zero contraction sets are valid")
+TEST_CASE("Zero contraction sets are valid", "[ContractedRadialOrbitalSet]")
 {
 	Eigen::VectorXd exponents(3);
 	exponents << 1.0, 2.0, 3.0;
