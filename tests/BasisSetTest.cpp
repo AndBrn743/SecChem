@@ -754,3 +754,246 @@ TEST_CASE("CreatePrincipalQuantumNumberOffsetTable table-driven implementation c
 		REQUIRE(offsets[4] == 1);  // g: 110 >= 110
 	}
 }
+
+// =============================================================================
+// IsInStandardStorageOrder_OverloadSet for SemiLocalEcpChannel Tests
+// =============================================================================
+
+TEST_CASE("StandardizeRepresentation sorts SemiLocalEcpChannels by angular momentum", "[ElementaryBasisSet]")
+{
+	ElementaryBasisSet ebs;
+
+	// Add channels in wrong order: P, S, D (should be S, P, D)
+	Eigen::VectorXd coeffs(1);
+	coeffs << 1.0;
+	Eigen::VectorXd rExps(1);
+	rExps << 0.0;
+	Eigen::VectorXd gaussExps(1);
+	gaussExps << 2.0;
+
+	ebs.SemiLocalEcpChannels.emplace_back(AzimuthalQuantumNumber::P, coeffs, rExps, gaussExps);
+	ebs.SemiLocalEcpChannels.emplace_back(AzimuthalQuantumNumber::S, coeffs, rExps, gaussExps);
+	ebs.SemiLocalEcpChannels.emplace_back(AzimuthalQuantumNumber::D, coeffs, rExps, gaussExps);
+
+	REQUIRE_FALSE(ebs.IsInStandardRepresentation());
+
+	ebs.StandardizeRepresentation();
+
+	REQUIRE(ebs.IsInStandardRepresentation());
+	REQUIRE(ebs.SemiLocalEcpChannels[0].AngularMomentum() == AzimuthalQuantumNumber::S);
+	REQUIRE(ebs.SemiLocalEcpChannels[1].AngularMomentum() == AzimuthalQuantumNumber::P);
+	REQUIRE(ebs.SemiLocalEcpChannels[2].AngularMomentum() == AzimuthalQuantumNumber::D);
+}
+
+TEST_CASE("StandardizeRepresentation sorts SemiLocalEcpChannels by term count descending", "[ElementaryBasisSet]")
+{
+	ElementaryBasisSet ebs;
+
+	// Two P channels: one with 3 terms, one with 2 terms
+	// The 3-term channel should come first
+	Eigen::VectorXd coeffs3(3);
+	coeffs3 << 1.0, 0.5, 0.25;
+	Eigen::VectorXd rExps3(3);
+	rExps3 << 0.0, 1.0, 2.0;
+	Eigen::VectorXd gaussExps3(3);
+	gaussExps3 << 5.0, 4.0, 3.0;
+
+	Eigen::VectorXd coeffs2(2);
+	coeffs2 << 1.0, 0.5;
+	Eigen::VectorXd rExps2(2);
+	rExps2 << 0.0, 1.0;
+	Eigen::VectorXd gaussExps2(2);
+	gaussExps2 << 3.0, 2.0;
+
+	// Add in wrong order: 2-term first, then 3-term
+	ebs.SemiLocalEcpChannels.emplace_back(AzimuthalQuantumNumber::P, coeffs2, rExps2, gaussExps2);
+	ebs.SemiLocalEcpChannels.emplace_back(AzimuthalQuantumNumber::P, coeffs3, rExps3, gaussExps3);
+	REQUIRE(ebs.SemiLocalEcpChannels.size() == 2);
+
+	REQUIRE_FALSE(ebs.IsInStandardRepresentation());
+
+	ebs.StandardizeRepresentation();
+
+	REQUIRE(ebs.IsInStandardRepresentation());
+	REQUIRE(ebs.SemiLocalEcpChannels.size() == 1);
+	REQUIRE(ebs.SemiLocalEcpChannels[0].GaussianTermCount() == 3 + 2);
+}
+
+TEST_CASE("StandardizeRepresentation sorts SemiLocalEcpChannels by gaussian exponent descending", "[ElementaryBasisSet]")
+{
+	ElementaryBasisSet ebs;
+
+	// Two P channels with same term count but different exponents
+	// Larger exponent should come first
+	Eigen::VectorXd coeffs1(1);
+	coeffs1 << 1.0;
+	Eigen::VectorXd rExps1(1);
+	rExps1 << 0.0;
+	Eigen::VectorXd gaussExps1(1);
+	gaussExps1 << 2.0;
+
+	Eigen::VectorXd coeffs2(1);
+	coeffs2 << 1.0;
+	Eigen::VectorXd rExps2(1);
+	rExps2 << 0.0;
+	Eigen::VectorXd gaussExps2(1);
+	gaussExps2 << 5.0;
+
+	// Add in wrong order: smaller exponent first
+	ebs.SemiLocalEcpChannels.emplace_back(AzimuthalQuantumNumber::P, coeffs1, rExps1, gaussExps1);
+	ebs.SemiLocalEcpChannels.emplace_back(AzimuthalQuantumNumber::P, coeffs2, rExps2, gaussExps2);
+
+	REQUIRE_FALSE(ebs.IsInStandardRepresentation());
+
+	ebs.StandardizeRepresentation();
+
+	REQUIRE(ebs.IsInStandardRepresentation());
+	REQUIRE(ebs.SemiLocalEcpChannels.size() == 1);
+	REQUIRE(ebs.SemiLocalEcpChannels[0].GaussianExponent(0) == 5.0);
+	REQUIRE(ebs.SemiLocalEcpChannels[0].GaussianExponent(1) == 2.0);
+}
+
+TEST_CASE("StandardizeRepresentation sorts SemiLocalEcpChannels by coefficient descending", "[ElementaryBasisSet]")
+{
+	ElementaryBasisSet ebs;
+
+	// Two P channels with same term count and exponent but different coefficients
+	// Larger coefficient should come first
+	Eigen::VectorXd coeffs1(1);
+	coeffs1 << 0.5;
+	Eigen::VectorXd rExps1(1);
+	rExps1 << 0.0;
+	Eigen::VectorXd gaussExps1(1);
+	gaussExps1 << 3.0;
+
+	Eigen::VectorXd coeffs2(1);
+	coeffs2 << 1.5;
+	Eigen::VectorXd rExps2(1);
+	rExps2 << 0.0;
+	Eigen::VectorXd gaussExps2(1);
+	gaussExps2 << 3.0;
+
+	// Add in wrong order: smaller coefficient first
+	ebs.SemiLocalEcpChannels.emplace_back(AzimuthalQuantumNumber::P, coeffs1, rExps1, gaussExps1);
+	ebs.SemiLocalEcpChannels.emplace_back(AzimuthalQuantumNumber::P, coeffs2, rExps2, gaussExps2);
+	REQUIRE(ebs.SemiLocalEcpChannels.size() == 2);
+
+	REQUIRE_FALSE(ebs.IsInStandardRepresentation());
+
+	ebs.StandardizeRepresentation();
+
+	REQUIRE(ebs.IsInStandardRepresentation());
+	REQUIRE(ebs.SemiLocalEcpChannels.size() == 1);
+	REQUIRE(ebs.SemiLocalEcpChannels[0].Coefficient(0) == 1.5);
+	REQUIRE(ebs.SemiLocalEcpChannels[0].Coefficient(1) == 0.5);
+}
+
+TEST_CASE("StandardizeRepresentation sorts SemiLocalEcpChannels by r exponent descending", "[ElementaryBasisSet]")
+{
+	ElementaryBasisSet ebs;
+
+	// Two P channels with same term count, exponent, and coefficient but different r exponents
+	// Larger r exponent should come first
+	Eigen::VectorXd coeffs(1);
+	coeffs << 1.0;
+	Eigen::VectorXd rExps1(1);
+	rExps1 << 0.5;
+	Eigen::VectorXd gaussExps(1);
+	gaussExps << 3.0;
+
+	Eigen::VectorXd rExps2(1);
+	rExps2 << 2.0;
+
+	// Add in wrong order: smaller r exponent first
+	ebs.SemiLocalEcpChannels.emplace_back(AzimuthalQuantumNumber::P, coeffs, rExps1, gaussExps);
+	ebs.SemiLocalEcpChannels.emplace_back(AzimuthalQuantumNumber::P, coeffs, rExps2, gaussExps);
+
+	REQUIRE_FALSE(ebs.IsInStandardRepresentation());
+
+	ebs.StandardizeRepresentation();
+
+	REQUIRE(ebs.IsInStandardRepresentation());
+	REQUIRE(ebs.SemiLocalEcpChannels.size() == 1);
+	REQUIRE(ebs.SemiLocalEcpChannels[0].RExponent(0) == 2.0);
+	REQUIRE(ebs.SemiLocalEcpChannels[0].RExponent(1) == 0.5);
+}
+
+TEST_CASE("StandardizeRepresentation concatenates same-l SemiLocalEcpChannels", "[ElementaryBasisSet]")
+{
+	ElementaryBasisSet ebs;
+
+	// Two P channels that should be concatenated
+	Eigen::VectorXd coeffs1(2);
+	coeffs1 << 1.0, 0.5;
+	Eigen::VectorXd rExps1(2);
+	rExps1 << 0.0, 1.0;
+	Eigen::VectorXd gaussExps1(2);
+	gaussExps1 << 5.0, 4.0;
+
+	Eigen::VectorXd coeffs2(1);
+	coeffs2 << 0.25;
+	Eigen::VectorXd rExps2(1);
+	rExps2 << 2.0;
+	Eigen::VectorXd gaussExps2(1);
+	gaussExps2 << 3.0;
+
+	ebs.SemiLocalEcpChannels.emplace_back(AzimuthalQuantumNumber::P, coeffs1, rExps1, gaussExps1);
+	ebs.SemiLocalEcpChannels.emplace_back(AzimuthalQuantumNumber::P, coeffs2, rExps2, gaussExps2);
+
+	REQUIRE_FALSE(ebs.IsInStandardRepresentation());
+
+	ebs.StandardizeRepresentation();
+
+	REQUIRE(ebs.IsInStandardRepresentation());
+	REQUIRE(ebs.SemiLocalEcpChannels.size() == 1);
+	REQUIRE(ebs.SemiLocalEcpChannels[0].AngularMomentum() == AzimuthalQuantumNumber::P);
+	REQUIRE(ebs.SemiLocalEcpChannels[0].GaussianTermCount() == 3);
+	REQUIRE(ebs.SemiLocalEcpChannels[0].GaussianExponent(0) == 5.0);
+	REQUIRE(ebs.SemiLocalEcpChannels[0].GaussianExponent(1) == 4.0);
+	REQUIRE(ebs.SemiLocalEcpChannels[0].GaussianExponent(2) == 3.0);
+}
+
+TEST_CASE("IsInStandardRepresentation with empty SemiLocalEcpChannels", "[ElementaryBasisSet]")
+{
+	ElementaryBasisSet ebs;
+
+	REQUIRE(ebs.IsInStandardRepresentation());
+
+	// Empty channels should be ignored
+	Eigen::VectorXd coeffs(0);
+	Eigen::VectorXd rExps(0);
+	Eigen::VectorXd gaussExps(0);
+
+	ebs.SemiLocalEcpChannels.emplace_back(AzimuthalQuantumNumber::P, coeffs, rExps, gaussExps);
+
+	// standard representation should have empty channels removed
+	REQUIRE_FALSE(ebs.IsInStandardRepresentation());
+}
+
+TEST_CASE("IsInStandardRepresentation with mixed empty and non-empty SemiLocalEcpChannels", "[ElementaryBasisSet]")
+{
+	ElementaryBasisSet ebs;
+
+	Eigen::VectorXd coeffs(1);
+	coeffs << 1.0;
+	Eigen::VectorXd rExps(1);
+	rExps << 0.0;
+	Eigen::VectorXd gaussExps(1);
+	gaussExps << 2.0;
+
+	// Add non-empty channel
+	ebs.SemiLocalEcpChannels.emplace_back(AzimuthalQuantumNumber::P, coeffs, rExps, gaussExps);
+
+	// Now add an empty one
+	Eigen::VectorXd empty(0);
+	ebs.SemiLocalEcpChannels.emplace_back(AzimuthalQuantumNumber::D, empty, empty, empty);
+
+	REQUIRE_FALSE(ebs.IsInStandardRepresentation());
+
+	ebs.StandardizeRepresentation();
+
+	// Empty channel should be removed
+	REQUIRE(ebs.IsInStandardRepresentation());
+	REQUIRE(ebs.SemiLocalEcpChannels.size() == 1);
+	REQUIRE(ebs.SemiLocalEcpChannels[0].AngularMomentum() == AzimuthalQuantumNumber::P);
+}
