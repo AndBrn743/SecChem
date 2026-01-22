@@ -52,8 +52,7 @@ namespace SecChem::BasisSet::Gaussian
 			return concatSets;
 		}
 
-		static bool IsInStandardStorageOrder_OverloadSet(const AzimuthalShell& lhs,
-		                                                 const AzimuthalShell& rhs)
+		static bool IsInStandardStorageOrder_OverloadSet(const AzimuthalShell& lhs, const AzimuthalShell& rhs)
 		{
 			if (lhs.AngularMomentum() != rhs.AngularMomentum())
 			{
@@ -244,81 +243,43 @@ namespace SecChem::BasisSet::Gaussian
 				return offsets;
 			}
 
-			if (!offsets.empty())
+			// Table of {electronCount threshold, offset value} pairs for each l
+			// Sorted in descending order of electron count
+
+			//  S   P   D   F   G
+			//  2,
+			//  4, 10,
+			// 12, 18, 28,
+			// 30, 36, 46, 60,
+			// 62, 68, 78, 92, 110.
+
+			static constexpr std::array<std::pair<int, int>, 5> STable = {{{62, 5}, {30, 4}, {12, 3}, {4, 2}, {2, 1}}};
+			static constexpr std::array<std::pair<int, int>, 4> PTable = {{{68, 4}, {36, 3}, {18, 2}, {10, 1}}};
+			static constexpr std::array<std::pair<int, int>, 3> DTable = {{{78, 3}, {46, 2}, {28, 1}}};
+			static constexpr std::array<std::pair<int, int>, 2> FTable = {{{92, 2}, {60, 1}}};
+			static constexpr std::array<std::pair<int, int>, 1> GTable = {{{110, 1}}};
+
+			const auto setOffset = [this, &offsets](const auto& table, const int index)
 			{
-				if (EcpElectronCount >= 2)
+				if (static_cast<size_t>(index) >= offsets.size())
 				{
-					offsets[0] = 1;
+					return;
 				}
-				if (EcpElectronCount >= 4)
+				for (const auto& [threshold, value] : table)
 				{
-					offsets[0] = 2;
+					if (EcpElectronCount >= threshold)
+					{
+						offsets[index] = value;
+						return;
+					}
 				}
-				if (EcpElectronCount >= 12)
-				{
-					offsets[0] = 3;
-				}
-				if (EcpElectronCount >= 30)
-				{
-					offsets[0] = 4;
-				}
-				if (EcpElectronCount >= 62)
-				{
-					offsets[0] = 5;
-				}
-			}
-			if (offsets.size() > 1)
-			{
-				if (EcpElectronCount >= 10)
-				{
-					offsets[1] = 1;
-				}
-				if (EcpElectronCount >= 18)
-				{
-					offsets[1] = 2;
-				}
-				if (EcpElectronCount >= 36)
-				{
-					offsets[1] = 3;
-				}
-				if (EcpElectronCount >= 68)
-				{
-					offsets[1] = 4;
-				}
-			}
-			else if (offsets.size() > 2)
-			{
-				if (EcpElectronCount >= 28)
-				{
-					offsets[2] = 1;
-				}
-				if (EcpElectronCount >= 60)
-				{
-					offsets[2] = 2;
-				}
-				if (EcpElectronCount >= 78)
-				{
-					offsets[2] = 3;
-				}
-			}
-			else if (offsets.size() > 3)
-			{
-				if (EcpElectronCount >= 60)
-				{
-					offsets[3] = 1;
-				}
-				if (EcpElectronCount >= 92)
-				{
-					offsets[3] = 2;
-				}
-			}
-			else if (offsets.size() > 4)
-			{
-				if (EcpElectronCount >= 110)
-				{
-					offsets[4] = 1;
-				}
-			}
+			};
+
+			setOffset(STable, 0);
+			setOffset(PTable, 1);
+			setOffset(DTable, 2);
+			setOffset(FTable, 3);
+			setOffset(GTable, 4);
 
 			return offsets;
 		}
@@ -487,8 +448,7 @@ namespace SecChem::BasisSet::Gaussian
 				for (const auto& [_, elementaryBasis] : Data())
 				{
 					if (!elementaryBasis.IsInStandardRepresentation()
-					    || (elementaryBasis.AzimuthalShells.empty()
-					        && elementaryBasis.SemiLocalEcpChannels.empty()))
+					    || (elementaryBasis.AzimuthalShells.empty() && elementaryBasis.SemiLocalEcpChannels.empty()))
 					{
 						return false;
 					}

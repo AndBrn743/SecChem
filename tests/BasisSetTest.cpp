@@ -449,3 +449,308 @@ TEST_CASE("Builder<BasisSetLibrary> with empty basis set", "[BasisSetLibrary][Bu
 	REQUIRE_FALSE(library["empty"].Has(Element::H));
 	REQUIRE_FALSE(library["empty"].Has(Element::C));
 }
+
+// =============================================================================
+// CreatePrincipalQuantumNumberOffsetTable Tests
+// =============================================================================
+//  S   P   D   F   G
+//  2,
+//  4, 10,
+// 12, 18, 28,
+// 30, 36, 46, 60,
+// 62, 68, 78, 92, 110.
+
+TEST_CASE("CreatePrincipalQuantumNumberOffsetTable returns all zeros when EcpElectronCount is 0", "[ElementaryBasisSet]")
+{
+	ElementaryBasisSet ebs;
+	ebs.AzimuthalShells.emplace_back(
+	        AzimuthalQuantumNumber::G,
+	        ContractedRadialOrbitalSet{Eigen::VectorXd::Constant(1, 1.0), Eigen::MatrixXd::Constant(1, 1, 1.0)});
+
+	auto offsets = ebs.CreatePrincipalQuantumNumberOffsetTable();
+
+	REQUIRE(offsets.size() == 5);  // l=0,1,2,3,4
+	REQUIRE(offsets[0] == 0);
+	REQUIRE(offsets[1] == 0);
+	REQUIRE(offsets[2] == 0);
+	REQUIRE(offsets[3] == 0);
+	REQUIRE(offsets[4] == 0);
+}
+
+TEST_CASE("CreatePrincipalQuantumNumberOffsetTable for l=0 (s orbitals)", "[ElementaryBasisSet]")
+{
+	ElementaryBasisSet ebs;
+	ebs.AzimuthalShells.emplace_back(
+	        AzimuthalQuantumNumber::S,
+	        ContractedRadialOrbitalSet{Eigen::VectorXd::Constant(1, 1.0), Eigen::MatrixXd::Constant(1, 1, 1.0)});
+
+	SECTION("EcpElectronCount < 2 gives offset 0")
+	{
+		ebs.EcpElectronCount = 0;
+		auto offsets = ebs.CreatePrincipalQuantumNumberOffsetTable();
+		REQUIRE(offsets[0] == 0);
+	}
+
+	SECTION("EcpElectronCount = 2 gives offset 1")
+	{
+		ebs.EcpElectronCount = 2;
+		auto offsets = ebs.CreatePrincipalQuantumNumberOffsetTable();
+		REQUIRE(offsets[0] == 1);
+	}
+
+	SECTION("EcpElectronCount = 4 gives offset 2")
+	{
+		ebs.EcpElectronCount = 4;
+		auto offsets = ebs.CreatePrincipalQuantumNumberOffsetTable();
+		REQUIRE(offsets[0] == 2);
+	}
+
+	SECTION("EcpElectronCount = 12 gives offset 3")
+	{
+		ebs.EcpElectronCount = 12;
+		auto offsets = ebs.CreatePrincipalQuantumNumberOffsetTable();
+		REQUIRE(offsets[0] == 3);
+	}
+
+	SECTION("EcpElectronCount = 30 gives offset 4")
+	{
+		ebs.EcpElectronCount = 30;
+		auto offsets = ebs.CreatePrincipalQuantumNumberOffsetTable();
+		REQUIRE(offsets[0] == 4);
+	}
+
+	SECTION("EcpElectronCount = 62 gives offset 5")
+	{
+		ebs.EcpElectronCount = 62;
+		auto offsets = ebs.CreatePrincipalQuantumNumberOffsetTable();
+		REQUIRE(offsets[0] == 5);
+	}
+
+	SECTION("EcpElectronCount between thresholds uses lower threshold")
+	{
+		ebs.EcpElectronCount = 20;  // between 12 and 30
+		auto offsets = ebs.CreatePrincipalQuantumNumberOffsetTable();
+		REQUIRE(offsets[0] == 3);  // should use 12 -> 3
+
+		ebs.EcpElectronCount = 50;  // between 30 and 62
+		offsets = ebs.CreatePrincipalQuantumNumberOffsetTable();
+		REQUIRE(offsets[0] == 4);  // should use 30 -> 4
+	}
+}
+
+TEST_CASE("CreatePrincipalQuantumNumberOffsetTable for l=1 (p orbitals)", "[ElementaryBasisSet]")
+{
+	ElementaryBasisSet ebs;
+	ebs.AzimuthalShells.emplace_back(
+	        AzimuthalQuantumNumber::P,
+	        ContractedRadialOrbitalSet{Eigen::VectorXd::Constant(1, 1.0), Eigen::MatrixXd::Constant(1, 1, 1.0)});
+
+	SECTION("EcpElectronCount < 10 gives offset 0")
+	{
+		ebs.EcpElectronCount = 4;
+		auto offsets = ebs.CreatePrincipalQuantumNumberOffsetTable();
+		REQUIRE(offsets[1] == 0);
+	}
+
+	SECTION("EcpElectronCount = 10 gives offset 1")
+	{
+		ebs.EcpElectronCount = 10;
+		auto offsets = ebs.CreatePrincipalQuantumNumberOffsetTable();
+		REQUIRE(offsets[1] == 1);
+	}
+
+	SECTION("EcpElectronCount = 18 gives offset 2")
+	{
+		ebs.EcpElectronCount = 18;
+		auto offsets = ebs.CreatePrincipalQuantumNumberOffsetTable();
+		REQUIRE(offsets[1] == 2);
+	}
+
+	SECTION("EcpElectronCount = 36 gives offset 3")
+	{
+		ebs.EcpElectronCount = 36;
+		auto offsets = ebs.CreatePrincipalQuantumNumberOffsetTable();
+		REQUIRE(offsets[1] == 3);
+	}
+
+	SECTION("EcpElectronCount = 68 gives offset 4")
+	{
+		ebs.EcpElectronCount = 68;
+		auto offsets = ebs.CreatePrincipalQuantumNumberOffsetTable();
+		REQUIRE(offsets[1] == 4);
+	}
+}
+
+TEST_CASE("CreatePrincipalQuantumNumberOffsetTable for l=2 (d orbitals)", "[ElementaryBasisSet]")
+{
+	ElementaryBasisSet ebs;
+	ebs.AzimuthalShells.emplace_back(
+	        AzimuthalQuantumNumber::D,
+	        ContractedRadialOrbitalSet{Eigen::VectorXd::Constant(1, 1.0), Eigen::MatrixXd::Constant(1, 1, 1.0)});
+
+	SECTION("EcpElectronCount < 28 gives offset 0")
+	{
+		ebs.EcpElectronCount = 18;
+		auto offsets = ebs.CreatePrincipalQuantumNumberOffsetTable();
+		REQUIRE(offsets[2] == 0);
+	}
+
+	SECTION("EcpElectronCount = 28 gives offset 1")
+	{
+		ebs.EcpElectronCount = 28;
+		auto offsets = ebs.CreatePrincipalQuantumNumberOffsetTable();
+		REQUIRE(offsets[2] == 1);
+	}
+
+	SECTION("EcpElectronCount = 60 gives offset 2")
+	{
+		ebs.EcpElectronCount = 60;
+		auto offsets = ebs.CreatePrincipalQuantumNumberOffsetTable();
+		REQUIRE(offsets[2] == 2);
+	}
+
+	SECTION("EcpElectronCount = 78 gives offset 3")
+	{
+		ebs.EcpElectronCount = 78;
+		auto offsets = ebs.CreatePrincipalQuantumNumberOffsetTable();
+		REQUIRE(offsets[2] == 3);
+	}
+}
+
+TEST_CASE("CreatePrincipalQuantumNumberOffsetTable for l=3 (f orbitals)", "[ElementaryBasisSet]")
+{
+	ElementaryBasisSet ebs;
+	ebs.AzimuthalShells.emplace_back(
+	        AzimuthalQuantumNumber::F,
+	        ContractedRadialOrbitalSet{Eigen::VectorXd::Constant(1, 1.0), Eigen::MatrixXd::Constant(1, 1, 1.0)});
+
+	SECTION("EcpElectronCount < 60 gives offset 0")
+	{
+		ebs.EcpElectronCount = 50;
+		auto offsets = ebs.CreatePrincipalQuantumNumberOffsetTable();
+		REQUIRE(offsets[3] == 0);
+	}
+
+	SECTION("EcpElectronCount = 60 gives offset 1")
+	{
+		ebs.EcpElectronCount = 60;
+		auto offsets = ebs.CreatePrincipalQuantumNumberOffsetTable();
+		REQUIRE(offsets[3] == 1);
+	}
+
+	SECTION("EcpElectronCount = 92 gives offset 2")
+	{
+		ebs.EcpElectronCount = 92;
+		auto offsets = ebs.CreatePrincipalQuantumNumberOffsetTable();
+		REQUIRE(offsets[3] == 2);
+	}
+}
+
+TEST_CASE("CreatePrincipalQuantumNumberOffsetTable for l=4 (g orbitals)", "[ElementaryBasisSet]")
+{
+	ElementaryBasisSet ebs;
+	ebs.AzimuthalShells.emplace_back(
+	        AzimuthalQuantumNumber::G,
+	        ContractedRadialOrbitalSet{Eigen::VectorXd::Constant(1, 1.0), Eigen::MatrixXd::Constant(1, 1, 1.0)});
+
+	SECTION("EcpElectronCount < 110 gives offset 0")
+	{
+		ebs.EcpElectronCount = 100;
+		auto offsets = ebs.CreatePrincipalQuantumNumberOffsetTable();
+		REQUIRE(offsets[4] == 0);
+	}
+
+	SECTION("EcpElectronCount = 110 gives offset 1")
+	{
+		ebs.EcpElectronCount = 110;
+		auto offsets = ebs.CreatePrincipalQuantumNumberOffsetTable();
+		REQUIRE(offsets[4] == 1);
+	}
+}
+
+TEST_CASE("CreatePrincipalQuantumNumberOffsetTable with multiple angular momenta", "[ElementaryBasisSet]")
+{
+	ElementaryBasisSet ebs;
+	ebs.AzimuthalShells.emplace_back(
+	        AzimuthalQuantumNumber::S,
+	        ContractedRadialOrbitalSet{Eigen::VectorXd::Constant(1, 1.0), Eigen::MatrixXd::Constant(1, 1, 1.0)});
+	ebs.AzimuthalShells.emplace_back(
+	        AzimuthalQuantumNumber::P,
+	        ContractedRadialOrbitalSet{Eigen::VectorXd::Constant(1, 1.0), Eigen::MatrixXd::Constant(1, 1, 1.0)});
+	ebs.AzimuthalShells.emplace_back(
+	        AzimuthalQuantumNumber::D,
+	        ContractedRadialOrbitalSet{Eigen::VectorXd::Constant(1, 1.0), Eigen::MatrixXd::Constant(1, 1, 1.0)});
+
+	ebs.EcpElectronCount = 46;  // common ECP core size (e.g., for Ag, Pd)
+
+	auto offsets = ebs.CreatePrincipalQuantumNumberOffsetTable();
+
+	REQUIRE(offsets.size() == 3);
+	REQUIRE(offsets[0] == 4);  // l=0: 46 >= 30, so offset is 4
+	REQUIRE(offsets[1] == 3);  // l=1: 46 >= 36, so offset is 2
+	REQUIRE(offsets[2] == 2);  // l=2: 46 >= 28, so offset is 1
+}
+
+TEST_CASE("CreatePrincipalQuantumNumberOffsetTable table-driven implementation correctness", "[ElementaryBasisSet]")
+{
+	// Test specific ECP electron counts that correspond to known elements
+	ElementaryBasisSet ebs;
+	ebs.AzimuthalShells.emplace_back(
+	        AzimuthalQuantumNumber::G,
+	        ContractedRadialOrbitalSet{Eigen::VectorXd::Constant(1, 1.0), Eigen::MatrixXd::Constant(1, 1, 1.0)});
+
+	SECTION("EcpElectronCount = 10")
+	{
+		ebs.EcpElectronCount = 10;
+		auto offsets = ebs.CreatePrincipalQuantumNumberOffsetTable();
+		REQUIRE(offsets[0] == 2);  // s: 10 >= 4
+		REQUIRE(offsets[1] == 1);  // p: 10 >= 10
+		REQUIRE(offsets[2] == 0);  // d: 10 < 28
+		REQUIRE(offsets[3] == 0);  // f: 10 < 60
+		REQUIRE(offsets[4] == 0);  // g: 10 < 110
+	}
+
+	SECTION("EcpElectronCount = 28")
+	{
+		ebs.EcpElectronCount = 28;
+		auto offsets = ebs.CreatePrincipalQuantumNumberOffsetTable();
+		REQUIRE(offsets[0] == 3);  // s: 28 >= 12
+		REQUIRE(offsets[1] == 2);  // p: 28 >= 18
+		REQUIRE(offsets[2] == 1);  // d: 28 >= 28
+		REQUIRE(offsets[3] == 0);  // f: 28 < 60
+		REQUIRE(offsets[4] == 0);  // g: 28 < 110
+	}
+
+	SECTION("EcpElectronCount = 60")
+	{
+		ebs.EcpElectronCount = 60;
+		auto offsets = ebs.CreatePrincipalQuantumNumberOffsetTable();
+		REQUIRE(offsets[0] == 4);  // s: 60 >= 30
+		REQUIRE(offsets[1] == 3);  // p: 60 >= 36
+		REQUIRE(offsets[2] == 2);  // d: 60 >= 60
+		REQUIRE(offsets[3] == 1);  // f: 60 >= 60
+		REQUIRE(offsets[4] == 0);  // g: 60 < 110
+	}
+
+	SECTION("EcpElectronCount = 78")
+	{
+		ebs.EcpElectronCount = 78;
+		auto offsets = ebs.CreatePrincipalQuantumNumberOffsetTable();
+		REQUIRE(offsets[0] == 5);  // s: 78 >= 62
+		REQUIRE(offsets[1] == 4);  // p: 78 >= 68
+		REQUIRE(offsets[2] == 3);  // d: 78 >= 78
+		REQUIRE(offsets[3] == 1);  // f: 78 >= 60
+		REQUIRE(offsets[4] == 0);  // g: 78 < 110
+	}
+
+	SECTION("EcpElectronCount = 110 (max supported)")
+	{
+		ebs.EcpElectronCount = 110;
+		auto offsets = ebs.CreatePrincipalQuantumNumberOffsetTable();
+		REQUIRE(offsets[0] == 5);  // s: 110 >= 62
+		REQUIRE(offsets[1] == 4);  // p: 110 >= 68
+		REQUIRE(offsets[2] == 3);  // d: 110 >= 78
+		REQUIRE(offsets[3] == 2);  // f: 110 >= 92
+		REQUIRE(offsets[4] == 1);  // g: 110 >= 110
+	}
+}
