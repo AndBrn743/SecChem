@@ -258,7 +258,7 @@ TEST_CASE("BasisSetLibrary sanity", "[MolecularBasisSet][Library]")
 	REQUIRE(lib["example-basis"].Has(Element::H));
 	REQUIRE(lib["example-basis"].Has(Element::Ne));
 
-	REQUIRE_FALSE(lib["example-basis"][Element::Ne].SemiLocalEcpProjectors.empty());
+	REQUIRE_FALSE(lib["example-basis"][Element::Ne].SemiLocalEcpChannels.empty());
 }
 
 TEST_CASE("MolecularBasisSet build succeeds", "[MolecularBasisSet][Builder]")
@@ -534,9 +534,9 @@ TEST_CASE("ECP-only angular momentum blocks are preserved", "[MolecularBasisSet]
 	                         .SetOrOverwriteGlobalDefaultBasisSetTo("def2-SVP")
 	                         .BuildWith(MolecularInputInterpreter{}, R"(Ne 0 0 0 basis="example-basis")");
 
-	REQUIRE(mbs.ElementaryBasisAt(0).AngularMomentumBlocks.size() == 1);
-	REQUIRE(mbs.ElementaryBasisAt(0).SemiLocalEcpProjectors.size() == 2);
-	REQUIRE(mbs.ElementaryBasisAt(0).AngularMomentumBlocks[0].IsNotEmpty());
+	REQUIRE(mbs.ElementaryBasisAt(0).AzimuthalShells.size() == 1);
+	REQUIRE(mbs.ElementaryBasisAt(0).SemiLocalEcpChannels.size() == 2);
+	REQUIRE(mbs.ElementaryBasisAt(0).AzimuthalShells[0].IsNotEmpty());
 }
 
 TEST_CASE("Elementary default basis cannot be set before global default", "[MolecularBasisSet][Builder][Negative]")

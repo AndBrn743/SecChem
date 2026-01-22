@@ -36,12 +36,12 @@ static ContractedRadialOrbitalSet MakeSimpleContractedSet(const Eigen::Index pri
 
 //--------------------------------------------------------------------------------------------------------------------//
 
-TEST_CASE("AngularMomentumBlock basic construction without ECP", "[AngularMomentumBlock]")
+TEST_CASE("AzimuthalShell basic construction without ECP", "[AzimuthalShell]")
 {
 	AzimuthalQuantumNumber l{1};  // p shell
 	auto crs = MakeSimpleContractedSet(3, 2);
 
-	AngularMomentumBlock block{l, crs};
+	AzimuthalShell block{l, crs};
 
 	REQUIRE(block.IsNotEmpty());
 	REQUIRE(block.PrimitiveShellCount() == 3);
@@ -59,12 +59,12 @@ TEST_CASE("AngularMomentumBlock basic construction without ECP", "[AngularMoment
 	REQUIRE(contractedShells[1] == ElectronicSubshell{3, 1});
 }
 
-TEST_CASE("Primitive and contracted orbital counts are consistent", "[AngularMomentumBlock][Counts]")
+TEST_CASE("Primitive and contracted orbital counts are consistent", "[AzimuthalShell][Counts]")
 {
 	AzimuthalQuantumNumber l{2};  // d shell
 	auto crs = MakeSimpleContractedSet(4, 3);
 
-	AngularMomentumBlock block{l, crs};
+	AzimuthalShell block{l, crs};
 
 	const auto nCart = l.CartesianMagneticQuantumNumberCount();
 	const auto nSph = l.MagneticQuantumNumberCount();
@@ -78,7 +78,7 @@ TEST_CASE("Primitive and contracted orbital counts are consistent", "[AngularMom
 	REQUIRE(block.ContractedSphericalOrbitalCount() == block.ContractedShellCount() * nSph);
 }
 
-TEST_CASE("ExponentSet and ContractionSets are forwarded correctly", "[AngularMomentumBlock]")
+TEST_CASE("ExponentSet and ContractionSets are forwarded correctly", "[AzimuthalShell]")
 {
 	AzimuthalQuantumNumber l{0};
 	auto crs = MakeSimpleContractedSet(6, 3);
@@ -86,42 +86,42 @@ TEST_CASE("ExponentSet and ContractionSets are forwarded correctly", "[AngularMo
 	const Eigen::VectorXd& exponents = crs.ExponentSet();
 	const Eigen::MatrixXd& contractions = crs.ContractionSets();
 
-	AngularMomentumBlock block{l, crs};
+	AzimuthalShell block{l, crs};
 
 	REQUIRE(block.ExponentSet().isApprox(exponents));
 	REQUIRE(block.ContractionSets().isApprox(contractions));
 }
 
-TEST_CASE("AngularMomentumBlock::Concat should work", "[AngularMomentumBlock][Concat]")
+TEST_CASE("AzimuthalShell::Concat should work", "[AzimuthalShell][Concat]")
 {
 	const auto crs0 = MakeSimpleContractedSet(6, 3);
 	const auto crs1 = MakeSimpleContractedSet(3, 2);
 
-	AngularMomentumBlock amb0 = {AzimuthalQuantumNumber::S, crs0};
-	AngularMomentumBlock amb1 = {AzimuthalQuantumNumber::S, crs1};
+	AzimuthalShell amb0 = {AzimuthalQuantumNumber::S, crs0};
+	AzimuthalShell amb1 = {AzimuthalQuantumNumber::S, crs1};
 
-	AngularMomentumBlock amb3 = {AzimuthalQuantumNumber::S, crs0};
-	AngularMomentumBlock amb4 = {AzimuthalQuantumNumber::S, crs1};
+	AzimuthalShell amb3 = {AzimuthalQuantumNumber::S, crs0};
+	AzimuthalShell amb4 = {AzimuthalQuantumNumber::S, crs1};
 
-	AngularMomentumBlock amb5 = {AzimuthalQuantumNumber::S, {}};
-	AngularMomentumBlock amb6 = {AzimuthalQuantumNumber::S, {}};
+	AzimuthalShell amb5 = {AzimuthalQuantumNumber::S, {}};
+	AzimuthalShell amb6 = {AzimuthalQuantumNumber::S, {}};
 
 	{
 		auto ambs = {amb0, amb1};
-		const auto amb = AngularMomentumBlock::Concat(ambs.begin(), ambs.end());
+		const auto amb = AzimuthalShell::Concat(ambs.begin(), ambs.end());
 		REQUIRE(amb.ExponentSet().size() == 6 + 3);
 		REQUIRE(amb.ContractedShellCount() == 3 + 2);
 	}
 
 	{
 		auto ambs = {amb0};
-		const auto amb = AngularMomentumBlock::Concat(ambs.begin(), ambs.end());
+		const auto amb = AzimuthalShell::Concat(ambs.begin(), ambs.end());
 		REQUIRE(amb == amb0);
 	}
 
 	{
 		auto ambs = {amb0, amb4};
-		const auto amb = AngularMomentumBlock::Concat(ambs.begin(), ambs.end());
+		const auto amb = AzimuthalShell::Concat(ambs.begin(), ambs.end());
 		REQUIRE(amb.ExponentSet().size() == 6 + 3);
 		REQUIRE(amb.ContractedShellCount() == 3 + 2);
 
@@ -134,44 +134,44 @@ TEST_CASE("AngularMomentumBlock::Concat should work", "[AngularMomentumBlock][Co
 
 	{
 		auto ambs = {amb3, amb4};
-		const auto amb = AngularMomentumBlock::Concat(ambs.begin(), ambs.end());
+		const auto amb = AzimuthalShell::Concat(ambs.begin(), ambs.end());
 		REQUIRE(amb.ExponentSet().size() == 6 + 3);
 		REQUIRE(amb.ContractedShellCount() == 3 + 2);
 	}
 
 	{
 		auto ambs = {amb5, amb6};
-		const auto amb = AngularMomentumBlock::Concat(ambs.begin(), ambs.end());
+		const auto amb = AzimuthalShell::Concat(ambs.begin(), ambs.end());
 		REQUIRE_FALSE(amb.IsNotEmpty());
 	}
 
 	{
 		auto ambs = {amb1, amb6};
-		const auto amb = AngularMomentumBlock::Concat(ambs.begin(), ambs.end());
+		const auto amb = AzimuthalShell::Concat(ambs.begin(), ambs.end());
 		REQUIRE(amb.IsNotEmpty());
 	}
 
 	{
 		auto ambs = {amb3, amb6};
-		const auto amb = AngularMomentumBlock::Concat(ambs.begin(), ambs.end());
+		const auto amb = AzimuthalShell::Concat(ambs.begin(), ambs.end());
 		REQUIRE(amb.IsNotEmpty());
 	}
 }
 
-TEST_CASE("AngularMomentumBlock::Concat should throw on empty input range", "[AngularMomentumBlock][Concat][Exception]")
+TEST_CASE("AzimuthalShell::Concat should throw on empty input range", "[AzimuthalShell][Concat][Exception]")
 {
-	std::initializer_list<AngularMomentumBlock> ambs = {};
-	REQUIRE_THROWS(AngularMomentumBlock::Concat(ambs.begin(), ambs.end()));
+	std::initializer_list<AzimuthalShell> ambs = {};
+	REQUIRE_THROWS(AzimuthalShell::Concat(ambs.begin(), ambs.end()));
 }
 
-TEST_CASE("AngularMomentumBlock::Concat should refuse concat blocks of different angular momentum", "[AngularMomentumBlock][Concat][Validation]")
+TEST_CASE("AzimuthalShell::Concat should refuse concat blocks of different angular momentum", "[AzimuthalShell][Concat][Validation]")
 {
 	const auto crs0 = MakeSimpleContractedSet(6, 3);
 	const auto crs1 = MakeSimpleContractedSet(3, 2);
 
-	AngularMomentumBlock amb0 = {AzimuthalQuantumNumber::S, crs0};
-	AngularMomentumBlock amb1 = {AzimuthalQuantumNumber::P, crs1};
+	AzimuthalShell amb0 = {AzimuthalQuantumNumber::S, crs0};
+	AzimuthalShell amb1 = {AzimuthalQuantumNumber::P, crs1};
 
 	auto ambs = {amb0, amb1};
-	REQUIRE_THROWS(AngularMomentumBlock::Concat(ambs.begin(), ambs.end()));
+	REQUIRE_THROWS(AzimuthalShell::Concat(ambs.begin(), ambs.end()));
 }

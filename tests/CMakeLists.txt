@@ -100,7 +100,7 @@ add_secchem_test(GeometryInputTest GeometryInputTest.cpp)
 # Basis set tests
 add_secchem_test(ContractedRadialOrbitalSetTest ContractedRadialOrbitalSetTest.cpp)
 add_secchem_test(SemiLocalEcpTest SemiLocalEcpTest.cpp)
-add_secchem_test(AngularMomentumBlockTest AngularMomentumBlockTest.cpp)
+add_secchem_test(AzimuthalShellTest AzimuthalShellTest.cpp)
 add_secchem_test(BasisSetTest BasisSetTest.cpp)
 add_secchem_test(BasisParserTest BasisParserTest.cpp)
 add_secchem_test(MolecularBasisSetTest MolecularBasisSetTest.cpp)

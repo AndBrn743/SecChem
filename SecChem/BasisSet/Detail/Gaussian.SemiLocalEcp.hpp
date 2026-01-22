@@ -8,17 +8,17 @@
 
 namespace SecChem::BasisSet::Gaussian
 {
-	class SemiLocalEcp : public SecUtility::IEquatableWithTolerance<SemiLocalEcp>
+	class SemiLocalEcpTerm : public SecUtility::IEquatableWithTolerance<SemiLocalEcpTerm>
 	{
 		friend IEquatableWithTolerance;
 
 	public:
-		static constexpr Scalar ZeroTolerance = SecUtility::Traits<SemiLocalEcp>::DefaultEqualityComparisonTolerance;
+		static constexpr Scalar ZeroTolerance = SecUtility::Traits<SemiLocalEcpTerm>::DefaultEqualityComparisonTolerance;
 
-		constexpr SemiLocalEcp() noexcept = default;
+		constexpr SemiLocalEcpTerm() noexcept = default;
 
 		template <typename CoefficientSet, typename RExponentSet, typename GaussianExponentSet>
-		SemiLocalEcp(const CoefficientSet& coefficientSet,
+		SemiLocalEcpTerm(const CoefficientSet& coefficientSet,
 		             const RExponentSet& rExponentSet,
 		             const GaussianExponentSet& gaussianExponentSet)
 		    : m_Data(CreateDataSet(coefficientSet, rExponentSet, gaussianExponentSet))
@@ -38,7 +38,7 @@ namespace SecChem::BasisSet::Gaussian
 			return m_Data.rows() != 0;
 		}
 
-		Eigen::Index TermCount() const noexcept
+		Eigen::Index GaussianTermCount() const noexcept
 		{
 			return m_Data.rows();
 		}
@@ -75,7 +75,7 @@ namespace SecChem::BasisSet::Gaussian
 
 		template <typename ForwardIterator, typename Getter>
 		static std::enable_if_t<!std::is_same_v<std::decay_t<decltype(*std::declval<ForwardIterator>())>, void>,
-		                        SemiLocalEcp>
+		                        SemiLocalEcpTerm>
 		Concat(const ForwardIterator begin, const ForwardIterator end, const Getter get)
 		{
 			if (begin == end)
@@ -102,23 +102,23 @@ namespace SecChem::BasisSet::Gaussian
 				offset += get(*it).m_Data.rows();
 			}
 
-			return SemiLocalEcp{std::move(data)};
+			return SemiLocalEcpTerm{std::move(data)};
 		}
 
 		template <typename ForwardIterator>
 		static std::enable_if_t<!std::is_same_v<std::decay_t<decltype(*std::declval<ForwardIterator>())>, void>,
-		                        SemiLocalEcp>
+		                        SemiLocalEcpTerm>
 		Concat(const ForwardIterator begin, const ForwardIterator end)
 		{
 			return Concat(begin, end, [](auto&& item) -> decltype(auto) { return std::forward<decltype(item)>(item); });
 		}
 
 		template <typename... Sets>
-		static std::enable_if_t<(std::is_same_v<std::decay_t<Sets>, SemiLocalEcp> && ...), SemiLocalEcp> Concat(
+		static std::enable_if_t<(std::is_same_v<std::decay_t<Sets>, SemiLocalEcpTerm> && ...), SemiLocalEcpTerm> Concat(
 		        const Sets&... sets)
 		{
 			static_assert(sizeof...(Sets) > 0);
-			const std::initializer_list<std::reference_wrapper<const SemiLocalEcp>> list = {std::ref(sets)...};
+			const std::initializer_list<std::reference_wrapper<const SemiLocalEcpTerm>> list = {std::ref(sets)...};
 
 			if constexpr (sizeof...(Sets) == 1)
 			{
@@ -128,13 +128,13 @@ namespace SecChem::BasisSet::Gaussian
 			{
 				return Concat(std::begin(list),
 				              std::end(list),
-				              [](const std::reference_wrapper<const SemiLocalEcp> ref) -> const SemiLocalEcp&
+				              [](const std::reference_wrapper<const SemiLocalEcpTerm> ref) -> const SemiLocalEcpTerm&
 				              { return ref.get(); });
 			}
 		}
 
 	private:
-		explicit SemiLocalEcp(Eigen::Matrix<Scalar, Eigen::Dynamic, 3> data) : m_Data(std::move(data))
+		explicit SemiLocalEcpTerm(Eigen::Matrix<Scalar, Eigen::Dynamic, 3> data) : m_Data(std::move(data))
 		{
 			/* NO CODE */
 		}
@@ -176,7 +176,7 @@ namespace SecChem::BasisSet::Gaussian
 			}
 		}
 
-		bool EqualsTo_Impl(const SemiLocalEcp& other, const Scalar tolerance = ZeroTolerance) const noexcept
+		bool EqualsTo_Impl(const SemiLocalEcpTerm& other, const Scalar tolerance = ZeroTolerance) const noexcept
 		{
 			return m_Data.rows() == other.m_Data.rows()
 			       && (m_Data.size() == 0 || (m_Data - other.m_Data).cwiseAbs().maxCoeff() <= tolerance);
@@ -186,14 +186,14 @@ namespace SecChem::BasisSet::Gaussian
 	};
 
 
-	class SemiLocalEcpProjector : public SecUtility::IEquatableWithTolerance<SemiLocalEcpProjector>
+	class SemiLocalEcpChannel : public SecUtility::IEquatableWithTolerance<SemiLocalEcpChannel>
 	{
 		friend IEquatableWithTolerance;
 
 	public:
-		static constexpr Scalar ZeroTolerance = SecUtility::Traits<SemiLocalEcp>::DefaultEqualityComparisonTolerance;
+		static constexpr Scalar ZeroTolerance = SecUtility::Traits<SemiLocalEcpTerm>::DefaultEqualityComparisonTolerance;
 
-		explicit SemiLocalEcpProjector(const AzimuthalQuantumNumber angularMomentum)
+		explicit SemiLocalEcpChannel(const AzimuthalQuantumNumber angularMomentum)
 		    : m_AzimuthalQuantumNumber(angularMomentum)
 		{
 			/* NO CODE */
@@ -201,8 +201,8 @@ namespace SecChem::BasisSet::Gaussian
 
 		template <typename... Args>
 		// ReSharper disable once CppNonExplicitConvertingConstructor
-		SemiLocalEcpProjector(const AzimuthalQuantumNumber angularMomentum, Args&&... args)
-		    : m_AzimuthalQuantumNumber(angularMomentum), m_SemiLocalEcpTerms(std::forward<Args>(args)...)
+		SemiLocalEcpChannel(const AzimuthalQuantumNumber angularMomentum, Args&&... args)
+		    : m_AzimuthalQuantumNumber(angularMomentum), m_SemiLocalEcpTerm(std::forward<Args>(args)...)
 		{
 			/* NO CODE */
 		}
@@ -214,52 +214,52 @@ namespace SecChem::BasisSet::Gaussian
 
 		bool IsEmpty() const noexcept
 		{
-			return m_SemiLocalEcpTerms.IsEmpty();
+			return m_SemiLocalEcpTerm.IsEmpty();
 		}
 
 		bool IsNotEmpty() const noexcept
 		{
-			return m_SemiLocalEcpTerms.IsNotEmpty();
+			return m_SemiLocalEcpTerm.IsNotEmpty();
 		}
 
-		Eigen::Index TermCount() const noexcept
+		Eigen::Index GaussianTermCount() const noexcept
 		{
-			return m_SemiLocalEcpTerms.TermCount();
+			return m_SemiLocalEcpTerm.GaussianTermCount();
 		}
 
 		auto Coefficients() const noexcept
 		{
-			return m_SemiLocalEcpTerms.Coefficients();
+			return m_SemiLocalEcpTerm.Coefficients();
 		}
 
 		auto RExponents() const noexcept
 		{
-			return m_SemiLocalEcpTerms.RExponents();
+			return m_SemiLocalEcpTerm.RExponents();
 		}
 
 		auto GaussianExponents() const noexcept
 		{
-			return m_SemiLocalEcpTerms.GaussianExponents();
+			return m_SemiLocalEcpTerm.GaussianExponents();
 		}
 
 		const auto& Coefficient(const Eigen::Index index) const noexcept
 		{
-			return m_SemiLocalEcpTerms.Coefficient(index);
+			return m_SemiLocalEcpTerm.Coefficient(index);
 		}
 
 		const auto& RExponent(const Eigen::Index index) const noexcept
 		{
-			return m_SemiLocalEcpTerms.RExponent(index);
+			return m_SemiLocalEcpTerm.RExponent(index);
 		}
 
 		const auto& GaussianExponent(const Eigen::Index index) const noexcept
 		{
-			return m_SemiLocalEcpTerms.GaussianExponent(index);
+			return m_SemiLocalEcpTerm.GaussianExponent(index);
 		}
 
 		template <typename ForwardIterator, typename Getter>
 		static std::enable_if_t<!std::is_same_v<std::decay_t<decltype(*std::declval<ForwardIterator>())>, void>,
-		                        SemiLocalEcpProjector>
+		                        SemiLocalEcpChannel>
 		Concat(const ForwardIterator begin, const ForwardIterator end, Getter&& get)
 		{
 			if (begin == end)
@@ -276,25 +276,25 @@ namespace SecChem::BasisSet::Gaussian
 				        "Cannot concatenate SemiLocalEcpProjector objects of different angular momenta");
 			}
 
-			return SemiLocalEcpProjector{l,
-			                             SemiLocalEcp::Concat(begin,
+			return SemiLocalEcpChannel{l,
+			                             SemiLocalEcpTerm::Concat(begin,
 			                                                  end,
-			                                                  [&get](const auto& item) -> const SemiLocalEcp&
-			                                                  { return get(item).m_SemiLocalEcpTerms; })};
+			                                                  [&get](const auto& item) -> const SemiLocalEcpTerm&
+			                                                  { return get(item).m_SemiLocalEcpTerm; })};
 		}
 
 		template <typename ForwardIterator>
 		static std::enable_if_t<!std::is_same_v<std::decay_t<decltype(*std::declval<ForwardIterator>())>, void>,
-		                        SemiLocalEcpProjector>
+		                        SemiLocalEcpChannel>
 		Concat(const ForwardIterator begin, const ForwardIterator end)
 		{
-			return Concat(begin, end, [](const SemiLocalEcpProjector& p) -> const SemiLocalEcpProjector& { return p; });
+			return Concat(begin, end, [](const SemiLocalEcpChannel& p) -> const SemiLocalEcpChannel& { return p; });
 		}
 
 		template <typename Arg0, typename... Args>
-		static std::enable_if_t<std::is_same_v<std::decay_t<Arg0>, SemiLocalEcpProjector>
-		                                && (std::is_same_v<std::decay_t<Args>, SemiLocalEcpProjector> && ...),
-		                        SemiLocalEcpProjector>
+		static std::enable_if_t<std::is_same_v<std::decay_t<Arg0>, SemiLocalEcpChannel>
+		                                && (std::is_same_v<std::decay_t<Args>, SemiLocalEcpChannel> && ...),
+		                        SemiLocalEcpChannel>
 		Concat(Arg0&& arg0, Args&&... args)
 		{
 			const auto l = arg0.m_AzimuthalQuantumNumber;
@@ -304,22 +304,22 @@ namespace SecChem::BasisSet::Gaussian
 				        "Cannot concatenate SemiLocalEcpProjector objects of different angular momenta");
 			}
 
-			return SemiLocalEcpProjector{arg0.m_AzimuthalQuantumNumber,
-			                             SemiLocalEcp::Concat(static_cast<const SemiLocalEcp&>(arg0),
-			                                                  static_cast<const SemiLocalEcp&>(args)...)};
+			return SemiLocalEcpChannel{arg0.m_AzimuthalQuantumNumber,
+			                             SemiLocalEcpTerm::Concat(static_cast<const SemiLocalEcpTerm&>(arg0),
+			                                                  static_cast<const SemiLocalEcpTerm&>(args)...)};
 		}
 
 
 	private:
-		bool EqualsTo_Impl(const SemiLocalEcpProjector& other, const Scalar tolerance = ZeroTolerance) const noexcept
+		bool EqualsTo_Impl(const SemiLocalEcpChannel& other, const Scalar tolerance = ZeroTolerance) const noexcept
 		{
 			return m_AzimuthalQuantumNumber == other.m_AzimuthalQuantumNumber
-			       && m_SemiLocalEcpTerms.EqualsTo(other.m_SemiLocalEcpTerms, tolerance);
+			       && m_SemiLocalEcpTerm.EqualsTo(other.m_SemiLocalEcpTerm, tolerance);
 		}
 
 
 	private:
 		AzimuthalQuantumNumber m_AzimuthalQuantumNumber;
-		SemiLocalEcp m_SemiLocalEcpTerms;
+		SemiLocalEcpTerm m_SemiLocalEcpTerm;
 	};
 }  // namespace SecChem::BasisSet::Gaussian

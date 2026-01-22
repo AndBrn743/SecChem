@@ -20,7 +20,7 @@ namespace Eigen
 
 using SecChem::AzimuthalQuantumNumber;
 using SecChem::Element;
-using SecChem::BasisSet::Gaussian::AngularMomentumBlock;
+using SecChem::BasisSet::Gaussian::AzimuthalShell;
 using SecChem::BasisSet::Gaussian::ContractedRadialOrbitalSet;
 
 SecChem::BasisSet::Gaussian::BasisSet ParseBasisSetExchangeJson(const nlohmann::json& json)
@@ -67,7 +67,7 @@ SecChem::BasisSet::Gaussian::BasisSet ParseBasisSetExchangeJson(const nlohmann::
 				}
 
 
-				elementaryBasis.AngularMomentumBlocks.emplace_back(
+				elementaryBasis.AzimuthalShells.emplace_back(
 				        angularMomentum, ContractedRadialOrbitalSet{std::move(exponents), std::move(contractionSets)});
 			}
 		}
@@ -93,7 +93,7 @@ SecChem::BasisSet::Gaussian::BasisSet ParseBasisSetExchangeJson(const nlohmann::
 					                         "consider split ECP blocks for each angular momentum");
 				}
 				const auto angularMomentum = static_cast<AzimuthalQuantumNumber>(angularMomentaJson[0].get<int>());
-				result[element].SemiLocalEcpProjectors.emplace_back(
+				result[element].SemiLocalEcpChannels.emplace_back(
 				        angularMomentum,
 				        ecpJson.at("coefficients").get<Eigen::VectorXd>(),
 				        ecpJson.at("r_exponents").get<Eigen::VectorXd>(),

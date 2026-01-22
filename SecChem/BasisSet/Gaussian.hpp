@@ -22,16 +22,16 @@ namespace SecChem::BasisSet::Gaussian
 {
 	class ContractedRadialOrbitalSet;
 
-	class SemiLocalEcp;
+	class SemiLocalEcpTerm;
 
-	class SemiLocalEcpProjector;
+	class SemiLocalEcpChannel;
 
 	template <typename>
-	class AbstractAngularMomentumBlock;
+	class AbstractAzimuthalShell;
 
-	class AngularMomentumBlock;
+	class AzimuthalShell;
 
-	class AngularMomentumBlockSegmentView;
+	class AzimuthalShellSegmentView;
 
 	namespace Detail
 	{
@@ -58,33 +58,35 @@ struct SecUtility::Traits<SecChem::BasisSet::Gaussian::ContractedRadialOrbitalSe
 };
 
 template <>
-struct SecUtility::Traits<SecChem::BasisSet::Gaussian::SemiLocalEcp>
+struct SecUtility::Traits<SecChem::BasisSet::Gaussian::SemiLocalEcpTerm>
 {
 	static constexpr auto DefaultEqualityComparisonTolerance = 1e-15;
 };
 
 template <>
-struct SecUtility::Traits<SecChem::BasisSet::Gaussian::SemiLocalEcpProjector>
+struct SecUtility::Traits<SecChem::BasisSet::Gaussian::SemiLocalEcpChannel>
 {
 	static constexpr auto DefaultEqualityComparisonTolerance = 1e-15;
 };
 
 template <typename Derived>
-struct SecUtility::Traits<SecChem::BasisSet::Gaussian::AbstractAngularMomentumBlock<Derived>>
+struct SecUtility::Traits<SecChem::BasisSet::Gaussian::AbstractAzimuthalShell<Derived>>
 {
 	static constexpr auto DefaultEqualityComparisonTolerance = 1e-15;
 };
 
 template <>
-struct SecUtility::Traits<SecChem::BasisSet::Gaussian::AngularMomentumBlock>
+struct SecUtility::Traits<SecChem::BasisSet::Gaussian::AzimuthalShell>
 {
 	static constexpr auto DefaultEqualityComparisonTolerance = 1e-15;
 };
 
 #define SECCHEM_GAUSSIAN_BASIS_SET_INTERNAL
+// clang-format off
 #include "Detail/Gaussian.ContractedRadialOrbitalSet.hpp"
 #include "Detail/Gaussian.SemiLocalEcp.hpp"
-#include "Detail/Gaussian.AngularMomentumBlock.hpp"
+#include "Detail/Gaussian.AzimuthalShell.hpp"
 #include "Detail/Gaussian.BasisSet.hpp"
 #include "Detail/Gaussian.MolecularBasisSet.hpp"
+// clang-format on
 #undef SECCHEM_GAUSSIAN_BASIS_SET_INTERNAL

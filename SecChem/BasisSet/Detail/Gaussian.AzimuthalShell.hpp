@@ -12,10 +12,10 @@
 namespace SecChem::BasisSet::Gaussian
 {
 	template <typename Derived>
-	class AbstractAngularMomentumBlock
-	    : public SecUtility::IEquatableWithTolerance<AbstractAngularMomentumBlock<Derived>>
+	class AbstractAzimuthalShell
+	    : public SecUtility::IEquatableWithTolerance<AbstractAzimuthalShell<Derived>>
 	{
-		friend SecUtility::IEquatableWithTolerance<AbstractAngularMomentumBlock>;
+		friend SecUtility::IEquatableWithTolerance<AbstractAzimuthalShell>;
 		friend Derived;
 
 	public:
@@ -87,7 +87,7 @@ namespace SecChem::BasisSet::Gaussian
 
 		/* CRTP PURE VIRTUAL */ const auto& ContractionSets_Impl() const noexcept = delete;
 
-		bool EqualsTo_Impl(const AbstractAngularMomentumBlock& other, const Scalar tolerance) const noexcept
+		bool EqualsTo_Impl(const AbstractAzimuthalShell& other, const Scalar tolerance) const noexcept
 		{
 			return PrimitiveShellCount() == other.PrimitiveShellCount()
 			       && ContractedShellCount() == other.ContractedShellCount()
@@ -105,33 +105,33 @@ namespace SecChem::BasisSet::Gaussian
 			return ContractionSets().cols();
 		}
 
-		explicit constexpr AbstractAngularMomentumBlock(const AzimuthalQuantumNumber l) noexcept
+		explicit constexpr AbstractAzimuthalShell(const AzimuthalQuantumNumber l) noexcept
 		    : m_AzimuthalQuantumNumber(l)
 		{
 			/* NO CODE */
 		}
 
-		constexpr AbstractAngularMomentumBlock(const AbstractAngularMomentumBlock&) noexcept = default;
-		constexpr AbstractAngularMomentumBlock(AbstractAngularMomentumBlock&&) noexcept = default;
-		constexpr AbstractAngularMomentumBlock& operator=(const AbstractAngularMomentumBlock&) noexcept = default;
-		constexpr AbstractAngularMomentumBlock& operator=(AbstractAngularMomentumBlock&&) noexcept = default;
+		constexpr AbstractAzimuthalShell(const AbstractAzimuthalShell&) noexcept = default;
+		constexpr AbstractAzimuthalShell(AbstractAzimuthalShell&&) noexcept = default;
+		constexpr AbstractAzimuthalShell& operator=(const AbstractAzimuthalShell&) noexcept = default;
+		constexpr AbstractAzimuthalShell& operator=(AbstractAzimuthalShell&&) noexcept = default;
 
 #if __cplusplus >= 202002L
 		constexpr
 #endif
-		        ~AbstractAngularMomentumBlock() noexcept = default;
+		        ~AbstractAzimuthalShell() noexcept = default;
 
 		AzimuthalQuantumNumber m_AzimuthalQuantumNumber;
 	};
 
-	class AngularMomentumBlockSegmentView : public AbstractAngularMomentumBlock<AngularMomentumBlockSegmentView>
+	class AzimuthalShellSegmentView : public AbstractAzimuthalShell<AzimuthalShellSegmentView>
 	{
-		using Base = AbstractAngularMomentumBlock;
+		using Base = AbstractAzimuthalShell;
 		friend Base;
-		friend AngularMomentumBlock;
+		friend AzimuthalShell;
 		using Scalar = SecChem::Scalar;
 
-		AngularMomentumBlockSegmentView(const AzimuthalQuantumNumber azimuthalQuantumNumber,
+		AzimuthalShellSegmentView(const AzimuthalQuantumNumber azimuthalQuantumNumber,
 		                                const Eigen::Map<const Eigen::VectorX<Scalar>>& exponentSet,
 		                                const Eigen::Block<const Eigen::MatrixX<Scalar>>& contractionSets) noexcept
 		    : Base(azimuthalQuantumNumber), m_ExponentSetView(exponentSet), m_ContractionSetsView(contractionSets)
@@ -153,16 +153,16 @@ namespace SecChem::BasisSet::Gaussian
 		Eigen::Block<const Eigen::MatrixX<Scalar>> m_ContractionSetsView;
 	};
 
-	class AngularMomentumBlock : public SecUtility::IEquatableWithTolerance<AngularMomentumBlock>,
-	                             public AbstractAngularMomentumBlock<AngularMomentumBlock>
+	class AzimuthalShell : public SecUtility::IEquatableWithTolerance<AzimuthalShell>,
+	                             public AbstractAzimuthalShell<AzimuthalShell>
 	{
-		friend IEquatableWithTolerance<AngularMomentumBlock>;
-		using Base = AbstractAngularMomentumBlock;
+		friend IEquatableWithTolerance<AzimuthalShell>;
+		using Base = AbstractAzimuthalShell;
 		friend Base;
 		using SegmentationTable = std::vector<std::pair<Eigen::Index, Eigen::Index>>;
 
 	public:
-		AngularMomentumBlock(const AzimuthalQuantumNumber angularMomentum,
+		AzimuthalShell(const AzimuthalQuantumNumber angularMomentum,
 		                     ContractedRadialOrbitalSet contractedRadialOrbitalSet)
 		    : Base(angularMomentum), m_ContractedRadialOrbitalSet(std::move(contractedRadialOrbitalSet)),
 		      m_SegmentationTable{{0, 0},
@@ -172,7 +172,7 @@ namespace SecChem::BasisSet::Gaussian
 			/* NO CODE */
 		}
 
-		AngularMomentumBlock& AddOrOverrideContractedRadialOrbitalSet(
+		AzimuthalShell& AddOrOverrideContractedRadialOrbitalSet(
 		        ContractedRadialOrbitalSet contractedRadialOrbitalSet)
 		{
 			m_ContractedRadialOrbitalSet = std::move(contractedRadialOrbitalSet);
@@ -200,15 +200,15 @@ namespace SecChem::BasisSet::Gaussian
 		}
 
 		/// <summary>
-		/// Concatenates multiple AngularMomentumBlock instances.
+		/// Concatenates multiple AzimuthalShell instances.
 		/// Throws std::runtime_error if the input range is empty or if blocks have different angular momenta.
 		/// </summary>
 		template <typename ForwardIterator, typename Getter>
-		static AngularMomentumBlock Concat(ForwardIterator begin, const ForwardIterator end, Getter get)
+		static AzimuthalShell Concat(ForwardIterator begin, const ForwardIterator end, Getter get)
 		{
 			if (begin == end)
 			{
-				throw std::runtime_error("AngularMomentumBlock: input range is empty");
+				throw std::runtime_error("AzimuthalShell: input range is empty");
 			}
 
 			if (std::distance(begin, end) == 1)
@@ -223,7 +223,7 @@ namespace SecChem::BasisSet::Gaussian
 			                [get, azimuthalQuantumNumber](const auto& item)
 			                { return get(item).m_AzimuthalQuantumNumber != azimuthalQuantumNumber; }))
 			{
-				throw std::runtime_error("AngularMomentumBlock: cannot concat blocks with different angular momenta");
+				throw std::runtime_error("AzimuthalShell: cannot concat blocks with different angular momenta");
 			}
 
 			// clang-format off
@@ -237,11 +237,11 @@ namespace SecChem::BasisSet::Gaussian
 		}
 
 		/// <summary>
-		/// Concatenates multiple AngularMomentumBlock instances.
+		/// Concatenates multiple AzimuthalShell instances.
 		/// Throws std::runtime_error if the input range is empty or if blocks have different angular momenta.
 		/// </summary>
 		template <typename ForwardIterator>
-		static AngularMomentumBlock Concat(ForwardIterator begin, const ForwardIterator end)
+		static AzimuthalShell Concat(ForwardIterator begin, const ForwardIterator end)
 		{
 			return Concat(begin, end, [](auto&& item) -> decltype(auto) { return std::forward<decltype(item)>(item); });
 		}
@@ -256,7 +256,7 @@ namespace SecChem::BasisSet::Gaussian
 			return static_cast<Eigen::Index>(m_SegmentationTable.size() - 1);
 		}
 
-		AngularMomentumBlockSegmentView Segment(const Eigen::Index index) const noexcept
+		AzimuthalShellSegmentView Segment(const Eigen::Index index) const noexcept
 		{
 			assert(IsNotEmpty());
 			assert(index >= 0 && index < SegmentCount());
@@ -264,18 +264,18 @@ namespace SecChem::BasisSet::Gaussian
 			const auto [p0, c0] = m_SegmentationTable[index];
 			const auto [p1, c1] = m_SegmentationTable[index + 1];
 
-			return AngularMomentumBlockSegmentView{AngularMomentum(),
+			return AzimuthalShellSegmentView{AngularMomentum(),
 			                                       {ExponentSet().data() + p0, p1 - p0},
 			                                       ContractionSets().block(p0, c0, p1 - p0, c1 - c0)};
 		}
 
-		using IEquatableWithTolerance<AngularMomentumBlock>::EqualsTo;
-		using IEquatableWithTolerance<AngularMomentumBlock>::NotEqualsTo;
-		using IEquatableWithTolerance<AngularMomentumBlock>::operator==;
-		using IEquatableWithTolerance<AngularMomentumBlock>::operator!=;
+		using IEquatableWithTolerance<AzimuthalShell>::EqualsTo;
+		using IEquatableWithTolerance<AzimuthalShell>::NotEqualsTo;
+		using IEquatableWithTolerance<AzimuthalShell>::operator==;
+		using IEquatableWithTolerance<AzimuthalShell>::operator!=;
 
 	private:
-		AngularMomentumBlock(const AzimuthalQuantumNumber angularMomentum,
+		AzimuthalShell(const AzimuthalQuantumNumber angularMomentum,
 		                     Gaussian::ContractedRadialOrbitalSet nullableContractedRadialOrbitalSet,
 		                     std::vector<std::pair<Eigen::Index, Eigen::Index>> segmentationTable)
 		    : Base(angularMomentum), m_ContractedRadialOrbitalSet(std::move(nullableContractedRadialOrbitalSet)),
@@ -284,7 +284,7 @@ namespace SecChem::BasisSet::Gaussian
 			/* NO CODE */
 		}
 
-		bool EqualsTo_Impl(const AngularMomentumBlock& other, const SecChem::Scalar tolerance) const noexcept
+		bool EqualsTo_Impl(const AzimuthalShell& other, const SecChem::Scalar tolerance) const noexcept
 		{
 			return m_ContractedRadialOrbitalSet.EqualsTo(other.m_ContractedRadialOrbitalSet, tolerance);
 			// return m_ContractedRadialOrbitalSet.EqualsTo(other.m_ContractedRadialOrbitalSet, tolerance)

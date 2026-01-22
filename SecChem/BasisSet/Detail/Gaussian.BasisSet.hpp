@@ -26,15 +26,15 @@ namespace SecChem::BasisSet::Gaussian
 	{
 	private:
 		template <typename T>
-		static auto ConcatSetsOf(const std::vector<T>& sortedAngularMomentumBlocks)
+		static auto ConcatSetsOf(const std::vector<T>& sortedNonEmptyBlocks)
 		{
 			using Iterator = typename std::vector<T>::const_iterator;
 			std::vector<std::pair<Iterator, Iterator>> concatSets;
-			auto it0 = sortedAngularMomentumBlocks.begin();
-			while (it0 != sortedAngularMomentumBlocks.end())
+			auto it0 = sortedNonEmptyBlocks.begin();
+			while (it0 != sortedNonEmptyBlocks.end())
 			{
 				auto it1 = std::find_if_not(std::next(it0),
-				                            sortedAngularMomentumBlocks.end(),
+				                            sortedNonEmptyBlocks.end(),
 				                            [l0 = it0->AngularMomentum()](const T& block)
 				                            { return block.AngularMomentum() == l0; });
 
@@ -52,8 +52,8 @@ namespace SecChem::BasisSet::Gaussian
 			return concatSets;
 		}
 
-		static bool IsInStandardStorageOrder_OverloadSet(const AngularMomentumBlock& lhs,
-		                                                 const AngularMomentumBlock& rhs)
+		static bool IsInStandardStorageOrder_OverloadSet(const AzimuthalShell& lhs,
+		                                                 const AzimuthalShell& rhs)
 		{
 			if (lhs.AngularMomentum() != rhs.AngularMomentum())
 			{
@@ -80,17 +80,16 @@ namespace SecChem::BasisSet::Gaussian
 			return false;
 		}
 
-		static bool IsInStandardStorageOrder_OverloadSet(const SemiLocalEcpProjector& lhs,
-		                                                 const SemiLocalEcpProjector& rhs)
+		static bool IsInStandardStorageOrder_OverloadSet(const SemiLocalEcpChannel& lhs, const SemiLocalEcpChannel& rhs)
 		{
 			if (lhs.AngularMomentum() != rhs.AngularMomentum())
 			{
 				return lhs.AngularMomentum() < rhs.AngularMomentum();
 			}
 
-			if (lhs.TermCount() != rhs.TermCount())
+			if (lhs.GaussianTermCount() != rhs.GaussianTermCount())
 			{
-				return lhs.TermCount() > rhs.TermCount();
+				return lhs.GaussianTermCount() > rhs.GaussianTermCount();
 			}
 
 			if (lhs.GaussianExponent(0) != rhs.GaussianExponent(0))
@@ -114,8 +113,8 @@ namespace SecChem::BasisSet::Gaussian
 		}
 
 	public:
-		std::vector<AngularMomentumBlock> AngularMomentumBlocks{};
-		std::vector<SemiLocalEcpProjector> SemiLocalEcpProjectors{};
+		std::vector<AzimuthalShell> AzimuthalShells{};
+		std::vector<SemiLocalEcpChannel> SemiLocalEcpChannels{};
 		int EcpElectronCount{};
 
 		static constexpr auto IsInStandardStorageOrder = [](const auto& lhs, const auto& rhs)
@@ -123,18 +122,18 @@ namespace SecChem::BasisSet::Gaussian
 
 		bool IsInStandardRepresentation() const noexcept
 		{
-			if (!AngularMomentumBlocks.empty()
-			    && (ranges::any_of(AngularMomentumBlocks, &AngularMomentumBlock::IsEmpty)
-			        || !ranges::is_sorted(AngularMomentumBlocks, IsInStandardStorageOrder)
-			        || !ConcatSetsOf(AngularMomentumBlocks).empty()))
+			if (!AzimuthalShells.empty()
+			    && (ranges::any_of(AzimuthalShells, &AzimuthalShell::IsEmpty)
+			        || !ranges::is_sorted(AzimuthalShells, IsInStandardStorageOrder)
+			        || !ConcatSetsOf(AzimuthalShells).empty()))
 			{
 				return false;
 			}
 
-			if (!SemiLocalEcpProjectors.empty()
-			    && (ranges::any_of(SemiLocalEcpProjectors, &SemiLocalEcpProjector::IsEmpty)
-			        || !ranges::is_sorted(SemiLocalEcpProjectors, IsInStandardStorageOrder)
-			        || !ConcatSetsOf(SemiLocalEcpProjectors).empty()))
+			if (!SemiLocalEcpChannels.empty()
+			    && (ranges::any_of(SemiLocalEcpChannels, &SemiLocalEcpChannel::IsEmpty)
+			        || !ranges::is_sorted(SemiLocalEcpChannels, IsInStandardStorageOrder)
+			        || !ConcatSetsOf(SemiLocalEcpChannels).empty()))
 			{
 				return false;
 			}
@@ -144,11 +143,11 @@ namespace SecChem::BasisSet::Gaussian
 
 		void StandardizeRepresentation()
 		{
-			AngularMomentumBlocks = StandardizedRepresentationOf(
-			        AngularMomentumBlocks, [](const AngularMomentumBlock& block) { return block.IsEmpty(); });
+			AzimuthalShells = StandardizedRepresentationOf(
+			        AzimuthalShells, [](const AzimuthalShell& s) { return s.IsEmpty(); });
 
-			SemiLocalEcpProjectors = StandardizedRepresentationOf(
-			        SemiLocalEcpProjectors, [](const SemiLocalEcpProjector& projector) { return projector.IsEmpty(); });
+			SemiLocalEcpChannels = StandardizedRepresentationOf(
+			        SemiLocalEcpChannels, [](const SemiLocalEcpChannel& p) { return p.IsEmpty(); });
 		}
 
 		template <typename T, typename IsEmpty>
@@ -205,18 +204,18 @@ namespace SecChem::BasisSet::Gaussian
 
 		bool EqualsTo(const ElementaryBasisSet& other, const Scalar tolerance = 1e-15) const noexcept
 		{
-			if (AngularMomentumBlocks.size() != other.AngularMomentumBlocks.size()
-			    || SemiLocalEcpProjectors.size() != other.SemiLocalEcpProjectors.size())
+			if (AzimuthalShells.size() != other.AzimuthalShells.size()
+			    || SemiLocalEcpChannels.size() != other.SemiLocalEcpChannels.size())
 			{
 				return false;
 			}
 
-			return ranges::mismatch(AngularMomentumBlocks,
-			                        other.AngularMomentumBlocks,
+			return ranges::mismatch(AzimuthalShells,
+			                        other.AzimuthalShells,
 			                        [tolerance](const auto& lhs, const auto& rhs)
 			                        { return lhs.EqualsTo(rhs, tolerance); })
 			               .in1
-			       == AngularMomentumBlocks.cend();
+			       == AzimuthalShells.cend();
 		}
 
 		bool NotEqualsTo(const ElementaryBasisSet& other, const Scalar tolerance = 1e-15) const noexcept
@@ -238,7 +237,7 @@ namespace SecChem::BasisSet::Gaussian
 		/// the behavior is undefined otherwise
 		std::vector<int> CreatePrincipalQuantumNumberOffsetTable() const
 		{
-			std::vector offsets(AngularMomentumBlocks.back().AngularMomentum().Value() + 1, 0);
+			std::vector offsets(AzimuthalShells.back().AngularMomentum().Value() + 1, 0);
 
 			if (EcpElectronCount == 0)
 			{
@@ -488,8 +487,8 @@ namespace SecChem::BasisSet::Gaussian
 				for (const auto& [_, elementaryBasis] : Data())
 				{
 					if (!elementaryBasis.IsInStandardRepresentation()
-					    || (elementaryBasis.AngularMomentumBlocks.empty()
-					        && elementaryBasis.SemiLocalEcpProjectors.empty()))
+					    || (elementaryBasis.AzimuthalShells.empty()
+					        && elementaryBasis.SemiLocalEcpChannels.empty()))
 					{
 						return false;
 					}
@@ -504,11 +503,11 @@ namespace SecChem::BasisSet::Gaussian
 
 				for (auto& [element, elementaryBasis] : Data())
 				{
-					const auto& angularMomentumBlocks = elementaryBasis.AngularMomentumBlocks;
-					const auto& ecpProjectors = elementaryBasis.SemiLocalEcpProjectors;
+					const auto& angularMomentumBlocks = elementaryBasis.AzimuthalShells;
+					const auto& ecpProjectors = elementaryBasis.SemiLocalEcpChannels;
 					if ((angularMomentumBlocks.empty()
-					     || ranges::all_of(angularMomentumBlocks, &AngularMomentumBlock::IsEmpty))
-					    && (ecpProjectors.empty() || ranges::all_of(ecpProjectors, &SemiLocalEcpProjector::IsEmpty)))
+					     || ranges::all_of(angularMomentumBlocks, &AzimuthalShell::IsEmpty))
+					    && (ecpProjectors.empty() || ranges::all_of(ecpProjectors, &SemiLocalEcpChannel::IsEmpty)))
 					{
 						nullElements.emplace_back(element);
 					}
