@@ -377,3 +377,261 @@ TEST_CASE("SemiLocalEcp::Concat should work with single item range", "[SemiLocal
 		REQUIRE(ecp == ecpExampleA);
 	}
 }
+
+// =============================================================================
+// SemiLocalEcpChannel Tests
+// =============================================================================
+
+using SecChem::AzimuthalQuantumNumber;
+
+TEST_CASE("SemiLocalEcpChannel constructs correctly with angular momentum only", "[SemiLocalEcpChannel]")
+{
+	SemiLocalEcpChannel channel(AzimuthalQuantumNumber::P);
+
+	REQUIRE(channel.AngularMomentum() == AzimuthalQuantumNumber::P);
+	REQUIRE(channel.IsEmpty());
+	REQUIRE_FALSE(channel.IsNotEmpty());
+	REQUIRE(channel.GaussianTermCount() == 0);
+}
+
+TEST_CASE("SemiLocalEcpChannel constructs correctly with angular momentum and data", "[SemiLocalEcpChannel]")
+{
+	Eigen::VectorXd coefficients(3);
+	coefficients << 1.0, -0.5, 0.25;
+
+	Eigen::VectorXd rExponents(3);
+	rExponents << 0.0, 1.0, 2.0;
+
+	Eigen::VectorXd gaussianExponents(3);
+	gaussianExponents << 3.0, 2.0, 1.0;
+
+	SemiLocalEcpChannel channel(AzimuthalQuantumNumber::D, coefficients, rExponents, gaussianExponents);
+
+	REQUIRE(channel.AngularMomentum() == AzimuthalQuantumNumber::D);
+	REQUIRE_FALSE(channel.IsEmpty());
+	REQUIRE(channel.IsNotEmpty());
+	REQUIRE(channel.GaussianTermCount() == 3);
+
+	CHECK_THAT(channel.Coefficient(0), WithinRel(1.0, 1e-14));
+	CHECK_THAT(channel.Coefficient(1), WithinRel(-0.5, 1e-14));
+	CHECK_THAT(channel.Coefficient(2), WithinRel(0.25, 1e-14));
+
+	CHECK_THAT(channel.RExponent(0), WithinRel(0.0, 1e-14));
+	CHECK_THAT(channel.RExponent(1), WithinRel(1.0, 1e-14));
+	CHECK_THAT(channel.RExponent(2), WithinRel(2.0, 1e-14));
+
+	CHECK_THAT(channel.GaussianExponent(0), WithinRel(3.0, 1e-14));
+	CHECK_THAT(channel.GaussianExponent(1), WithinRel(2.0, 1e-14));
+	CHECK_THAT(channel.GaussianExponent(2), WithinRel(1.0, 1e-14));
+}
+
+TEST_CASE("SemiLocalEcpChannel accepts row vectors", "[SemiLocalEcpChannel]")
+{
+	Eigen::RowVectorXd coefficients(2);
+	coefficients << 0.1, 0.2;
+
+	Eigen::RowVectorXd rExponents(2);
+	rExponents << 1.0, 2.0;
+
+	Eigen::RowVectorXd gaussianExponents(2);
+	gaussianExponents << 4.0, 5.0;
+
+	SemiLocalEcpChannel channel(AzimuthalQuantumNumber::F, coefficients, rExponents, gaussianExponents);
+
+	REQUIRE(channel.AngularMomentum() == AzimuthalQuantumNumber::F);
+	REQUIRE(channel.GaussianTermCount() == 2);
+
+	CHECK_THAT(channel.Coefficient(1), WithinRel(0.2, 1e-14));
+	CHECK_THAT(channel.RExponent(0), WithinRel(1.0, 1e-14));
+	CHECK_THAT(channel.GaussianExponent(1), WithinRel(5.0, 1e-14));
+}
+
+TEST_CASE("SemiLocalEcpChannel column accessors reference internal storage", "[SemiLocalEcpChannel]")
+{
+	Eigen::VectorXd coefficients(3);
+	coefficients << 1.0, 2.0, 3.0;
+
+	Eigen::VectorXd rExponents(3);
+	rExponents << 4.0, 5.0, 6.0;
+
+	Eigen::VectorXd gaussianExponents(3);
+	gaussianExponents << 7.0, 8.0, 9.0;
+
+	SemiLocalEcpChannel channel(AzimuthalQuantumNumber::S, coefficients, rExponents, gaussianExponents);
+
+	const auto coeffs = channel.Coefficients();
+	const auto rExps = channel.RExponents();
+	const auto gExps = channel.GaussianExponents();
+
+	REQUIRE(coeffs.data() == &channel.Coefficient(0));
+	REQUIRE(rExps.data() == &channel.RExponent(0));
+	REQUIRE(gExps.data() == &channel.GaussianExponent(0));
+}
+
+TEST_CASE("SemiLocalEcpChannel equality comparison", "[SemiLocalEcpChannel]")
+{
+	Eigen::VectorXd coefficients(3);
+	coefficients << 1.0, -0.5, 0.25;
+
+	Eigen::VectorXd rExponents(3);
+	rExponents << 0.0, 1.0, 2.0;
+
+	Eigen::VectorXd gaussianExponents(3);
+	gaussianExponents << 3.0, 2.0, 1.0;
+
+	SemiLocalEcpChannel channel0(AzimuthalQuantumNumber::P, coefficients, rExponents, gaussianExponents);
+
+	SECTION("Equal channels")
+	{
+		SemiLocalEcpChannel channel1(AzimuthalQuantumNumber::P, coefficients, rExponents, gaussianExponents);
+		REQUIRE(channel1 == channel0);
+		REQUIRE_FALSE(channel1 != channel0);
+	}
+
+	SECTION("Different angular momentum")
+	{
+		SemiLocalEcpChannel channel2(AzimuthalQuantumNumber::D, coefficients, rExponents, gaussianExponents);
+		REQUIRE_FALSE(channel2 == channel0);
+		REQUIRE(channel2 != channel0);
+	}
+
+	SECTION("Different gaussian exponent")
+	{
+		Eigen::VectorXd gaussianExponentsToo = gaussianExponents;
+		gaussianExponentsToo[0] += 1e-6;
+
+		SemiLocalEcpChannel channel3(AzimuthalQuantumNumber::P, coefficients, rExponents, gaussianExponentsToo);
+		REQUIRE_FALSE(channel3 == channel0);
+		REQUIRE(channel3 != channel0);
+		REQUIRE_FALSE(channel3.EqualsTo(channel0, 1e-9));
+		REQUIRE(channel3.EqualsTo(channel0, 1e-5));
+	}
+
+	SECTION("Both empty channels with same angular momentum")
+	{
+		SemiLocalEcpChannel empty1(AzimuthalQuantumNumber::F);
+		SemiLocalEcpChannel empty2(AzimuthalQuantumNumber::F);
+		REQUIRE(empty1 == empty2);
+	}
+
+	SECTION("Empty channels with different angular momenta")
+	{
+		SemiLocalEcpChannel emptyS(AzimuthalQuantumNumber::S);
+		SemiLocalEcpChannel emptyP(AzimuthalQuantumNumber::P);
+		REQUIRE_FALSE(emptyS == emptyP);
+		REQUIRE(emptyS != emptyP);
+	}
+}
+
+static const SemiLocalEcpChannel channelExampleP = []
+{
+	Eigen::VectorXd coefficients(3);
+	coefficients << 1.0, -0.5, 0.25;
+
+	Eigen::VectorXd rExponents(3);
+	rExponents << 0.0, 1.0, 2.0;
+
+	Eigen::VectorXd gaussianExponents(3);
+	gaussianExponents << 3.0, 2.0, 1.0;
+
+	return SemiLocalEcpChannel(AzimuthalQuantumNumber::P, coefficients, rExponents, gaussianExponents);
+}();
+
+static const SemiLocalEcpChannel channelExampleP2 = []
+{
+	Eigen::VectorXd coefficients(2);
+	coefficients << 10.0, -10.5;
+
+	Eigen::VectorXd rExponents(2);
+	rExponents << 1.9, 1.8;
+
+	Eigen::VectorXd gaussianExponents(2);
+	gaussianExponents << 3.2, 2.2;
+
+	return SemiLocalEcpChannel(AzimuthalQuantumNumber::P, coefficients, rExponents, gaussianExponents);
+}();
+
+static const SemiLocalEcpChannel channelExampleD = []
+{
+	Eigen::VectorXd coefficients(2);
+	coefficients << 5.0, -2.5;
+
+	Eigen::VectorXd rExponents(2);
+	rExponents << 0.5, 1.5;
+
+	Eigen::VectorXd gaussianExponents(2);
+	gaussianExponents << 2.0, 1.0;
+
+	return SemiLocalEcpChannel(AzimuthalQuantumNumber::D, coefficients, rExponents, gaussianExponents);
+}();
+
+TEST_CASE("SemiLocalEcpChannel::Concat should work", "[SemiLocalEcpChannel]")
+{
+	SECTION("Concat iterable")
+	{
+		const std::array channels = {channelExampleP, channelExampleP2};
+		auto channel = SemiLocalEcpChannel::Concat(channels.begin(), channels.end());
+
+		REQUIRE(channel.AngularMomentum() == AzimuthalQuantumNumber::P);
+		REQUIRE(channel.GaussianTermCount() == 5);
+		REQUIRE(channel.Coefficients().head(3) == channelExampleP.Coefficients());
+		REQUIRE(channel.Coefficients().tail(2) == channelExampleP2.Coefficients());
+		REQUIRE(channel.RExponents().head(3) == channelExampleP.RExponents());
+		REQUIRE(channel.RExponents().tail(2) == channelExampleP2.RExponents());
+		REQUIRE(channel.GaussianExponents().head(3) == channelExampleP.GaussianExponents());
+		REQUIRE(channel.GaussianExponents().tail(2) == channelExampleP2.GaussianExponents());
+	}
+
+	SECTION("Concat items")
+	{
+		auto channel = SemiLocalEcpChannel::Concat(channelExampleP, channelExampleP2);
+
+		REQUIRE(channel.AngularMomentum() == AzimuthalQuantumNumber::P);
+		REQUIRE(channel.GaussianTermCount() == 5);
+		REQUIRE(channel.Coefficients().head(3) == channelExampleP.Coefficients());
+		REQUIRE(channel.Coefficients().tail(2) == channelExampleP2.Coefficients());
+	}
+}
+
+TEST_CASE("SemiLocalEcpChannel::Concat throws on empty range", "[SemiLocalEcpChannel]")
+{
+	std::vector<SemiLocalEcpChannel> empty{};
+	REQUIRE_THROWS_MATCHES(SemiLocalEcpChannel::Concat(empty.begin(), empty.end()),
+	                       std::invalid_argument,
+	                       MessageMatches(ContainsSubstring("empty")));
+}
+
+TEST_CASE("SemiLocalEcpChannel::Concat throws on different angular momenta", "[SemiLocalEcpChannel]")
+{
+	SECTION("Iterable with different angular momenta")
+	{
+		const std::array channels = {channelExampleP, channelExampleD};
+		REQUIRE_THROWS_MATCHES(SemiLocalEcpChannel::Concat(channels.begin(), channels.end()),
+		                       std::invalid_argument,
+		                       MessageMatches(ContainsSubstring("angular momenta")));
+	}
+
+	SECTION("Items with different angular momenta")
+	{
+		REQUIRE_THROWS_MATCHES(SemiLocalEcpChannel::Concat(channelExampleP, channelExampleD),
+		                       std::invalid_argument,
+		                       MessageMatches(ContainsSubstring("angular momenta")));
+	}
+}
+
+TEST_CASE("SemiLocalEcpChannel::Concat with single item range", "[SemiLocalEcpChannel]")
+{
+	const std::array channels = {channelExampleP};
+
+	SECTION("Concat iterable")
+	{
+		auto channel = SemiLocalEcpChannel::Concat(channels.begin(), channels.end());
+		REQUIRE(channel == channelExampleP);
+	}
+
+	SECTION("Concat item")
+	{
+		auto channel = SemiLocalEcpChannel::Concat(channelExampleP);
+		REQUIRE(channel == channelExampleP);
+	}
+}

@@ -13,14 +13,15 @@ namespace SecChem::BasisSet::Gaussian
 		friend IEquatableWithTolerance;
 
 	public:
-		static constexpr Scalar ZeroTolerance = SecUtility::Traits<SemiLocalEcpTerm>::DefaultEqualityComparisonTolerance;
+		static constexpr Scalar ZeroTolerance =
+		        SecUtility::Traits<SemiLocalEcpTerm>::DefaultEqualityComparisonTolerance;
 
 		constexpr SemiLocalEcpTerm() noexcept = default;
 
 		template <typename CoefficientSet, typename RExponentSet, typename GaussianExponentSet>
 		SemiLocalEcpTerm(const CoefficientSet& coefficientSet,
-		             const RExponentSet& rExponentSet,
-		             const GaussianExponentSet& gaussianExponentSet)
+		                 const RExponentSet& rExponentSet,
+		                 const GaussianExponentSet& gaussianExponentSet)
 		    : m_Data(CreateDataSet(coefficientSet, rExponentSet, gaussianExponentSet))
 		{
 			static_assert(std::is_base_of_v<Eigen::EigenBase<CoefficientSet>, CoefficientSet>);
@@ -191,7 +192,8 @@ namespace SecChem::BasisSet::Gaussian
 		friend IEquatableWithTolerance;
 
 	public:
-		static constexpr Scalar ZeroTolerance = SecUtility::Traits<SemiLocalEcpTerm>::DefaultEqualityComparisonTolerance;
+		static constexpr Scalar ZeroTolerance =
+		        SecUtility::Traits<SemiLocalEcpTerm>::DefaultEqualityComparisonTolerance;
 
 		explicit SemiLocalEcpChannel(const AzimuthalQuantumNumber angularMomentum)
 		    : m_AzimuthalQuantumNumber(angularMomentum)
@@ -277,10 +279,10 @@ namespace SecChem::BasisSet::Gaussian
 			}
 
 			return SemiLocalEcpChannel{l,
-			                             SemiLocalEcpTerm::Concat(begin,
-			                                                  end,
-			                                                  [&get](const auto& item) -> const SemiLocalEcpTerm&
-			                                                  { return get(item).m_SemiLocalEcpTerm; })};
+			                           SemiLocalEcpTerm::Concat(begin,
+			                                                    end,
+			                                                    [&get](const auto& item) -> const SemiLocalEcpTerm&
+			                                                    { return get(item).m_SemiLocalEcpTerm; })};
 		}
 
 		template <typename ForwardIterator>
@@ -305,8 +307,7 @@ namespace SecChem::BasisSet::Gaussian
 			}
 
 			return SemiLocalEcpChannel{arg0.m_AzimuthalQuantumNumber,
-			                             SemiLocalEcpTerm::Concat(static_cast<const SemiLocalEcpTerm&>(arg0),
-			                                                  static_cast<const SemiLocalEcpTerm&>(args)...)};
+			                           SemiLocalEcpTerm::Concat(arg0.m_SemiLocalEcpTerm, args.m_SemiLocalEcpTerm...)};
 		}
 
 
