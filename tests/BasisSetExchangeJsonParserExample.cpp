@@ -4,7 +4,6 @@
 
 #include "BasisSetExchangeJsonParserExample.hpp"
 #include <SecChem/Utility/Parser.hpp>
-#include <range/v3/algorithm/find_if.hpp>
 
 namespace Eigen
 {
@@ -40,40 +39,37 @@ SecChem::BasisSet::Gaussian::BasisSet ParseBasisSetExchangeJson(const nlohmann::
 		const Element element{SecUtility::Parse<int>(it.key())};
 
 		const auto& elementData = it.value();
-
-		if (!elementData.contains("electron_shells"))
-		{
-			std::clog << "Warning: An entry of element " << element
-			          << " contains no 'electron_shells' key. This entry will be ignored." << std::endl;
-			continue;
-		}
-
 		auto& elementaryBasis = result.AddEntryFor(element);
-		for (const auto& shell : elementData.at("electron_shells"))
+
+		if (elementData.contains("electron_shells"))
 		{
-			const auto& angularMomenta = shell.at("angular_momentum");
-			if (angularMomenta.size() != 1)
+			for (const auto& shell : elementData.at("electron_shells"))
 			{
-				throw std::runtime_error("Only single angular momentum shells are supported. As a workaround, please "
-				                         "consider split the input for each angular momentum");
+				const auto& angularMomenta = shell.at("angular_momentum");
+				if (angularMomenta.size() != 1)
+				{
+					throw std::runtime_error(
+					        "Only single angular momentum shells are supported. As a workaround, please "
+					        "consider split the input for each angular momentum");
+				}
+				AzimuthalQuantumNumber angularMomentum{angularMomenta[0].get<int>()};
+
+
+				auto exponents = shell.at("exponents").get<Eigen::VectorXd>();
+
+
+				const auto& coefficientsOfJson = shell.at("coefficients");
+				const auto contractionSetCount = static_cast<Eigen::Index>(coefficientsOfJson.size());
+				Eigen::MatrixXd contractionSets = Eigen::MatrixXd::Zero(exponents.size(), contractionSetCount);
+				for (Eigen::Index c = 0; c < contractionSetCount; c++)
+				{
+					contractionSets.col(c) = coefficientsOfJson[c].get<Eigen::VectorXd>();
+				}
+
+
+				elementaryBasis.AngularMomentumBlocks.emplace_back(
+				        angularMomentum, ContractedRadialOrbitalSet{std::move(exponents), std::move(contractionSets)});
 			}
-			AzimuthalQuantumNumber angularMomentum{angularMomenta[0].get<int>()};
-
-
-			auto exponents = shell.at("exponents").get<Eigen::VectorXd>();
-
-
-			const auto& coefficientsOfJson = shell.at("coefficients");
-			const auto contractionSetCount = static_cast<Eigen::Index>(coefficientsOfJson.size());
-			Eigen::MatrixXd contractionSets = Eigen::MatrixXd::Zero(exponents.size(), contractionSetCount);
-			for (Eigen::Index c = 0; c < contractionSetCount; c++)
-			{
-				contractionSets.col(c) = coefficientsOfJson[c].get<Eigen::VectorXd>();
-			}
-
-
-			elementaryBasis.AngularMomentumBlocks.emplace_back(
-			        angularMomentum, ContractedRadialOrbitalSet{std::move(exponents), std::move(contractionSets)});
 		}
 
 		if (elementData.contains("ecp_electrons"))
@@ -81,44 +77,27 @@ SecChem::BasisSet::Gaussian::BasisSet ParseBasisSetExchangeJson(const nlohmann::
 			result[element].EcpElectronCount = elementData.at("ecp_electrons").get<int>();
 		}
 
-		if (!elementData.contains("ecp_potentials"))
+		if (elementData.contains("ecp_potentials"))
 		{
-			continue;
-		}
+			for (const auto& ecpJson : elementData.at("ecp_potentials"))
+			{
+				if (ecpJson.at("ecp_type").get<std::string>() != "scalar_ecp")
+				{
+					throw std::runtime_error("Only scalar ECPs are supported. Sorry ");
+				}
 
-		for (const auto& ecpJson : elementData.at("ecp_potentials"))
-		{
-			if (ecpJson.at("ecp_type").get<std::string>() != "scalar_ecp")
-			{
-				throw std::runtime_error("Only scalar ECPs are supported. Sorry ");
-			}
-
-			const auto& angularMomentaJson = ecpJson.at("angular_momentum");
-			if (angularMomentaJson.size() != 1)
-			{
-				throw std::runtime_error("Only single angular momentum ECPs are supported. As a workaround, please "
-				                         "consider split ECP blocks for each angular momentum");
-			}
-			const auto angularMomentum = static_cast<AzimuthalQuantumNumber>(angularMomentaJson[0].get<int>());
-			const auto attachPointIterator = ranges::find_if(result[element].AngularMomentumBlocks,
-			                                                 [angularMomentum](const AngularMomentumBlock& amb)
-			                                                 { return amb.AngularMomentum() == angularMomentum; });
-			if (attachPointIterator != result[element].AngularMomentumBlocks.end())
-			{
-				attachPointIterator->AddOrOverrideSemiLocalEcp(
-				        {ecpJson.at("coefficients").get<Eigen::VectorXd>(),
-				         ecpJson.at("r_exponents").get<Eigen::VectorXd>(),
-				         ecpJson.at("gaussian_exponents").get<Eigen::VectorXd>()});
-			}
-			else
-			{
-				result[element].AngularMomentumBlocks.emplace_back(
+				const auto& angularMomentaJson = ecpJson.at("angular_momentum");
+				if (angularMomentaJson.size() != 1)
+				{
+					throw std::runtime_error("Only single angular momentum ECPs are supported. As a workaround, please "
+					                         "consider split ECP blocks for each angular momentum");
+				}
+				const auto angularMomentum = static_cast<AzimuthalQuantumNumber>(angularMomentaJson[0].get<int>());
+				result[element].SemiLocalEcpProjectors.emplace_back(
 				        angularMomentum,
-				        std::nullopt,
-				        SecChem::BasisSet::Gaussian::SemiLocalEcp{
-				                ecpJson.at("coefficients").get<Eigen::VectorXd>(),
-				                ecpJson.at("r_exponents").get<Eigen::VectorXd>(),
-				                ecpJson.at("gaussian_exponents").get<Eigen::VectorXd>()});
+				        ecpJson.at("coefficients").get<Eigen::VectorXd>(),
+				        ecpJson.at("r_exponents").get<Eigen::VectorXd>(),
+				        ecpJson.at("gaussian_exponents").get<Eigen::VectorXd>());
 			}
 		}
 	}

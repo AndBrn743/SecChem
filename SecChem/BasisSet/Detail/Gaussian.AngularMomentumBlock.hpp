@@ -77,7 +77,7 @@ namespace SecChem::BasisSet::Gaussian
 			return ContractedShellCount() * m_AzimuthalQuantumNumber.MagneticQuantumNumberCount();
 		}
 
-		const AzimuthalQuantumNumber& AngularMomentum() const noexcept
+		AzimuthalQuantumNumber AngularMomentum() const noexcept
 		{
 			return m_AzimuthalQuantumNumber;
 		}
@@ -172,30 +172,6 @@ namespace SecChem::BasisSet::Gaussian
 			/* NO CODE */
 		}
 
-		AngularMomentumBlock(const AzimuthalQuantumNumber angularMomentum,
-		                     ContractedRadialOrbitalSet contractedRadialOrbitalSet,
-		                     SemiLocalEcp ecp)
-		    : Base(angularMomentum), m_ContractedRadialOrbitalSet(std::move(contractedRadialOrbitalSet)),
-		      m_SegmentationTable{{0, 0},
-		                          {m_ContractedRadialOrbitalSet.PrimitiveShellCount(),
-		                           m_ContractedRadialOrbitalSet.ContractedShellCount()}},
-		      m_SemiLocalEcp(std::move(ecp))
-		{
-			/* NO CODE */
-		}
-
-		AngularMomentumBlock(const AzimuthalQuantumNumber angularMomentum, std::nullopt_t, SemiLocalEcp ecp)
-		    : Base(angularMomentum), m_SemiLocalEcp(std::move(ecp))
-		{
-			/* NO CODE */
-		}
-
-		AngularMomentumBlock& AddOrOverrideSemiLocalEcp(SemiLocalEcp ecp)
-		{
-			m_SemiLocalEcp = std::move(ecp);
-			return *this;
-		}
-
 		AngularMomentumBlock& AddOrOverrideContractedRadialOrbitalSet(
 		        ContractedRadialOrbitalSet contractedRadialOrbitalSet)
 		{
@@ -206,21 +182,14 @@ namespace SecChem::BasisSet::Gaussian
 			return *this;
 		}
 
-		bool HasOrbital() const noexcept
+		bool IsEmpty() const noexcept
 		{
-			return m_ContractedRadialOrbitalSet.PrimitiveShellCount() > 0;
+			return m_ContractedRadialOrbitalSet.PrimitiveShellCount() == 0;
 		}
 
-		bool HasSemiLocalEcp() const noexcept
+		bool IsNotEmpty() const noexcept
 		{
-			return m_SemiLocalEcp.TermCount() > 0;
-		}
-
-		// GCC require elaborated type specifier
-		// ReSharper disable once CppRedundantElaboratedTypeSpecifier
-		const class SemiLocalEcp& SemiLocalEcp() const noexcept
-		{
-			return m_SemiLocalEcp;
+			return m_ContractedRadialOrbitalSet.PrimitiveShellCount() != 0;
 		}
 
 		// GCC require elaborated type specifier
@@ -260,13 +229,11 @@ namespace SecChem::BasisSet::Gaussian
 			// clang-format off
 			auto crs = ContractedRadialOrbitalSet::Concat(
 					begin, end, [get](const auto& block) -> const auto& { return get(block).m_ContractedRadialOrbitalSet; });
-			auto ecp = SemiLocalEcp::Concat(
-					begin, end, [get](const auto& block) -> const auto& { return get(block).m_SemiLocalEcp; });
 			auto segTable = ConcatSegmentationTable(
 					begin, end, [get](const auto& block) -> const auto& { return get(block).m_SegmentationTable; });
 			// clang-format on
 
-			return {azimuthalQuantumNumber, std::move(crs), std::move(segTable), std::move(ecp)};
+			return {azimuthalQuantumNumber, std::move(crs), std::move(segTable)};
 		}
 
 		/// <summary>
@@ -285,13 +252,13 @@ namespace SecChem::BasisSet::Gaussian
 		Eigen::Index SegmentCount() const noexcept
 #endif
 		{
-			assert(HasOrbital());
+			assert(IsNotEmpty());
 			return static_cast<Eigen::Index>(m_SegmentationTable.size() - 1);
 		}
 
 		AngularMomentumBlockSegmentView Segment(const Eigen::Index index) const noexcept
 		{
-			assert(HasOrbital());
+			assert(IsNotEmpty());
 			assert(index >= 0 && index < SegmentCount());
 
 			const auto [p0, c0] = m_SegmentationTable[index];
@@ -310,19 +277,18 @@ namespace SecChem::BasisSet::Gaussian
 	private:
 		AngularMomentumBlock(const AzimuthalQuantumNumber angularMomentum,
 		                     Gaussian::ContractedRadialOrbitalSet nullableContractedRadialOrbitalSet,
-		                     std::vector<std::pair<Eigen::Index, Eigen::Index>> segmentationTable,
-		                     Gaussian::SemiLocalEcp semiLocalEcp)
-		    : Base(angularMomentum),
-		      m_ContractedRadialOrbitalSet(std::move(nullableContractedRadialOrbitalSet)),
-		      m_SegmentationTable(std::move(segmentationTable)), m_SemiLocalEcp(std::move(semiLocalEcp))
+		                     std::vector<std::pair<Eigen::Index, Eigen::Index>> segmentationTable)
+		    : Base(angularMomentum), m_ContractedRadialOrbitalSet(std::move(nullableContractedRadialOrbitalSet)),
+		      m_SegmentationTable(std::move(segmentationTable))
 		{
 			/* NO CODE */
 		}
 
 		bool EqualsTo_Impl(const AngularMomentumBlock& other, const SecChem::Scalar tolerance) const noexcept
 		{
-			return m_ContractedRadialOrbitalSet.EqualsTo(other.m_ContractedRadialOrbitalSet)
-			       && m_SemiLocalEcp.EqualsTo(other.m_SemiLocalEcp, tolerance);
+			return m_ContractedRadialOrbitalSet.EqualsTo(other.m_ContractedRadialOrbitalSet, tolerance);
+			// return m_ContractedRadialOrbitalSet.EqualsTo(other.m_ContractedRadialOrbitalSet, tolerance)
+			//        && m_SegmentationTable == other.m_SegmentationTable;
 		}
 
 		/* CRTP OVERRIDE */ const Eigen::VectorXd& ExponentSet_Impl() const noexcept
@@ -337,12 +303,12 @@ namespace SecChem::BasisSet::Gaussian
 
 		/* CRTP OVERRIDE */ Eigen::Index PrimitiveShellCount_Impl() const noexcept
 		{
-			return HasOrbital() ? ExponentSet_Impl().size() : 0;
+			return IsNotEmpty() ? ExponentSet_Impl().size() : 0;
 		}
 
 		/* CRTP OVERRIDE */ Eigen::Index ContractedShellCount_Impl() const noexcept
 		{
-			return HasOrbital() ? ContractionSets_Impl().cols() : 0;
+			return IsNotEmpty() ? ContractionSets_Impl().cols() : 0;
 		}
 
 		template <typename InputIterator, typename Getter>
@@ -393,6 +359,5 @@ namespace SecChem::BasisSet::Gaussian
 
 		Gaussian::ContractedRadialOrbitalSet m_ContractedRadialOrbitalSet = {};
 		SegmentationTable m_SegmentationTable = {};
-		Gaussian::SemiLocalEcp m_SemiLocalEcp = {};
 	};
 }  // namespace SecChem::BasisSet::Gaussian

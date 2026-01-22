@@ -13,7 +13,7 @@ namespace SecChem::BasisSet::Gaussian
 		friend IEquatableWithTolerance;
 
 	public:
-		static constexpr Scalar ZeroTolerance = 1e-15;
+		static constexpr Scalar ZeroTolerance = SecUtility::Traits<SemiLocalEcp>::DefaultEqualityComparisonTolerance;
 
 		constexpr SemiLocalEcp() noexcept = default;
 
@@ -26,6 +26,16 @@ namespace SecChem::BasisSet::Gaussian
 			static_assert(std::is_base_of_v<Eigen::EigenBase<CoefficientSet>, CoefficientSet>);
 			static_assert(std::is_base_of_v<Eigen::EigenBase<RExponentSet>, RExponentSet>);
 			static_assert(std::is_base_of_v<Eigen::EigenBase<GaussianExponentSet>, GaussianExponentSet>);
+		}
+
+		bool IsEmpty() const noexcept
+		{
+			return m_Data.rows() == 0;
+		}
+
+		bool IsNotEmpty() const noexcept
+		{
+			return m_Data.rows() != 0;
 		}
 
 		Eigen::Index TermCount() const noexcept
@@ -173,5 +183,143 @@ namespace SecChem::BasisSet::Gaussian
 		}
 
 		Eigen::Matrix<Scalar, Eigen::Dynamic, 3> m_Data;
+	};
+
+
+	class SemiLocalEcpProjector : public SecUtility::IEquatableWithTolerance<SemiLocalEcpProjector>
+	{
+		friend IEquatableWithTolerance;
+
+	public:
+		static constexpr Scalar ZeroTolerance = SecUtility::Traits<SemiLocalEcp>::DefaultEqualityComparisonTolerance;
+
+		explicit SemiLocalEcpProjector(const AzimuthalQuantumNumber angularMomentum)
+		    : m_AzimuthalQuantumNumber(angularMomentum)
+		{
+			/* NO CODE */
+		}
+
+		template <typename... Args>
+		// ReSharper disable once CppNonExplicitConvertingConstructor
+		SemiLocalEcpProjector(const AzimuthalQuantumNumber angularMomentum, Args&&... args)
+		    : m_AzimuthalQuantumNumber(angularMomentum), m_SemiLocalEcpTerms(std::forward<Args>(args)...)
+		{
+			/* NO CODE */
+		}
+
+		AzimuthalQuantumNumber AngularMomentum() const noexcept
+		{
+			return m_AzimuthalQuantumNumber;
+		}
+
+		bool IsEmpty() const noexcept
+		{
+			return m_SemiLocalEcpTerms.IsEmpty();
+		}
+
+		bool IsNotEmpty() const noexcept
+		{
+			return m_SemiLocalEcpTerms.IsNotEmpty();
+		}
+
+		Eigen::Index TermCount() const noexcept
+		{
+			return m_SemiLocalEcpTerms.TermCount();
+		}
+
+		auto Coefficients() const noexcept
+		{
+			return m_SemiLocalEcpTerms.Coefficients();
+		}
+
+		auto RExponents() const noexcept
+		{
+			return m_SemiLocalEcpTerms.RExponents();
+		}
+
+		auto GaussianExponents() const noexcept
+		{
+			return m_SemiLocalEcpTerms.GaussianExponents();
+		}
+
+		const auto& Coefficient(const Eigen::Index index) const noexcept
+		{
+			return m_SemiLocalEcpTerms.Coefficient(index);
+		}
+
+		const auto& RExponent(const Eigen::Index index) const noexcept
+		{
+			return m_SemiLocalEcpTerms.RExponent(index);
+		}
+
+		const auto& GaussianExponent(const Eigen::Index index) const noexcept
+		{
+			return m_SemiLocalEcpTerms.GaussianExponent(index);
+		}
+
+		template <typename ForwardIterator, typename Getter>
+		static std::enable_if_t<!std::is_same_v<std::decay_t<decltype(*std::declval<ForwardIterator>())>, void>,
+		                        SemiLocalEcpProjector>
+		Concat(const ForwardIterator begin, const ForwardIterator end, Getter&& get)
+		{
+			if (begin == end)
+			{
+				throw std::invalid_argument("Cannot concat empty range");
+			}
+
+			const auto l = begin->m_AzimuthalQuantumNumber;
+			if (std::find_if(
+			            begin, end, [&get, l](const auto& item) { return get(item).m_AzimuthalQuantumNumber != l; })
+			    != end)
+			{
+				throw std::invalid_argument(
+				        "Cannot concatenate SemiLocalEcpProjector objects of different angular momenta");
+			}
+
+			return SemiLocalEcpProjector{l,
+			                             SemiLocalEcp::Concat(begin,
+			                                                  end,
+			                                                  [&get](const auto& item) -> const SemiLocalEcp&
+			                                                  { return get(item).m_SemiLocalEcpTerms; })};
+		}
+
+		template <typename ForwardIterator>
+		static std::enable_if_t<!std::is_same_v<std::decay_t<decltype(*std::declval<ForwardIterator>())>, void>,
+		                        SemiLocalEcpProjector>
+		Concat(const ForwardIterator begin, const ForwardIterator end)
+		{
+			return Concat(begin, end, [](const SemiLocalEcpProjector& p) -> const SemiLocalEcpProjector& { return p; });
+		}
+
+		template <typename Arg0, typename... Args>
+		static std::enable_if_t<std::is_same_v<std::decay_t<Arg0>, SemiLocalEcpProjector>
+		                                && (std::is_same_v<std::decay_t<Args>, SemiLocalEcpProjector> && ...),
+		                        SemiLocalEcpProjector>
+		Concat(Arg0&& arg0, Args&&... args)
+		{
+			const auto l = arg0.m_AzimuthalQuantumNumber;
+			if (((args.m_AzimuthalQuantumNumber != l) || ...))
+			{
+				throw std::invalid_argument(
+				        "Cannot concatenate SemiLocalEcpProjector objects of different angular momenta");
+			}
+
+			return SemiLocalEcpProjector{arg0.m_AzimuthalQuantumNumber,
+			                             SemiLocalEcp::Concat(static_cast<const SemiLocalEcp&>(arg0),
+			                                                  static_cast<const SemiLocalEcp&>(args)...)};
+		}
+
+
+	private:
+		bool EqualsTo_Impl(const SemiLocalEcpProjector& other, const Scalar tolerance = ZeroTolerance) const noexcept
+		{
+			return m_AzimuthalQuantumNumber == other.m_AzimuthalQuantumNumber
+			       && m_SemiLocalEcpTerms.EqualsTo(other.m_SemiLocalEcpTerms, tolerance);
+		}
+
+
+	private:
+		AzimuthalQuantumNumber m_AzimuthalQuantumNumber;
+		SemiLocalEcp m_SemiLocalEcpTerms;
 	};
 }  // namespace SecChem::BasisSet::Gaussian

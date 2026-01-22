@@ -24,6 +24,8 @@ namespace SecChem::BasisSet::Gaussian
 
 	class SemiLocalEcp;
 
+	class SemiLocalEcpProjector;
+
 	template <typename>
 	class AbstractAngularMomentumBlock;
 
@@ -57,6 +59,12 @@ struct SecUtility::Traits<SecChem::BasisSet::Gaussian::ContractedRadialOrbitalSe
 
 template <>
 struct SecUtility::Traits<SecChem::BasisSet::Gaussian::SemiLocalEcp>
+{
+	static constexpr auto DefaultEqualityComparisonTolerance = 1e-15;
+};
+
+template <>
+struct SecUtility::Traits<SecChem::BasisSet::Gaussian::SemiLocalEcpProjector>
 {
 	static constexpr auto DefaultEqualityComparisonTolerance = 1e-15;
 };

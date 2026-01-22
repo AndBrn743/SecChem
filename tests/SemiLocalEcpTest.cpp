@@ -146,7 +146,7 @@ TEST_CASE("SemiLocalEcp accepts empty coefficient set", "[SemiLocalEcp]")
 
 	SemiLocalEcp ecp(coefficients, rExponents, gaussianExponents);
 
-	REQUIRE(ecp.TermCount() == 0);
+	REQUIRE(ecp.IsEmpty());
 }
 
 TEST_CASE("null SemiLocalEcp equal to each other", "[SemiLocalEcp]")
@@ -158,8 +158,8 @@ TEST_CASE("null SemiLocalEcp equal to each other", "[SemiLocalEcp]")
 	SemiLocalEcp ecp(coefficients, rExponents, gaussianExponents);
 	SemiLocalEcp ecp2{};
 
-	REQUIRE(ecp.TermCount() == 0);
-	REQUIRE(ecp2.TermCount() == 0);
+	REQUIRE(ecp.IsEmpty());
+	REQUIRE(ecp2.IsEmpty());
 	REQUIRE(ecp == ecp2);
 }
 

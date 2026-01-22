@@ -81,6 +81,13 @@ TEST_CASE("Sample parser should able to parse sample BSE JSON", "[BasisParser][B
           "r_exponents": ["1.6"],
           "gaussian_exponents": ["3.500000E+00"],
           "coefficients": ["-4.000000E+00"]
+        },
+        {
+          "ecp_type": "scalar_ecp",
+          "angular_momentum": [1],
+          "r_exponents": ["1"],
+          "gaussian_exponents": ["4.500000E+00"],
+          "coefficients": ["-5.000000E+00"]
         }
       ],
       "ecp_electrons": 28
@@ -93,17 +100,19 @@ TEST_CASE("Sample parser should able to parse sample BSE JSON", "[BasisParser][B
 
 	REQUIRE(sampleBasisSet.Has(Element::H));
 	REQUIRE(sampleBasisSet.Has(Element::Ne));
+	REQUIRE(sampleBasisSet[Element::H].IsInStandardRepresentation());
+	REQUIRE(sampleBasisSet[Element::Ne].IsInStandardRepresentation());
 	REQUIRE(sampleBasisSet.IsInStandardRepresentation());
 
-	REQUIRE(sampleBasisSet[Element::H].AngularMomentumBlocks[0].HasOrbital());
-	REQUIRE(!sampleBasisSet[Element::H].AngularMomentumBlocks[0].HasSemiLocalEcp());
+	REQUIRE(sampleBasisSet[Element::H].AngularMomentumBlocks.size() == 2);
+	REQUIRE(sampleBasisSet[Element::H].AngularMomentumBlocks[0].IsNotEmpty());
+	REQUIRE(sampleBasisSet[Element::H].SemiLocalEcpProjectors.empty());
 	REQUIRE(sampleBasisSet[Element::H].AngularMomentumBlocks[0].EqualsTo(AngularMomentumBlock{
 	        AzimuthalQuantumNumber::S,
 	        ContractedRadialOrbitalSet{Eigen::Vector3d{13.01, 1.962, 0.4446},
 	                                   Eigen::Matrix<double, 3, 2>{{0.019685, 0}, {0.137977, 0}, {0.000000, 1}}}}));
 
-	REQUIRE(sampleBasisSet[Element::H].AngularMomentumBlocks[1].HasOrbital());
-	REQUIRE(!sampleBasisSet[Element::H].AngularMomentumBlocks[1].HasSemiLocalEcp());
+	REQUIRE(sampleBasisSet[Element::H].AngularMomentumBlocks[1].IsNotEmpty());
 	REQUIRE(sampleBasisSet[Element::H].AngularMomentumBlocks[1].EqualsTo(AngularMomentumBlock{
 	        AzimuthalQuantumNumber::P,
 	        ContractedRadialOrbitalSet{Eigen::Vector2d{0.727, 0.141},
@@ -111,20 +120,18 @@ TEST_CASE("Sample parser should able to parse sample BSE JSON", "[BasisParser][B
 
 	REQUIRE(sampleBasisSet[Element::H].EcpElectronCount == 0);
 
-	REQUIRE(sampleBasisSet[Element::Ne].AngularMomentumBlocks[0].HasOrbital());
-	REQUIRE(sampleBasisSet[Element::Ne].AngularMomentumBlocks[0].HasSemiLocalEcp());
-	const SemiLocalEcp ecp0{Eigen::Vector<double, 1>{-6}, Eigen::Vector<double, 1>{2}, Eigen::Vector<double, 1>{4}};
+	REQUIRE(sampleBasisSet[Element::Ne].AngularMomentumBlocks.size() == 1);
+	REQUIRE(sampleBasisSet[Element::Ne].AngularMomentumBlocks[0].IsNotEmpty());
+	REQUIRE(sampleBasisSet[Element::Ne].SemiLocalEcpProjectors.size() == 2);
 	REQUIRE(sampleBasisSet[Element::Ne].AngularMomentumBlocks[0].EqualsTo(
 	        AngularMomentumBlock{AzimuthalQuantumNumber::S,
 	                             ContractedRadialOrbitalSet{Eigen::Vector2d{38.36, 5.77},
-	                                                        Eigen::Matrix<double, 2, 1>{{0.023809}, {0.154891}}},
-	                             ecp0}));
+	                                                        Eigen::Matrix<double, 2, 1>{{0.023809}, {0.154891}}}}));
 
-	REQUIRE(!sampleBasisSet[Element::Ne].AngularMomentumBlocks[1].HasOrbital());
-	REQUIRE(sampleBasisSet[Element::Ne].AngularMomentumBlocks[1].HasSemiLocalEcp());
-	const SemiLocalEcp ecp1{Eigen::Vector<double, 1>{-4}, Eigen::Vector<double, 1>{1.6}, Eigen::Vector<double, 1>{3.5}};
-	REQUIRE(sampleBasisSet[Element::Ne].AngularMomentumBlocks[1].EqualsTo(
-	        AngularMomentumBlock{AzimuthalQuantumNumber::P, std::nullopt, ecp1}));
+	const SemiLocalEcp ecp0{Eigen::Vector<double, 1>{-6}, Eigen::Vector<double, 1>{2}, Eigen::Vector<double, 1>{4}};
+	REQUIRE(sampleBasisSet[Element::Ne].SemiLocalEcpProjectors[0].EqualsTo({AzimuthalQuantumNumber::S, ecp0}));
+	const SemiLocalEcp ecp1{Eigen::Vector2d{-5, -4}, Eigen::Vector2d{1, 1.6}, Eigen::Vector2d{4.5, 3.5}};
+	REQUIRE(sampleBasisSet[Element::Ne].SemiLocalEcpProjectors[1].EqualsTo({AzimuthalQuantumNumber::P, ecp1}));
 
 	REQUIRE(sampleBasisSet[Element::Ne].EcpElectronCount == 28);
 }
