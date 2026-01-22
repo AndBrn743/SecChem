@@ -2,9 +2,6 @@
 // Copyright (c) 2025-2026 Andy Brown
 
 #pragma once
-#if !defined(SECCHEM_GAUSSIAN_BASIS_SET_INTERNAL)
-#error Do not include internal header files directly
-#endif
 
 #include <range/v3/algorithm.hpp>
 #include <range/v3/numeric.hpp>
@@ -18,6 +15,7 @@
 #include <SecChem/Molecule.hpp>
 #include <SecChem/Polyfill/flat_map.hpp>
 
+#include "Gaussian.BasisSet.hpp"
 
 namespace SecChem::BasisSet::Gaussian
 {
@@ -131,14 +129,14 @@ namespace SecChem::BasisSet::Gaussian
 		                  const SharedMolecule& molecule,
 		                  std::vector<const ElementaryBasisSet*> basisAssignments)
 		    : m_Library(std::move(library)), m_Molecule(molecule), m_BasisAssignments(std::move(basisAssignments)),
-		      m_PrimitiveSphericalOrbitalSegmentationTable(CreateSegmentationTableOfSomeKindOfOrbitals(
-		              &AzimuthalShell::PrimitiveSphericalOrbitalCount)),
-		      m_ContractedSphericalOrbitalSegmentationTable(CreateSegmentationTableOfSomeKindOfOrbitals(
-		              &AzimuthalShell::ContractedSphericalOrbitalCount)),
-		      m_PrimitiveCartesianOrbitalSegmentationTable(CreateSegmentationTableOfSomeKindOfOrbitals(
-		              &AzimuthalShell::PrimitiveCartesianOrbitalCount)),
-		      m_ContractedCartesianOrbitalSegmentationTable(CreateSegmentationTableOfSomeKindOfOrbitals(
-		              &AzimuthalShell::ContractedCartesianOrbitalCount)),
+		      m_PrimitiveSphericalOrbitalSegmentationTable(
+		              CreateSegmentationTableOfSomeKindOfOrbitals(&AzimuthalShell::PrimitiveSphericalOrbitalCount)),
+		      m_ContractedSphericalOrbitalSegmentationTable(
+		              CreateSegmentationTableOfSomeKindOfOrbitals(&AzimuthalShell::ContractedSphericalOrbitalCount)),
+		      m_PrimitiveCartesianOrbitalSegmentationTable(
+		              CreateSegmentationTableOfSomeKindOfOrbitals(&AzimuthalShell::PrimitiveCartesianOrbitalCount)),
+		      m_ContractedCartesianOrbitalSegmentationTable(
+		              CreateSegmentationTableOfSomeKindOfOrbitals(&AzimuthalShell::ContractedCartesianOrbitalCount)),
 		      m_ComputedElementaryBasisInfoTable(ComputedElementaryBasisInfo::CreateStatisticsFor(m_BasisAssignments))
 		{
 			assert(molecule.AtomCount() == m_BasisAssignments.size());
@@ -155,10 +153,8 @@ namespace SecChem::BasisSet::Gaussian
 			                  std::next(segTable.begin()),
 			                  [&offset, orbitalCountOf](const ElementaryBasisSet* basisPtr)
 			                  {
-				                  offset += ranges::accumulate(basisPtr->AzimuthalShells,
-				                                               Eigen::Index{0},
-				                                               std::plus<>{},
-				                                               orbitalCountOf);
+				                  offset += ranges::accumulate(
+				                          basisPtr->AzimuthalShells, Eigen::Index{0}, std::plus<>{}, orbitalCountOf);
 				                  return offset;
 			                  });
 
@@ -536,8 +532,8 @@ namespace SecChem::BasisSet::Gaussian
 				const auto atomicOffset = cr_BasisSet.OrbitalSegmentationTable<C, R>()[atomIndex];
 				const ElementaryBasisSet* basisPtr = cr_BasisSet.m_BasisAssignments[atomIndex];
 
-				const auto& subshellSegTable =
-				        cr_BasisSet.m_ComputedElementaryBasisInfoTable.at(basisPtr).template SubshellSegmentationTable<C, R>();
+				const auto& subshellSegTable = cr_BasisSet.m_ComputedElementaryBasisInfoTable.at(basisPtr)
+				                                       .template SubshellSegmentationTable<C, R>();
 				assert(subshellSegTable.size() >= 2);
 				const auto segIterator = std::prev(std::upper_bound(
 				        std::next(subshellSegTable.cbegin()), subshellSegTable.cend(), orbitalIndex - atomicOffset));
@@ -683,8 +679,7 @@ namespace SecChem::BasisSet::Gaussian
 			auto SubshellsOf(const Atom& atom) const
 			{
 				return cr_BasisSet.ElementaryBasisAt(cr_BasisSet.m_Molecule.IndexOf(atom)).AzimuthalShells
-				       | ranges::views::transform([](const AzimuthalShell& amb)
-				                                  { return amb.ContractedShells(); })
+				       | ranges::views::transform([](const AzimuthalShell& amb) { return amb.ContractedShells(); })
 				       | ranges::views::join;
 			}
 

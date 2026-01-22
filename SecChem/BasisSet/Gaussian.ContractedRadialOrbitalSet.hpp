@@ -2,9 +2,20 @@
 // Copyright (c) 2025-2026 Andy Brown
 
 #pragma once
-#if !defined(SECCHEM_GAUSSIAN_BASIS_SET_INTERNAL)
-#error Do not include internal header files directly
-#endif
+#define SECCHEM_GAUSSIAN_BASIS_SET_INTERNAL
+#include "Detail/Gaussian.Forward.hpp"
+#undef SECCHEM_GAUSSIAN_BASIS_SET_INTERNAL
+
+#include <Eigen/Dense>
+#include <algorithm>
+#include <numeric>
+#include <type_traits>
+#include <utility>
+#include <vector>
+
+#include <SecChem/Utility/IEquatableWithTolerance.hpp>
+#include <SecChem/AzimuthalQuantumNumber.hpp>
+#include <SecChem/Element.hpp>
 
 namespace SecChem::BasisSet::Gaussian
 {

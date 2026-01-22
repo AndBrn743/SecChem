@@ -4,11 +4,9 @@
 #pragma once
 
 #include "AtomicElectronConfiguration.hpp"
-#include "AzimuthalQuantumNumber.hpp"
 #include <cassert>
 #include <cmath>
 #include <cstring>
-#include <exception>
 #include <iostream>
 #include <stdexcept>
 #include <string>

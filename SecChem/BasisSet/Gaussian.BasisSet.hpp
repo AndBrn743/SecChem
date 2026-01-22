@@ -2,15 +2,9 @@
 // Copyright (c) 2025-2026 Andy Brown
 
 #pragma once
-#include "Gaussian.SemiLocalEcp.hpp"
-
 
 #include <range/v3/algorithm/any_of.hpp>
 #include <range/v3/algorithm/mismatch.hpp>
-#if !defined(SECCHEM_GAUSSIAN_BASIS_SET_INTERNAL)
-#error Do not include internal header files directly
-#endif
-
 #include <range/v3/algorithm/all_of.hpp>
 #include <range/v3/algorithm/find_if.hpp>
 #include <range/v3/algorithm/find_if_not.hpp>
@@ -19,6 +13,9 @@
 #include <range/v3/algorithm/remove_if.hpp>
 #include <range/v3/algorithm/sort.hpp>
 #include <range/v3/numeric/accumulate.hpp>
+
+#include "Gaussian.SemiLocalEcp.hpp"
+#include "Gaussian.AzimuthalShell.hpp"
 
 namespace SecChem::BasisSet::Gaussian
 {

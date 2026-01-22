@@ -2,18 +2,30 @@
 // Copyright (c) 2025-2026 Andy Brown
 
 #pragma once
-#if !defined(SECCHEM_GAUSSIAN_BASIS_SET_INTERNAL)
-#error Do not include internal header files directly
-#endif
+#define SECCHEM_GAUSSIAN_BASIS_SET_INTERNAL
+#include "Detail/Gaussian.Forward.hpp"
+#undef SECCHEM_GAUSSIAN_BASIS_SET_INTERNAL
 
+#include <Eigen/Dense>
+#include <algorithm>
+#include <numeric>
 #include <range/v3/view/iota.hpp>
 #include <range/v3/view/transform.hpp>
+#include <type_traits>
+#include <utility>
+#include <vector>
+
+#include <SecChem/AzimuthalQuantumNumber.hpp>
+#include <SecChem/Element.hpp>
+#include <SecChem/System.hpp>
+#include <SecChem/Utility/IEquatableWithTolerance.hpp>
+
+#include "Gaussian.ContractedRadialOrbitalSet.hpp"
 
 namespace SecChem::BasisSet::Gaussian
 {
 	template <typename Derived>
-	class AbstractAzimuthalShell
-	    : public SecUtility::IEquatableWithTolerance<AbstractAzimuthalShell<Derived>>
+	class AbstractAzimuthalShell : public SecUtility::IEquatableWithTolerance<AbstractAzimuthalShell<Derived>>
 	{
 		friend SecUtility::IEquatableWithTolerance<AbstractAzimuthalShell>;
 		friend Derived;
@@ -105,8 +117,7 @@ namespace SecChem::BasisSet::Gaussian
 			return ContractionSets().cols();
 		}
 
-		explicit constexpr AbstractAzimuthalShell(const AzimuthalQuantumNumber l) noexcept
-		    : m_AzimuthalQuantumNumber(l)
+		explicit constexpr AbstractAzimuthalShell(const AzimuthalQuantumNumber l) noexcept : m_AzimuthalQuantumNumber(l)
 		{
 			/* NO CODE */
 		}
@@ -132,8 +143,8 @@ namespace SecChem::BasisSet::Gaussian
 		using Scalar = SecChem::Scalar;
 
 		AzimuthalShellSegmentView(const AzimuthalQuantumNumber azimuthalQuantumNumber,
-		                                const Eigen::Map<const Eigen::VectorX<Scalar>>& exponentSet,
-		                                const Eigen::Block<const Eigen::MatrixX<Scalar>>& contractionSets) noexcept
+		                          const Eigen::Map<const Eigen::VectorX<Scalar>>& exponentSet,
+		                          const Eigen::Block<const Eigen::MatrixX<Scalar>>& contractionSets) noexcept
 		    : Base(azimuthalQuantumNumber), m_ExponentSetView(exponentSet), m_ContractionSetsView(contractionSets)
 		{
 			/* NO CODE */
@@ -154,7 +165,7 @@ namespace SecChem::BasisSet::Gaussian
 	};
 
 	class AzimuthalShell : public SecUtility::IEquatableWithTolerance<AzimuthalShell>,
-	                             public AbstractAzimuthalShell<AzimuthalShell>
+	                       public AbstractAzimuthalShell<AzimuthalShell>
 	{
 		friend IEquatableWithTolerance<AzimuthalShell>;
 		using Base = AbstractAzimuthalShell;
@@ -163,7 +174,7 @@ namespace SecChem::BasisSet::Gaussian
 
 	public:
 		AzimuthalShell(const AzimuthalQuantumNumber angularMomentum,
-		                     ContractedRadialOrbitalSet contractedRadialOrbitalSet)
+		               ContractedRadialOrbitalSet contractedRadialOrbitalSet)
 		    : Base(angularMomentum), m_ContractedRadialOrbitalSet(std::move(contractedRadialOrbitalSet)),
 		      m_SegmentationTable{{0, 0},
 		                          {m_ContractedRadialOrbitalSet.PrimitiveShellCount(),
@@ -172,8 +183,7 @@ namespace SecChem::BasisSet::Gaussian
 			/* NO CODE */
 		}
 
-		AzimuthalShell& AddOrOverrideContractedRadialOrbitalSet(
-		        ContractedRadialOrbitalSet contractedRadialOrbitalSet)
+		AzimuthalShell& AddOrOverrideContractedRadialOrbitalSet(ContractedRadialOrbitalSet contractedRadialOrbitalSet)
 		{
 			m_ContractedRadialOrbitalSet = std::move(contractedRadialOrbitalSet);
 			m_SegmentationTable = {{0, 0},
@@ -265,8 +275,8 @@ namespace SecChem::BasisSet::Gaussian
 			const auto [p1, c1] = m_SegmentationTable[index + 1];
 
 			return AzimuthalShellSegmentView{AngularMomentum(),
-			                                       {ExponentSet().data() + p0, p1 - p0},
-			                                       ContractionSets().block(p0, c0, p1 - p0, c1 - c0)};
+			                                 {ExponentSet().data() + p0, p1 - p0},
+			                                 ContractionSets().block(p0, c0, p1 - p0, c1 - c0)};
 		}
 
 		using IEquatableWithTolerance<AzimuthalShell>::EqualsTo;
@@ -276,8 +286,8 @@ namespace SecChem::BasisSet::Gaussian
 
 	private:
 		AzimuthalShell(const AzimuthalQuantumNumber angularMomentum,
-		                     Gaussian::ContractedRadialOrbitalSet nullableContractedRadialOrbitalSet,
-		                     std::vector<std::pair<Eigen::Index, Eigen::Index>> segmentationTable)
+		               Gaussian::ContractedRadialOrbitalSet nullableContractedRadialOrbitalSet,
+		               std::vector<std::pair<Eigen::Index, Eigen::Index>> segmentationTable)
 		    : Base(angularMomentum), m_ContractedRadialOrbitalSet(std::move(nullableContractedRadialOrbitalSet)),
 		      m_SegmentationTable(std::move(segmentationTable))
 		{
