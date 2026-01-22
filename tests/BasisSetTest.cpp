@@ -271,3 +271,181 @@ TEST_CASE("Misc IsInStandardRepresentation and StandardizeRepresentation tests",
 	REQUIRE(bs.IsInStandardRepresentation());
 	REQUIRE_FALSE(bs.Has(Element::Carbon));
 }
+
+// =============================================================================
+// BasisSetLibrary Builder Tests
+// =============================================================================
+
+TEST_CASE("Builder<BasisSetLibrary> creates empty library", "[BasisSetLibrary][Builder]")
+{
+	SecChem::Builder<BasisSetLibrary> builder;
+	auto library = builder.Build();
+
+	REQUIRE_FALSE(library.Has("sto-3g"));
+	REQUIRE_FALSE(library.Has("6-31g"));
+}
+
+TEST_CASE("Builder<BasisSetLibrary> can add single basis set", "[BasisSetLibrary][Builder]")
+{
+	SecChem::Builder<BasisSetLibrary> builder;
+
+	BasisSet bs;
+	bs.AddEntryFor(Element::H).AzimuthalShells.emplace_back(
+	        AzimuthalQuantumNumber::S,
+	        ContractedRadialOrbitalSet{Eigen::VectorXd::Constant(1, 1.0), Eigen::MatrixXd::Constant(1, 1, 1.0)});
+
+	builder.AddBasisSet("minimal-h", std::move(bs));
+	auto library = builder.Build();
+
+	REQUIRE(library.Has("minimal-h"));
+	REQUIRE_FALSE(library.Has("6-31g"));
+	REQUIRE(library["minimal-h"].Has(Element::H));
+}
+
+TEST_CASE("Builder<BasisSetLibrary> can add multiple basis sets", "[BasisSetLibrary][Builder]")
+{
+	SecChem::Builder<BasisSetLibrary> builder;
+
+	BasisSet sto3g;
+	sto3g.AddEntryFor(Element::H).AzimuthalShells.emplace_back(
+	        AzimuthalQuantumNumber::S,
+	        ContractedRadialOrbitalSet{Eigen::VectorXd::Constant(1, 1.0), Eigen::MatrixXd::Constant(1, 1, 1.0)});
+	sto3g.AddEntryFor(Element::C).AzimuthalShells.emplace_back(
+	        AzimuthalQuantumNumber::S,
+	        ContractedRadialOrbitalSet{Eigen::VectorXd::Constant(1, 2.0), Eigen::MatrixXd::Constant(1, 1, 2.0)});
+
+	BasisSet cc_pvdz;
+	cc_pvdz.AddEntryFor(Element::O).AzimuthalShells.emplace_back(
+	        AzimuthalQuantumNumber::P,
+	        ContractedRadialOrbitalSet{Eigen::VectorXd::Constant(1, 3.0), Eigen::MatrixXd::Constant(1, 1, 3.0)});
+
+	builder.AddBasisSet("sto-3g", std::move(sto3g));
+	builder.AddBasisSet("cc-pvdz", std::move(cc_pvdz));
+
+	auto library = builder.Build();
+
+	REQUIRE(library.Has("sto-3g"));
+	REQUIRE(library.Has("cc-pvdz"));
+	REQUIRE(library["sto-3g"].Has(Element::H));
+	REQUIRE(library["sto-3g"].Has(Element::C));
+	REQUIRE(library["cc-pvdz"].Has(Element::O));
+}
+
+TEST_CASE("Builder<BasisSetLibrary> rejects duplicate basis set names", "[BasisSetLibrary][Builder]")
+{
+	SecChem::Builder<BasisSetLibrary> builder;
+
+	BasisSet bs1;
+	bs1.AddEntryFor(Element::H);
+
+	BasisSet bs2;
+	bs2.AddEntryFor(Element::C);
+
+	builder.AddBasisSet("basis1", std::move(bs1));
+
+	REQUIRE_THROWS_MATCHES(
+	        builder.AddBasisSet("basis1", std::move(bs2)),
+	        std::logic_error,
+	        MessageMatches(ContainsSubstring("same name")));
+}
+
+TEST_CASE("Builder<BasisSetLibrary> throws when already consumed", "[BasisSetLibrary][Builder]")
+{
+	SecChem::Builder<BasisSetLibrary> builder;
+
+	BasisSet bs;
+	bs.AddEntryFor(Element::H);
+
+	builder.AddBasisSet("test", std::move(bs));
+	auto library = builder.Build();
+
+	SECTION("Cannot Build twice")
+	{
+		REQUIRE_THROWS_MATCHES(builder.Build(), std::logic_error, MessageMatches(ContainsSubstring("already consumed")));
+	}
+
+	SECTION("Cannot AddBasisSet after Build")
+	{
+		BasisSet bs2;
+		bs2.AddEntryFor(Element::C);
+
+		REQUIRE_THROWS_MATCHES(
+		        builder.AddBasisSet("test2", std::move(bs2)),
+		        std::logic_error,
+		        MessageMatches(ContainsSubstring("already consumed")));
+	}
+}
+
+TEST_CASE("Builder<BasisSetLibrary> supports chaining", "[BasisSetLibrary][Builder]")
+{
+	SecChem::Builder<BasisSetLibrary> builder;
+
+	BasisSet bs1;
+	bs1.AddEntryFor(Element::H);
+
+	BasisSet bs2;
+	bs2.AddEntryFor(Element::C);
+
+	BasisSet bs3;
+	bs3.AddEntryFor(Element::O);
+
+	auto library = builder.AddBasisSet("bs1", std::move(bs1))
+	                      .AddBasisSet("bs2", std::move(bs2))
+	                      .AddBasisSet("bs3", std::move(bs3))
+	                      .Build();
+
+	REQUIRE(library.Has("bs1"));
+	REQUIRE(library.Has("bs2"));
+	REQUIRE(library.Has("bs3"));
+}
+
+TEST_CASE("Builder<SharedBasisSetLibrary> creates shared library", "[BasisSetLibrary][Builder]")
+{
+	SecChem::Builder<SharedBasisSetLibrary> builder;
+
+	SharedBasisSet bs;
+	bs.AddEntryFor(Element::H).AzimuthalShells.emplace_back(
+	        AzimuthalQuantumNumber::S,
+	        ContractedRadialOrbitalSet{Eigen::VectorXd::Constant(1, 1.0), Eigen::MatrixXd::Constant(1, 1, 1.0)});
+
+	builder.AddBasisSet("test", std::move(bs));
+	auto library = builder.Build();
+
+	REQUIRE(library.Has("test"));
+	REQUIRE(library["test"].Has(Element::H));
+}
+
+TEST_CASE("Builder<SharedBasisSetLibrary> throws when already consumed", "[BasisSetLibrary][Builder]")
+{
+	SecChem::Builder<SharedBasisSetLibrary> builder;
+
+	SharedBasisSet bs;
+	bs.AddEntryFor(Element::H);
+
+	builder.AddBasisSet("test", std::move(bs));
+	builder.Build();
+
+	REQUIRE_THROWS_MATCHES(builder.Build(), std::logic_error, MessageMatches(ContainsSubstring("already consumed")));
+}
+
+TEST_CASE("BasisSetLibrary operator[] throws for missing name", "[BasisSetLibrary]")
+{
+	SecChem::Builder<BasisSetLibrary> builder;
+	auto library = builder.Build();
+
+	REQUIRE_THROWS_AS(library["nonexistent"], std::out_of_range);
+}
+
+TEST_CASE("Builder<BasisSetLibrary> with empty basis set", "[BasisSetLibrary][Builder]")
+{
+	SecChem::Builder<BasisSetLibrary> builder;
+
+	BasisSet emptyBs;
+	builder.AddBasisSet("empty", std::move(emptyBs));
+
+	auto library = builder.Build();
+
+	REQUIRE(library.Has("empty"));
+	REQUIRE_FALSE(library["empty"].Has(Element::H));
+	REQUIRE_FALSE(library["empty"].Has(Element::C));
+}
