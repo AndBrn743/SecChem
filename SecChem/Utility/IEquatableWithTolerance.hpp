@@ -53,7 +53,7 @@ namespace SecUtility
 #endif
 				~IEquatableWithTolerance() noexcept = default;
 
-		bool EqualsTo_Impl(const Derived& other, Scalar tolerance) = delete;
+		bool EqualsTo_Impl(const Derived& other, Scalar tolerance) const noexcept = delete;
 
 		bool OperatorEquals_Impl(const Derived& other) const noexcept
 		{
