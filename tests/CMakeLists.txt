@@ -1,8 +1,5 @@
-if (POLICY CMP0135)
-    cmake_policy(SET CMP0135 NEW)
-endif ()
-
-option(USE_SYSTEM_CATCH2 NO)
+option(USE_SYSTEM_CATCH2 "Use system-installed Catch2 instead of fetching" OFF)
+option(USE_SYSTEM_NLOHMANN_JSON "Use system-installed nlohmann/json instead of fetching" OFF)
 
 if (USE_SYSTEM_CATCH2)
     find_package(Catch2 3.7.1 CONFIG)
@@ -10,18 +7,18 @@ endif ()
 
 if (NOT USE_SYSTEM_CATCH2 OR NOT Catch2_FOUND)
     if (NOT USE_SYSTEM_CATCH2)
-        message(STATUS "Building Catch2 Locally")
+        message(STATUS "Building Catch2 from source (USE_SYSTEM_CATCH2=OFF)")
     else ()
-        message(STATUS "Could NOT Find Catch2 (Building Locally)")
+        message(STATUS "Catch2 not found via find_package(), building from source")
     endif ()
     include(FetchContent)
     if (DEFINED CATCH2_SOURCE)
-        message(STATUS "Building Catch2 with user specified source")
+        message(STATUS "Building Catch2 from user-specified source: ${CATCH2_SOURCE}")
         FetchContent_Declare(
                 catch2
                 URL ${CATCH2_SOURCE})
     else ()
-        message(STATUS "Building Catch2 with source from internet")
+        message(STATUS "Fetching Catch2 from upstream repository")
         FetchContent_Declare(
                 catch2
                 GIT_REPOSITORY https://github.com/catchorg/Catch2.git
@@ -43,10 +40,10 @@ if (NOT USE_SYSTEM_NLOHMANN_JSON OR NOT nlohmann_json_FOUND)
     if (NOT DEFINED NLOHMANN_JSON_SOURCE OR NLOHMANN_JSON_SOURCE STREQUAL "")
         set(NLOHMANN_JSON_SOURCE "https://github.com/nlohmann/json/releases/download/v3.12.0/json.tar.xz")
     endif ()
+    message(STATUS "Building nlohmann/json from ${NLOHMANN_JSON_SOURCE}")
 
     FetchContent_Declare(NlohmannJson URL ${NLOHMANN_JSON_SOURCE})
     FetchContent_MakeAvailable(NlohmannJson)
-    #    target_link_libraries(foo PRIVATE nlohmann_json::nlohmann_json)
 else ()
     message(STATUS "Found nlohmann/json version ${nlohmann_json_VERSION}")
 endif ()
