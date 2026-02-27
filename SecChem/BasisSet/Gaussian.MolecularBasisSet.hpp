@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <functional>
 #include <range/v3/algorithm.hpp>
 #include <range/v3/numeric.hpp>
 #include <range/v3/numeric/accumulate.hpp>
@@ -184,20 +185,16 @@ namespace SecChem::BasisSet::Gaussian
 					if (referenceCount == 1)
 					{
 						primitiveSphericalSubshellSegTable = CreateSubshellSegmentationTableFor(
-						        *basisPtr,
-						        [](const AzimuthalShell& amb) { return amb.PrimitiveSphericalOrbitalCount(); });
+						        *basisPtr, &AzimuthalShell::PrimitiveSphericalOrbitalCount);
 
 						contractedSphericalSubshellSegTable = CreateSubshellSegmentationTableFor(
-						        *basisPtr,
-						        [](const AzimuthalShell& amb) { return amb.ContractedSphericalOrbitalCount(); });
+						        *basisPtr, &AzimuthalShell::ContractedSphericalOrbitalCount);
 
 						primitiveCartesianSubshellSegTable = CreateSubshellSegmentationTableFor(
-						        *basisPtr,
-						        [](const AzimuthalShell& amb) { return amb.PrimitiveCartesianOrbitalCount(); });
+						        *basisPtr, &AzimuthalShell::PrimitiveCartesianOrbitalCount);
 
 						contractedCartesianSubshellSegTable = CreateSubshellSegmentationTableFor(
-						        *basisPtr,
-						        [](const AzimuthalShell& amb) { return amb.ContractedCartesianOrbitalCount(); });
+						        *basisPtr, &AzimuthalShell::ContractedCartesianOrbitalCount);
 
 						primitiveSubshellCount = ranges::accumulate(basisPtr->AzimuthalShells,
 						                                            Eigen::Index{0},
@@ -283,7 +280,7 @@ namespace SecChem::BasisSet::Gaussian
 
 			for (const auto& amb : basis.AzimuthalShells)
 			{
-				offset += orbitalCountOf(amb);
+				offset += std::invoke(orbitalCountOf, amb);
 				segTable[amb.AngularMomentum().Value() + 1] = offset;
 			}
 
