@@ -6,6 +6,7 @@
 #include <Eigen/Dense>
 #include <SecChem/System.hpp>
 #include <array>
+#include <cassert>
 #include <cmath>
 #include <limits>
 
@@ -49,11 +50,13 @@ namespace SecChem::BasisSet::PlaneWave
 
 		const Eigen::Vector3<Scalar>& RealSpaceLatticeVector(const std::size_t index) const noexcept
 		{
+			assert(index < 3);
 			return m_RealSpaceLatticeVectors[index];
 		}
 
 		const Eigen::Vector3<Scalar>& ReciprocalLatticeVector(const std::size_t index) const noexcept
 		{
+			assert(index < 3);
 			return m_ReciprocalLatticeVectors[index];
 		}
 
