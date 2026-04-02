@@ -167,6 +167,21 @@ namespace SecChem
 			return static_cast<bool>(m_Tags & AtomTag::Frozen);
 		}
 
+		double SquaredDistanceTo(const Eigen::Vector3d& position) const noexcept
+		{
+			return (m_Position - position).squaredNorm();
+		}
+
+		double DistanceTo(const Eigen::Vector3d& position) const noexcept
+		{
+			return (m_Position - position).norm();
+		}
+
+		double SquaredDistanceTo(const Atom& other) const noexcept
+		{
+			return (m_Position - other.m_Position).squaredNorm();
+		}
+
 		double DistanceTo(const Atom& other) const noexcept
 		{
 			return (m_Position - other.m_Position).norm();
