@@ -23,6 +23,7 @@ The primary goals are:
     - Chemical elements
     - Atoms and molecules
     - Gaussian basis sets and ECPs
+    - Plane wave basis sets
 - Parsing of:
     - Cartesian coordinate input
     - Z-matrix (internal coordinate) input
