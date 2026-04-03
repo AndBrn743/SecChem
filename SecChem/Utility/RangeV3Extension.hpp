@@ -5,7 +5,15 @@
 
 #include <Eigen/Dense>
 #include <algorithm>
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-literal-operator"
+#pragma	clang diagnostic ignored "-Wc++20-extensions"
+#endif
 #include <range/v3/range/conversion.hpp>
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
 
 
 template <>
