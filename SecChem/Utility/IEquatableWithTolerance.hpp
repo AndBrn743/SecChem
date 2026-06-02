@@ -19,13 +19,13 @@ namespace SecUtility
 
 	public:
 		constexpr bool EqualsTo(const Derived& other,
-							   const Scalar tolerance = DefaultEqualityComparisonTolerance) const noexcept
+		                        const Scalar tolerance = DefaultEqualityComparisonTolerance) const noexcept
 		{
 			return static_cast<const Derived*>(this)->EqualsTo_Impl(other, tolerance);
 		}
 
 		constexpr bool NotEqualsTo(const Derived& other,
-								  const Scalar tolerance = DefaultEqualityComparisonTolerance) const noexcept
+		                           const Scalar tolerance = DefaultEqualityComparisonTolerance) const noexcept
 		{
 			return !static_cast<const Derived*>(this)->EqualsTo_Impl(other, tolerance);
 		}
@@ -51,8 +51,9 @@ namespace SecUtility
 #if __cplusplus >= 202002L
 		constexpr
 #endif
-				~IEquatableWithTolerance() noexcept = default;
+		        ~IEquatableWithTolerance() noexcept = default;
 
+		// NOLINTNEXTLINE(*-use-equals-delete)
 		bool EqualsTo_Impl(const Derived& other, Scalar tolerance) const noexcept = delete;
 
 		bool OperatorEquals_Impl(const Derived& other) const noexcept
