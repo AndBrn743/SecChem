@@ -35,6 +35,11 @@ namespace SecChem::BasisSet::PlaneWave
 
 			PlaneWaves& operator=(const PlaneWaves& other) &
 			{
+				if (this == &other)
+				{
+					return *this;
+				}
+
 				m_KineticEnergies = other.m_KineticEnergies;
 				m_WaveVectors = other.m_WaveVectors;
 				m_RealSpaceGridPoints = other.m_RealSpaceGridPoints;
@@ -49,7 +54,7 @@ namespace SecChem::BasisSet::PlaneWave
 				CreateOrSyncIterables();
 			}
 
-			PlaneWaves& operator=(PlaneWaves&& other) noexcept
+			PlaneWaves& operator=(PlaneWaves&& other) & noexcept
 			{
 				m_KineticEnergies = std::move(other).m_KineticEnergies;
 				m_WaveVectors = std::move(other).m_WaveVectors;
@@ -252,7 +257,8 @@ namespace SecChem::BasisSet::PlaneWave
 				}
 			}
 
-			pws.m_KineticEnergies = Eigen::VectorX<Scalar>::Map(kineticEnergies.data(), static_cast<Eigen::Index>(kineticEnergies.size()));
+			pws.m_KineticEnergies = Eigen::VectorX<Scalar>::Map(kineticEnergies.data(),
+			                                                    static_cast<Eigen::Index>(kineticEnergies.size()));
 			pws.m_WaveVectors = Eigen::Matrix<Scalar, 3, Eigen::Dynamic>(3, pws.m_KineticEnergies.size());
 			pws.m_RealSpaceGridPoints = Eigen::Matrix<Scalar, 3, Eigen::Dynamic>(3, pws.m_KineticEnergies.size());
 			for (Eigen::Index i = 0; i < pws.m_WaveVectors.cols(); i++)
