@@ -6,8 +6,8 @@
 [![codecov](https://codecov.io/gh/AndBrn743/SecChem/branch/master/graph/badge.svg)](https://codecov.io/gh/AndBrn743/SecChem)
 
 **SecChem** is a C++17 chemistry *infrastructure* library that provides core data structures and parsers for
-representing **molecules** and **Gaussian-type basis sets**, intended to be reused by quantum chemistry (QC)
-software.
+representing **molecules**, **Gaussian-type basis sets**, and **plane-wave basis sets**, intended to be reused by 
+quantum chemistry (QC) software.
 
 This repository was split out of the author’s HF/DFT codebase (**SecScf**) to allow focused refactoring,
 testing, and experimentation with cleaner abstractions and better software structure.
@@ -23,7 +23,7 @@ The primary goals are:
     - Chemical elements
     - Atoms and molecules
     - Gaussian basis sets and ECPs
-    - Plane wave basis sets
+    - Plane wave basis sets (partially completed)
 - Parsing of:
     - Cartesian coordinate input
     - Z-matrix (internal coordinate) input
