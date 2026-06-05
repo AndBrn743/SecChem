@@ -30,6 +30,14 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y cmake ninja-build ccache
 
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: build/_deps
+          key: deps-${{ runner.os }}-${{ hashFiles('CMakeLists.txt', 'tests/CMakeLists.txt') }}
+          restore-keys: |
+            deps-${{ runner.os }}-
+
       - name: Configure CMake
         run: |
           cmake -S . -B build \
@@ -58,6 +66,14 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y cmake ninja-build ccache
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: build/_deps
+          key: deps-${{ runner.os }}-${{ hashFiles('CMakeLists.txt', 'tests/CMakeLists.txt') }}
+          restore-keys: |
+            deps-${{ runner.os }}-
 
       - name: Configure CMake
         run: |
@@ -121,6 +137,14 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y cmake ninja-build ccache
 
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: build/_deps
+          key: deps-${{ runner.os }}-${{ hashFiles('CMakeLists.txt', 'tests/CMakeLists.txt') }}
+          restore-keys: |
+            deps-${{ runner.os }}-
+
       - name: Configure CMake
         run: |
           cmake -S . -B build \
@@ -154,6 +178,14 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y cmake ninja-build ccache lcov
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: build/_deps
+          key: deps-${{ runner.os }}-${{ hashFiles('CMakeLists.txt', 'tests/CMakeLists.txt') }}
+          restore-keys: |
+            deps-${{ runner.os }}-
 
       - name: Configure CMake with coverage
         run: |
