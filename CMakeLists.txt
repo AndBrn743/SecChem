@@ -118,8 +118,17 @@ endif ()
 target_link_libraries(SecChem INTERFACE range-v3::range-v3)
 
 
-enable_testing()
-add_subdirectory(tests)
+if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
+    set(_secchem_default_test ON)
+else ()
+    set(_secchem_default_test OFF)
+endif ()
+option(SECCHEM_ENABLE_TEST "Build SecChem tests" ${_secchem_default_test})
+
+if (SECCHEM_ENABLE_TEST)
+    enable_testing()
+    add_subdirectory(tests)
+endif ()
 
 #-----------------------------------------------------------------------------------
 
