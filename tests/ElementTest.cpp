@@ -4,6 +4,7 @@
 
 #include <SecChem/Element.hpp>
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/catch_approx.hpp>
 
 using namespace SecChem;
 
@@ -205,4 +206,25 @@ TEST_CASE("Element: lanthanides f-block", "[Element][Lanthanides]")
 		REQUIRE(e.CharacteristicOrbitalAzimuthalQuantumNumber() == 2);
 		REQUIRE(e.IsFromDBlock());
 	}
+}
+
+TEST_CASE("Elememt: SlaterEffectiveCoreCharge")
+{
+	CHECK(Element{Element::Neutron}.SlaterEffectiveCoreCharge() == 0);
+	CHECK(Element{Element::H}.SlaterEffectiveCoreCharge() == 1);
+
+	CHECK(Element{Element::He}.SlaterEffectiveCoreCharge() == Catch::Approx(1.7));
+	CHECK(Element{Element::Li}.SlaterEffectiveCoreCharge() == Catch::Approx(1.3));
+	CHECK(Element{Element::Be}.SlaterEffectiveCoreCharge() == Catch::Approx(1.95));
+	CHECK(Element{Element::B}.SlaterEffectiveCoreCharge() == Catch::Approx(2.6));
+	CHECK(Element{Element::C}.SlaterEffectiveCoreCharge() == Catch::Approx(3.25));
+	CHECK(Element{Element::N}.SlaterEffectiveCoreCharge() == Catch::Approx(3.9));
+	CHECK(Element{Element::O}.SlaterEffectiveCoreCharge() == Catch::Approx(4.55));
+	CHECK(Element{Element::F}.SlaterEffectiveCoreCharge() == Catch::Approx(5.2));
+	CHECK(Element{Element::Ne}.SlaterEffectiveCoreCharge() == Catch::Approx(5.85));
+
+	CHECK(Element{Element::Iron}.SlaterEffectiveCoreCharge() == Catch::Approx(3.75));
+	CHECK(Element{Element::Zinc}.SlaterEffectiveCoreCharge() == Catch::Approx(4.35));
+	CHECK(Element{Element::Gallium}.SlaterEffectiveCoreCharge() == Catch::Approx(5.0));
+
 }

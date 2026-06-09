@@ -991,12 +991,19 @@ namespace SecChem
 		        const AtomicElectronConfiguration& electronConfig,
 		        ElectronicSubshell outerMostShell = AtomicElectronConfiguration::MaxElectronShell)
 		{
+			if (atomicNumber == 0)
+			{
+				return 0;
+			}
+
 			double screeningConst = 0;
 
-			while (electronConfig[outerMostShell] == 0 && outerMostShell.IsValid())
+			while (electronConfig[outerMostShell] == 0 && outerMostShell != ElectronicSubshell{0})
 			{
 				outerMostShell = ElectronicSubshell(outerMostShell.UnderlyingId() - 1);
 			}
+
+			assert(outerMostShell.IsValid());
 
 			auto currentShell = outerMostShell;
 
