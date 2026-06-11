@@ -4,10 +4,7 @@
 #pragma once
 
 
-#if __has_include(<SecUtility/UnitOfMeasurement.hpp>)
-#include <SecUtility/UnitOfMeasurement.hpp>
-#else
-namespace SecUtility::UnitOfMeasurement
+namespace SecChem::UnitOfMeasurement
 {
 	constexpr auto BohrRadius2Angstrom = [](const auto& length) -> decltype(auto)
 	{
@@ -30,5 +27,4 @@ namespace SecUtility::UnitOfMeasurement
 		static constexpr auto factor = 180 / 3.14159265358979323846;
 		return deg * factor;
 	};
-}  // namespace SecUtility::UnitOfMeasurement
-#endif
+}  // namespace SecChem::UnitOfMeasurement

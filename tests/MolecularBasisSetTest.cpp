@@ -92,12 +92,12 @@ public:
 		const auto [element, position] =
 		        m_GeometryFormat == GeometryFormat::CartesianCoordinate
 		                ? ParseBasicCartesianCoordinateLine(tokens.begin(),
-		                                                    SecUtility::UnitOfMeasurement::Angstrom2BohrRadius)
+		                                                    SecChem::UnitOfMeasurement::Angstrom2BohrRadius)
 		                : ParseInternalCoordinateLine<1>(tokens.begin(),
 		                                                 tokens.begin() + 1 + geomTokenCount,
 		                                                 atoms,
-		                                                 SecUtility::UnitOfMeasurement::Angstrom2BohrRadius,
-		                                                 SecUtility::UnitOfMeasurement::Degree2Radian);
+		                                                 SecChem::UnitOfMeasurement::Angstrom2BohrRadius,
+		                                                 SecChem::UnitOfMeasurement::Degree2Radian);
 		const auto [tags, mass, nuclearRadius, basis] = ParseAttributes(tokens.begin() + 4, tokens.end(), element);
 
 		SecChem::Atom atom = SecChem::Atom::AtomWithMassAndNuclearRadius(element, position, mass, nuclearRadius, tags);

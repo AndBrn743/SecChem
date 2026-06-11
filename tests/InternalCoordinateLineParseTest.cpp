@@ -5,13 +5,13 @@
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 
+#include <SecChem/UnitOfMeasurement.hpp>
 #include <SecChem/Atom.hpp>
 #include <SecChem/Geometry.Input.hpp>
-#include <SecChem/Utility/UnitOfMeasurement.hpp>
 
 using namespace SecChem;
 using namespace SecChem::Geometry::Input;
-using namespace SecUtility::UnitOfMeasurement;
+using namespace SecChem::UnitOfMeasurement;
 
 static constexpr auto Bohr2Bohr = [](const double l) { return l; };
 

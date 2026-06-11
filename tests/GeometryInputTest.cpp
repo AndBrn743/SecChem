@@ -3,8 +3,8 @@
 //
 
 // ReSharper disable CppUseStructuredBinding
+#include <SecChem/UnitOfMeasurement.hpp>
 #include <SecChem/Geometry.Input.hpp>
-#include <SecChem/Utility/UnitOfMeasurement.hpp>
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <sstream>
@@ -15,7 +15,7 @@ using Catch::Approx;
 using SecChem::Atom;
 using SecChem::Element;
 using namespace SecChem::Geometry::Input;
-namespace UnitOfMeasurement = SecUtility::UnitOfMeasurement;
+namespace UnitOfMeasurement = SecChem::UnitOfMeasurement;
 
 TEST_CASE("ParseBasicCartesianCoordinateLine: Valid single atom", "[Geometry][Parser]")
 {

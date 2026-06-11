@@ -17,8 +17,8 @@
 #define CONSTEXPR23
 #endif
 
-#include "Utility/StringUtility.hpp"
-#include "Utility/UnitOfMeasurement.hpp"
+#include <SecChem/UnitOfMeasurement.hpp>
+#include <SecChem/Utility/StringUtility.hpp>
 
 
 namespace SecChem
@@ -844,7 +844,7 @@ namespace SecChem
 					throw std::runtime_error("Ghosh2009 parameters is only available for first 7 periods");
 			}
 
-			return a * 7.2 / SecUtility::UnitOfMeasurement::BohrRadius2Angstrom(Ghosh2008AtomicRadius()) + b;
+			return a * 7.2 / UnitOfMeasurement::BohrRadius2Angstrom(Ghosh2008AtomicRadius()) + b;
 		}
 
 
