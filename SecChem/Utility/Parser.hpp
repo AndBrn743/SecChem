@@ -3,6 +3,9 @@
 
 #pragma once
 
+#if __has_include(<SecUtility/Text/Conversion.hpp>)
+#include <SecUtility/Text/Conversion.hpp>
+#else
 #include <stdexcept>
 #include <string>
 
@@ -121,3 +124,4 @@ namespace SecUtility
 	template <typename Result>
 	inline constexpr Detail::ParseToFunctor<Result> ParseTo;
 }  // namespace SecUtility
+#endif
