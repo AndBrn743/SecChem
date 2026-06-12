@@ -7,6 +7,7 @@
 #include <numeric>
 #include <utility>
 #include <vector>
+#include <memory>
 
 #include "Utility/IEquatableWithTolerance.hpp"
 
