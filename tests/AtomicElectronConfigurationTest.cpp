@@ -62,7 +62,7 @@ TEST_CASE("AtomicElectronConfiguration filling", "[AtomicElectronConfiguration]"
     }
 }
 
-TEST_CASE("Equality operators", "[AtomicElectronConfiguration]") {
+TEST_CASE("AtomicElectronConfiguration: Equality operators", "[AtomicElectronConfiguration]") {
     AtomicElectronConfiguration c1(6);
     AtomicElectronConfiguration c2(6);
     AtomicElectronConfiguration c3(8);
@@ -71,10 +71,10 @@ TEST_CASE("Equality operators", "[AtomicElectronConfiguration]") {
     REQUIRE(c1 != c3);
 }
 
-TEST_CASE("operator<<", "[AtomicElectronConfiguration]")
+TEST_CASE("AtomicElectronConfiguration: operator<<", "[AtomicElectronConfiguration]")
 {
 	std::ostringstream oss{};
-        AtomicElectronConfiguration config(53);
+	AtomicElectronConfiguration config(53);
 	oss << config;
 	CHECK(oss.str() == "1s(2) 2s(2) 2p(6) 3s(2) 3p(6) 3d(10) 4s(2) 4p(6) 4d(10) 5s(2) 5p(5) ");
 }
