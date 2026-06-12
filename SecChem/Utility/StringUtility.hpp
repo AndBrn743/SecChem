@@ -9,14 +9,14 @@
 #include <vector>
 
 #if __has_include(<SecUtility/Text/CaseConversion.hpp>) && __has_include(<SecUtility/Text/Comparison.hpp>)
+
 #include <SecUtility/Text/CaseConversion.hpp>
 #include <SecUtility/Text/Comparison.hpp>
-#endif
 
+#else
 
 namespace SecUtility
 {
-#if !(__has_include(<SecUtility/Text/CaseConversion.hpp>) && __has_include(<SecUtility/Text/Comparison.hpp>))
 	inline constexpr auto ToLower = [](const unsigned char c) noexcept { return std::tolower(c); };
 	inline constexpr auto ToUpper = [](const unsigned char c) noexcept { return std::toupper(c); };
 
@@ -83,40 +83,6 @@ namespace SecUtility
 	{
 		return CaseInsensitiveAsciiComparison(lhs, rhs) == 0;
 	}
-#endif
-
-	inline std::vector<std::string> SplitRespectingQuotes(const std::string& line)
-	{
-		std::vector<std::string> tokens;
-		std::string current;
-		bool isInQuotes = false;
-
-		for (const char c : line)
-		{
-			if (c == '"')
-			{
-				isInQuotes = !isInQuotes;
-				current.push_back(c);
-			}
-			else if (std::isspace(c) && !isInQuotes)
-			{
-				if (!current.empty())
-				{
-					tokens.push_back(current);
-					current.clear();
-				}
-			}
-			else
-			{
-				current.push_back(c);
-			}
-		}
-
-		if (!current.empty())
-		{
-			tokens.push_back(current);
-		}
-
-		return tokens;
-	}
 }  // namespace SecUtility
+
+#endif

@@ -5,6 +5,7 @@
 // #include <catch2/catch_test_macros.hpp>
 
 #include "BasisSetExchangeJsonParserExample.hpp"
+#include <SecUtility/Text/Split.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <range/v3/range/conversion.hpp>
 
@@ -39,7 +40,10 @@ public:
 	        const std::unordered_map<SecChem::Element, const SecChem::BasisSet::Gaussian::ElementaryBasisSet*>&
 	                defaultBasisSet)
 	{
-		const auto tokens = SecUtility::SplitRespectingQuotes(line);
+		constexpr auto Options = SecUtility::SplitOptions::Trim | SecUtility::SplitOptions::SkipEmpty
+		                         | SecUtility::SplitOptions::EnableQuotes;
+		const auto tokens = SecUtility::Split<Options>(
+		        line, [](const char c) { return std::isspace(static_cast<unsigned char>(c)); });
 
 		if (tokens.empty())
 		{

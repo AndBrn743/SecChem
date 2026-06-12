@@ -30,6 +30,19 @@ else ()
     message(STATUS "Found Catch2 version ${Catch2_VERSION} from ${Catch2_DIR}")
 endif ()
 
+if (NOT TARGET SecUtility::Core)
+    if (NOT DEFINED SECUTILITY_SOURCE AND NOT DEFINED SECUTILITY_REPO)
+        set(SECUTILITY_REPO https://github.com/AndBrn743/SecUtility.Core.git)
+    endif ()
+
+    include(FetchContent)
+    FetchContent_Declare(
+            SecUtility.Core
+            URL ${SECUTILITY_SOURCE}
+            GIT_REPOSITORY ${SECUTILITY_REPO})
+    FetchContent_MakeAvailable(SecUtility.Core)
+endif ()
+
 if (USE_SYSTEM_NLOHMANN_JSON)
     find_package(nlohmann_json 3.12.0)
 endif ()
@@ -110,3 +123,5 @@ add_secchem_test(BasisSetTest BasisSetTest.cpp)
 add_secchem_test(BasisParserTest BasisParserTest.cpp)
 add_secchem_test(MolecularBasisSetTest MolecularBasisSetTest.cpp)
 add_secchem_test(PlaneWaveBasisSetTest PlaneWaveBasisSetTest.cpp)
+
+target_link_libraries(MolecularBasisSetTest PRIVATE SecUtility::Core)
