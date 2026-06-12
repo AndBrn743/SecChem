@@ -15,6 +15,7 @@
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #elif defined(__GNUC__)
 #pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpragmas"
 #pragma GCC diagnostic ignored "-Wdeprecated-literal-operator"
 #endif
 #include <range/v3/view/iota.hpp>
