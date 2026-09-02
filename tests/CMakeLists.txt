@@ -78,8 +78,14 @@ endif ()
 #if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang"
 #        AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 22
 #        AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 23)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-c2y-extensions")
+#     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-c2y-extensions")
 #endif ()
+
+include(CheckCXXCompilerFlag)
+check_cxx_compiler_flag("-Wno-c2y-extensions" COMPILER_SUPPORTS_WNO_C2Y_EXTENSIONS)
+if (COMPILER_SUPPORTS_WNO_C2Y_EXTENSIONS)
+    target_compile_options(SecScf INTERFACE $<$<COMPILE_LANGUAGE:CXX>: -Wno-c2y-extensions>)
+endif ()
 
 include(CTest)
 include(Catch)
