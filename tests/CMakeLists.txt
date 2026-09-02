@@ -75,11 +75,11 @@ endif ()
 
 # a temporary workaround for Clang 22.x. hopefully we can get rid of this, at least narrow the range, soon
 # see https://github.com/catchorg/Catch2/issues/3076 and https://github.com/llvm/llvm-project/issues/189645
-if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang"
-        AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 22
-        AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 23)
+#if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang"
+#        AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 22
+#        AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 23)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-c2y-extensions")
-endif ()
+#endif ()
 
 include(CTest)
 include(Catch)
@@ -123,5 +123,7 @@ add_secchem_test(BasisSetTest BasisSetTest.cpp)
 add_secchem_test(BasisParserTest BasisParserTest.cpp)
 add_secchem_test(MolecularBasisSetTest MolecularBasisSetTest.cpp)
 add_secchem_test(PlaneWaveBasisSetTest PlaneWaveBasisSetTest.cpp)
+add_secchem_test(SpinfulTest SpinfulTest.cpp)
 
 target_link_libraries(MolecularBasisSetTest PRIVATE SecUtility::Core)
+target_link_libraries(SpinfulTest PRIVATE SecUtility::Core)

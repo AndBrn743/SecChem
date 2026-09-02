@@ -99,6 +99,8 @@ If others find it useful, that’s a bonus.
     - A fully C++17 compliant STL (sadly, some people do use ancient STL)
     - [Eigen3](https://gitlab.com/libeigen/eigen/) v5 (fetched by CMake if not found)
     - [range-v3](https://github.com/ericniebler/range-v3) v0.12.0 (fetched by CMake if not found)
+- **Optional dependency**:
+  - [SecUtility.Core](https://github.com/AndBrn743/SecUtility.Core) (live at head, for `Spinful` only)
 - **Test-only dependencies** (fetched by CMake if needed):
     - [Catch2](https://github.com/catchorg/Catch2) v3
     - [nlohmann/json](https://github.com/nlohmann/json) v3.12.0
